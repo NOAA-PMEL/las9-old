@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<annotations>
+<annotation_group type="orthogonal_axes">
+<annotation type="t-axis">
+<value><![CDATA[TIME : 15-JAN 11:49]]></value>
+</annotation>
+</annotation_group>
+<annotation_group type="data">
+<annotation type="variable_title">
+<value><![CDATA[SEA SURFACE TEMPERATURE (Deg C)]]></value>
+</annotation>
+<annotation type="dataset_title">
+<value><![CDATA[DATASET: COADS]]></value>
+</annotation>
+</annotation_group>
+<annotation_group type="las">
+<annotation type="header">
+<value><![CDATA[LAS 8./Ferret 7.21     NOAA/PMEL]]></value>
+</annotation>
+</annotation_group>
+</annotations>

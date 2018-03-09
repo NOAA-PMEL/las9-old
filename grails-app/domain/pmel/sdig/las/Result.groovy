@@ -1,0 +1,26 @@
+package pmel.sdig.las
+
+class Result {
+
+    String name
+	String type
+    String mime_type
+	String suffix
+    String url
+    String filename
+    boolean linked = false
+
+    static hasMany = [resultSets: ResultSet]
+    static belongsTo = ResultSet
+
+    static mapping = {
+        url type: "text"
+    }
+    static constraints = {
+        resultSets nullable: true
+        url nullable: true
+        filename nullable: true
+    }
+
+
+}

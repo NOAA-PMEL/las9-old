@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Engineering Interactive Dashboard</title>
+    <link rel="icon" href="favicon.ico">
+    <link
+            rel="stylesheet"
+            href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript">
+
+        // Load the Visualization API and the piechart package.
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.load('current', {'packages':['annotationchart']});
+        // Set a callback to run when the Google Visualization API is loaded.
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var jsonData04 = $.ajax({
+                url: "http://dunkel.pmel.noaa.gov:8950/las9/product/erddapTimeseries?url=http%3A%2F%2Fferret.pmel.noaa.gov%2Fengineering%2Ferddap%2Ftabledap%2F15min_n04_fdd7_a060.json%3Ftime%252Cbpr_P%252Cbpr_S%26time%253E%3D2018-01-01T00%253A00%253A00Z%26time%253C%3D2018-02-01T18%253A00%253A00Z",
+                dataType: "json",
+                async: false
+            }).responseText;
+
+            // Create our data table out of JSON data loaded from server.
+            var data04 = new google.visualization.DataTable(jsonData04);
+
+            // Instantiate and draw our chart, passing in some options.
+            var chart = new google.visualization.AnnotationChart(document.getElementById('chart_div_n04'));
+            chart.draw(data04, {height: 400});
+
+            var jsonDataw20 = $.ajax({
+                url: "http://dunkel.pmel.noaa.gov:8950/las9/product/erddapTimeseries?url=http%3A%2F%2Fferret.pmel.noaa.gov%2Fengineering%2Ferddap%2Ftabledap%2F15min_w20_fdd7_a060.json%3Ftime%252Cbpr_P%252Cbpr_S%26time%253E%3D2018-01-01T00%253A00%253A00Z%26time%253C%3D2018-02-01T18%253A00%253A00Z",
+                dataType: "json",
+                async: false
+            }).responseText;
+
+            // Create our data table out of JSON data loaded from server.
+            var dataw20 = new google.visualization.DataTable(jsonDataw20);
+
+            // Instantiate and draw our chart, passing in some options.
+            var chartw20 = new google.visualization.AnnotationChart(document.getElementById('chart_div_w20'));
+            chartw20.draw(dataw20, {height: 400});
+        }
+
+
+        google.charts.load('current', {
+            'packages': ['geochart'],
+            // Note: you will need to get a mapsApiKey for your project.
+            // See: https://developers.google.com/chart/interactive/docs/basic_load_libs#load-settings
+            'mapsApiKey': 'AIzaSyBa59XbO0_RHD1zAh14Dyvc2q4lmQ5AA5c'
+        });
+        google.charts.setOnLoadCallback(drawMarkersMap);
+        function drawMarkersMap() {
+            var locationData = $.ajax({
+                url: "http://dunkel.pmel.noaa.gov:8950/las9/product/erddapTimeseries?url=http%3A%2F%2Fferret.pmel.noaa.gov%2Fengineering%2Ferddap%2Ftabledap%2F15min_n04_fdd7_a060.json%3Flatitude%252Clongitude%26time%253E%3D2018-01-01T00%253A00%253A00Z%26time%253C%3D2018-02-01T18%253A00%253A00Z",
+                dataType: "json",
+                async: false
+            }).responseText;
+            var locdata = new google.visualization.DataTable(locationData);
+            var options = {
+                displayMode: 'markers',
+                height: 370
+            };
+
+            var chart = new google.visualization.GeoChart(document.getElementById('map_div_n04'));
+            chart.draw(locdata, options);
+
+            var locationDataw20 = $.ajax({
+                url: "http://dunkel.pmel.noaa.gov:8950/las9/product/erddapTimeseries?url=http%3A%2F%2Fferret.pmel.noaa.gov%2Fengineering%2Ferddap%2Ftabledap%2F15min_w20_fdd7_a060.json%3Flatitude%252Clongitude%26time%253E%3D2018-01-01T00%253A00%253A00Z%26time%253C%3D2018-02-01T18%253A00%253A00Z",
+                dataType: "json",
+                async: false
+            }).responseText;
+            var locdataw20 = new google.visualization.DataTable(locationDataw20);
+
+            var chartw20 = new google.visualization.GeoChart(document.getElementById('map_div_w20'));
+            chartw20.draw(locdataw20, options);
+        }
+
+    </script>
+    <style>
+        .my-card-height {
+            height: 500px;
+        }
+        A.headlink:link  {text-decoration: none; color: white;}
+        A.headlink:visited {text-decoration: none; color: white;}
+        A.headlink:hover {text-decoration: underline; color: white;}
+        A.headlink:active {text-decoration: none; color: white;}
+    </style>
+</head>
+<header class="mdc-toolbar">
+    <div class="mdc-toolbar__row mdc-theme--secondary-bg">
+        <span class="mdc-toolbar__title"><a class="headlink" href="https://www.pmel.noaa.gov/edd/dart">NOAA/PMEL Dart Engineering Data Dashboard</a></span>
+        </section>
+    </div>
+</header>
+<body class="mdc-typography">
+<main>
+    <div class="mdc-layout-grid">
+        <div class="mdc-layout-grid__inner">
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12">
+                <div class="mdc-card">
+                    <h2 style="margin: 8px; padding: 0px"  class="mdc-typography--headline">NG Dart Site N04 (Chile) 15 minute data</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mdc-layout-grid">
+        <div class="mdc-layout-grid__inner">
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-4">
+                <div class="mdc-card my-card-height">
+                    <p style="margin: 8px; padding: 0px" class="mdc-typography--body1">
+                        Buoy Location
+                    </p>
+                    <p>
+                        <div id="map_div_n04"></div>
+                    </p>
+                </div>
+            </div>
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-7">
+                <div class="mdc-card my-card-height">
+                    <p style="margin: 8px; padding: 0px" class="mdc-typography--body1">
+                        Primary and Secondary Bottom Pressure
+                    </p>
+                    <p>
+                    <div id="chart_div_n04"></div>
+                    </p>
+                </div>
+            </div>
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-1">
+                <div class="mdc-card my-card-height">
+                    <p style="margin: 8px; padding: 0px" class="mdc-typography--body1">
+                        Related Links
+                    </p>
+                    <ul class="mdc-list">
+                        <li class="mdc-list-item"><a href="http://ferret.pmel.noaa.gov/engineering/las/UI.vm?catid=0AD0CA13734AA1301DE31AC75F0C6760&dsid=id-15min_n04_fdd7_a060&varid=bpr_P-15min_n04_fdd7_a060">LAS</a></li>
+                        <li class="mdc-list-item"><a href="http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_n04_fdd7_a060.html">ERDDAP</a></li>
+                    </ul>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mdc-layout-grid">
+        <div class="mdc-layout-grid__inner">
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12">
+                <div class="mdc-card">
+                    <h2 style="margin: 8px; padding: 0px"  class="mdc-typography--headline">NG Dart Site W20 (Chile) 15 minute data</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div cla
+    <div class="mdc-layout-grid">
+        <div class="mdc-layout-grid__inner">
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-4">
+                <div class="mdc-card my-card-height">
+                    <p style="margin: 8px; padding: 0px" class="mdc-typography--body1">
+                        Buoy Location
+                    </p>
+                    <p>
+                    <div id="map_div_w20"></div>
+                    </p>
+                </div>
+            </div>
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-7">
+                <div class="mdc-card my-card-height">
+                    <p style="margin: 8px; padding: 0px" class="mdc-typography--body1">
+                        Primary and Secondary Bottom Pressure
+                    </p>
+                    <p>
+                    <div id="chart_div_w20"></div>
+                    </p>
+                </div>
+            </div>
+            <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-1">
+                <div class="mdc-card my-card-height">
+                    <p style="margin: 8px; padding: 0px" class="mdc-typography--body1">
+                        Related Links
+                    </p>
+                    <ul class="mdc-list">
+                        <li class="mdc-list-item"><a href="http://ferret.pmel.noaa.gov/engineering/las/UI.vm?catid=7F30C271C3DE1E7BA5414A4518945098&dsid=id-15min_w20_fdd7_a060&varid=bpr_P-15min_w20_fdd7_a060">LAS</a></li>
+                        <li class="mdc-list-item"><a href="http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060.html">ERDDAP</a></li>
+                    </ul>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</main>
+
+<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+<script>window.mdc.autoInit();</script>
+
+</body>
+</html>
+

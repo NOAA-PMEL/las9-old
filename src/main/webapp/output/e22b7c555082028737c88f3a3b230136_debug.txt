@@ -1,0 +1,2108 @@
+ 
+IF `($initialize_script_arg) EQ 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+ 
+ 
+IF ($program_name"0|PyFerret>1|*>0") THEN EXIT/SCRIPT
+ !-> IF 1 THEN EXIT/SCRIPT
+ !-> EXIT/SCRIPT
+! Exit_GO
+ 
+IF ($ferret_view"|xy>1|*>0") THEN
+ !-> IF 1 THEN
+   go xy_plot_2D
+! Enter_GO xy_plot_2D
+IF ($ferret_interpolate_data%0|false>0|true>1|1|0|*>1%) THEN SET MODE INTERPOLATE
+ !-> IF 0 THEN SET MODE INTERPOLATE
+DEFINE SYMBOL fview = `UPCASE("($ferret_view)")`
+ !-> DEFINE SYMBOL fview = XY
+GO LAS_initialize_region 0
+! Enter_GO LAS_initialize_region 0
+DEFINE SYMBOL num ($1"0")
+ !-> DEFINE SYMBOL num 0
+DEFINE SYMBOL region_name data_($num)_region
+ !-> DEFINE SYMBOL region_name data_0_region
+DEFINE SYMBOL region ($($region_name)"region_0")
+ !-> DEFINE SYMBOL region region_0
+DEFINE SYMBOL region region_($num)
+ !-> DEFINE SYMBOL region region_0
+IF `($num) EQ 0 AND ($ferret_view"|xy>1|xyt>1|*>0") ` THEN
+ !-> IF 1 THEN
+DEFINE SYMBOL region_x_range = `ABS( ($region_0_x_hi) - ($region_0_x_lo) )`
+ !-> DEFINE SYMBOL region_x_range = 358
+DEFINE SYMBOL region_y_range = `($region_0_y_hi) - ($region_0_y_lo)`
+ !-> DEFINE SYMBOL region_y_range = 178
+DEFINE SYMBOL win_aspect = 0
+IF `($its_prop_prop_plot"0|*>1") EQ 0` THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL win_aspect =  `($region_Y_range)/($region_X_range)`
+ !-> IF 1 THEN     DEFINE SYMBOL win_aspect =  `178/358`
+ !-> DEFINE SYMBOL win_aspect =  `178/358`
+ !-> DEFINE SYMBOL win_aspect =  0.497206703910615
+ELSE
+ENDIF
+IF `($win_aspect"0|*>1") EQ 0` THEN DEFINE SYMBOL win_aspect = 1
+ !-> IF 0 THEN DEFINE SYMBOL win_aspect = 1
+SET DATA "($data_0_url)"
+ !-> SET DATA "/usr/local/fer_data/data/ocean_atlas_subset.nc"
+LET global_attnames = ..attnames
+IF `IS_ELEMENT_OF_STR_N(global_attnames, "featureType") ` THEN
+ !-> IF 0 THEN
+ELSE
+   IF `($win_aspect) LT 0.3` THEN DEFINE SYMBOL win_aspect = 0.3
+ !-> IF 0 THEN DEFINE SYMBOL win_aspect = 0.3
+   IF `($win_aspect) GT 2.5` THEN DEFINE SYMBOL win_aspect = 2.5
+ !-> IF 0 THEN DEFINE SYMBOL win_aspect = 2.5
+ENDIF
+ENDIF  ! end of adjusting xy aspect ratio
+IF ($($region)_x_lo"0|*>1") THEN
+ !-> IF 1 THEN
+  DEFINE SYMBOL region_x_lo = `INT(100000 * ($($region)_x_lo)) / 100000`
+ !-> DEFINE SYMBOL region_x_lo = 20.5
+  DEFINE SYMBOL region_x_hi = `INT(100000 * ($($region)_x_hi)) / 100000`
+ !-> DEFINE SYMBOL region_x_hi = 378.5
+  DEFINE SYMBOL limits_x = ($region_x_lo):($region_x_hi)
+ !-> DEFINE SYMBOL limits_x = 20.5:378.5
+  DEFINE SYMBOL limits_x_m360 = `($region_x_lo)-360`:`($region_x_hi)-360`
+ !-> DEFINE SYMBOL limits_x_m360 = -339.5:18.5
+  DEFINE SYMBOL limits_x_p360 = `($region_x_lo)+360`:`($region_x_hi)+360`
+ !-> DEFINE SYMBOL limits_x_p360 = 380.5:738.5
+  DEFINE SYMBOL region_x = X=($region_x_lo):($region_x_hi)
+ !-> DEFINE SYMBOL region_x = X=20.5:378.5
+  DEFINE SYMBOL region_x_m360 X=`($region_x_lo)-360`:`($region_x_hi)-360`
+ !-> DEFINE SYMBOL region_x_m360 X=-339.5:18.5
+  DEFINE SYMBOL region_x_p360 X=`($region_x_lo)+360`:`($region_x_hi)+360`
+ !-> DEFINE SYMBOL region_x_p360 X=380.5:738.5
+  IF `($region_x_hi) GE ($region_x_lo)` THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_x_range = `($region_x_hi) - ($region_x_lo)`
+ !-> DEFINE SYMBOL region_x_range = 358
+  ELSE
+  ENDIF
+  DEFINE SYMBOL region_small = X=($region_x_lo)
+ !-> DEFINE SYMBOL region_small = X=20.5
+  DEFINE SYMBOL region_comma = ,
+ENDIF
+IF ($($region)_y_lo"0|*>1") THEN
+ !-> IF 1 THEN
+  DEFINE SYMBOL region_y_lo = `INT(1000 * ($($region)_y_lo)) / 1000`
+ !-> DEFINE SYMBOL region_y_lo = -89.5
+  DEFINE SYMBOL region_y_hi = `INT(1000 * ($($region)_y_hi)) / 1000`
+ !-> DEFINE SYMBOL region_y_hi = 88.5
+  DEFINE SYMBOL limits_y = ($region_y_lo):($region_y_hi)
+ !-> DEFINE SYMBOL limits_y = -89.5:88.5
+  DEFINE SYMBOL region_y = Y=($region_y_lo):($region_y_hi)
+ !-> DEFINE SYMBOL region_y = Y=-89.5:88.5
+  IF `($region_y_hi) GE ($region_y_lo)` THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_y_range = `($region_y_hi) - ($region_y_lo)`
+ !-> DEFINE SYMBOL region_y_range = 178
+  ELSE
+  ENDIF
+  DEFINE SYMBOL region_small = ($region_small)($region_comma)Y=($region_y_lo)
+ !-> DEFINE SYMBOL region_small = X=20.5,Y=-89.5
+  DEFINE SYMBOL region_comma = ,
+ENDIF
+IF ($($region)_z_lo"0|*>1") THEN
+ !-> IF 1 THEN
+  DEFINE SYMBOL region_z_lo = ($($region)_z_lo)
+ !-> DEFINE SYMBOL region_z_lo = 0
+  DEFINE SYMBOL region_z_hi = ($($region)_z_hi)
+ !-> DEFINE SYMBOL region_z_hi = 0
+  DEFINE SYMBOL limits_z = ($region_z_lo):($region_z_hi)
+ !-> DEFINE SYMBOL limits_z = 0:0
+  DEFINE SYMBOL region_z = Z=($region_z_lo):($region_z_hi)
+ !-> DEFINE SYMBOL region_z = Z=0:0
+  IF `($region_z_hi) GE ($region_z_lo)` THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_z_range = `($region_z_hi) - ($region_z_lo)`
+ !-> DEFINE SYMBOL region_z_range = 0
+  ELSE
+  ENDIF
+  DEFINE SYMBOL region_small = ($region_small)($region_comma)Z=($region_z_lo)
+ !-> DEFINE SYMBOL region_small = X=20.5,Y=-89.5,Z=0
+  DEFINE SYMBOL region_comma = ,
+ENDIF
+IF ($add_region_z"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($($region)_t_lo"0|*>1") THEN
+ !-> IF 1 THEN
+  DEFINE SYMBOL region_t_lo = ($($region)_t_lo)
+ !-> DEFINE SYMBOL region_t_lo = 16-Jan-0001 00:00
+  DEFINE SYMBOL region_t_hi = ($($region)_t_hi)
+ !-> DEFINE SYMBOL region_t_hi = 16-Jan-0001 00:00
+  DEFINE SYMBOL limits_t \"($region_t_lo)\":\"($region_t_hi)\"
+ !-> DEFINE SYMBOL limits_t \"16-Jan-0001 00:00\":\"16-Jan-0001 00:00\"
+  DEFINE SYMBOL region_t T=\"($region_t_lo)\":\"($region_t_hi)\"
+ !-> DEFINE SYMBOL region_t T=\"16-Jan-0001 00:00\":\"16-Jan-0001 00:00\"
+  DEFINE SYMBOL region_small = ($region_small)($region_comma)T="($region_t_lo)"
+ !-> DEFINE SYMBOL region_small = X=20.5,Y=-89.5,Z=0,T="16-Jan-0001 00:00"
+  DEFINE SYMBOL region_comma = ,
+ENDIF
+IF ($add_region_t"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($($region)_e_lo"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($add_region_e"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($region_x"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_y"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xy = ($region_x),($region_y)
+ !-> DEFINE SYMBOL region_xy = X=20.5:378.5,Y=-89.5:88.5
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_x"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_z"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xz = ($region_x),($region_z)
+ !-> DEFINE SYMBOL region_xz = X=20.5:378.5,Z=0:0
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_x"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xt = ($region_x),($region_t)
+ !-> DEFINE SYMBOL region_xt = X=20.5:378.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_y"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_z"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_yz = ($region_y),($region_z)
+ !-> DEFINE SYMBOL region_yz = Y=-89.5:88.5,Z=0:0
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_y"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_yt = ($region_y),($region_t)
+ !-> DEFINE SYMBOL region_yt = Y=-89.5:88.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_z"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_zt = ($region_z),($region_t)
+ !-> DEFINE SYMBOL region_zt = Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_xy"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_z"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xyz = ($region_xy),($region_z)
+ !-> DEFINE SYMBOL region_xyz = X=20.5:378.5,Y=-89.5:88.5,Z=0:0
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_xy"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xyt = ($region_xy),($region_t)
+ !-> DEFINE SYMBOL region_xyt = X=20.5:378.5,Y=-89.5:88.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_xz"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xzt = ($region_xz),($region_t)
+ !-> DEFINE SYMBOL region_xzt = X=20.5:378.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_yz"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_yzt = ($region_yz),($region_t)
+ !-> DEFINE SYMBOL region_yzt = Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_xyz"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_t"0|*>1") THEN
+ !-> IF 1 THEN
+    DEFINE SYMBOL region_xyzt = ($region_xyz),($region_t)
+ !-> DEFINE SYMBOL region_xyzt = X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ELSE
+  ENDIF
+ELSE
+ENDIF
+IF ($region_xyzt"0|*>1") THEN
+ !-> IF 1 THEN
+  IF ($region_e"0|*>1") THEN
+ !-> IF 0 THEN
+  ELSE
+    DEFINE SYMBOL region_xyzte = ($region_xyzt)
+ !-> DEFINE SYMBOL region_xyzte = X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+  ENDIF
+ELSE
+ENDIF
+DEFINE SYMBOL region_full = ($region_xyzte)
+ !-> DEFINE SYMBOL region_full = X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+IF ($region_x"0|*>1") THEN DEFINE SYMBOL region_($num)_x = ($region_x)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_x = X=20.5:378.5
+ !-> DEFINE SYMBOL region_0_x = X=20.5:378.5
+IF ($region_y"0|*>1") THEN DEFINE SYMBOL region_($num)_y = ($region_y)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_y = Y=-89.5:88.5
+ !-> DEFINE SYMBOL region_0_y = Y=-89.5:88.5
+IF ($region_z"0|*>1") THEN DEFINE SYMBOL region_($num)_z = ($region_z)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_z = Z=0:0
+ !-> DEFINE SYMBOL region_0_z = Z=0:0
+IF ($region_t"0|*>1") THEN DEFINE SYMBOL region_($num)_t = ($region_t)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_t = T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+ !-> DEFINE SYMBOL region_0_t = T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+IF ($region_xt"0|*>1") THEN DEFINE SYMBOL region_($num)_xt = ($region_xt)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_xt = X=20.5:378.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+ !-> DEFINE SYMBOL region_0_xt = X=20.5:378.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+IF ($region_xy"0|*>1") THEN DEFINE SYMBOL region_($num)_xy = ($region_xy)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_xy = X=20.5:378.5,Y=-89.5:88.5
+ !-> DEFINE SYMBOL region_0_xy = X=20.5:378.5,Y=-89.5:88.5
+IF ($region_xz"0|*>1") THEN DEFINE SYMBOL region_($num)_xz = ($region_xz)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_xz = X=20.5:378.5,Z=0:0
+ !-> DEFINE SYMBOL region_0_xz = X=20.5:378.5,Z=0:0
+IF ($region_yt"0|*>1") THEN DEFINE SYMBOL region_($num)_yt = ($region_yt)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_yt = Y=-89.5:88.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+ !-> DEFINE SYMBOL region_0_yt = Y=-89.5:88.5,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+IF ($region_yz"0|*>1") THEN DEFINE SYMBOL region_($num)_yz = ($region_yz)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_yz = Y=-89.5:88.5,Z=0:0
+ !-> DEFINE SYMBOL region_0_yz = Y=-89.5:88.5,Z=0:0
+IF ($region_zt"0|*>1") THEN DEFINE SYMBOL region_($num)_zt = ($region_zt)
+ !-> IF 1 THEN DEFINE SYMBOL region_0_zt = Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+ !-> DEFINE SYMBOL region_0_zt = Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"
+IF ($region_0_t_lo"0|*>1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL t_lab_lo = ($region_0_t_lo)
+ !-> DEFINE SYMBOL t_lab_lo = 16-Jan-0001 00:00
+   LET iz = STRINDEX("($region_0_t_lo)", " 00:00:00")
+ !-> DEFINE VARIABLE iz = STRINDEX("16-Jan-0001 00:00", " 00:00:00")
+   IF `iz GT 0` THEN
+ !-> IF 0 THEN
+   ELSE
+      LET iz = STRINDEX("($region_0_t_lo)", ":00:00")
+ !-> DEFINE VARIABLE iz = STRINDEX("16-Jan-0001 00:00", ":00:00")
+      IF `iz GT 0` THEN DEFINE SYMBOL t_lab_lo = `SUBSTRING("($region_0_t_lo)", 1, iz-1)`
+ !-> IF 0 THEN DEFINE SYMBOL t_lab_lo = `SUBSTRING("16-Jan-0001 00:00", 1, iz-1)`
+   ENDIF
+ENDIF
+IF ($region_0_t_hi"0|*>1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL t_lab_hi = ($region_0_t_hi)
+ !-> DEFINE SYMBOL t_lab_hi = 16-Jan-0001 00:00
+   LET iz = STRINDEX("($region_0_t_hi)", " 00:00:00")
+ !-> DEFINE VARIABLE iz = STRINDEX("16-Jan-0001 00:00", " 00:00:00")
+   IF `iz GT 0` THEN
+ !-> IF 0 THEN
+   ELSE
+      LET iz = STRINDEX("($region_0_t_hi)", ":00:00")
+ !-> DEFINE VARIABLE iz = STRINDEX("16-Jan-0001 00:00", ":00:00")
+      IF `iz GT 0` THEN DEFINE SYMBOL t_lab_hi = `SUBSTRING("($region_0_t_hi)", 1, iz-1)`
+ !-> IF 0 THEN DEFINE SYMBOL t_lab_hi = `SUBSTRING("16-Jan-0001 00:00", 1, iz-1)`
+   ENDIF
+ENDIF
+IF ($region_full"1|*>0")  THEN
+ !-> IF 0  THEN
+ENDIF
+! Exit_GO                                                                  
+GO LAS_initialize_data 0
+! Enter_GO LAS_initialize_data 0
+IF `($ferret_start_memory"0") GT 0` THEN SET MEM/SIZ=($ferret_start_memory)
+ !-> IF 0 THEN SET MEM/SIZ=
+ DEFINE SYMBOL data_initialization_script LAS_initialize_data_std
+ !-> IF 1 THEN  DEFINE SYMBOL data_initialization_script LAS_initialize_data_std
+ !-> DEFINE SYMBOL data_initialization_script LAS_initialize_data_std
+GO ($data_initialization_script) ($1)
+ !-> GO LAS_initialize_data_std 0
+! Enter_GO LAS_initialize_data_std 0
+GO LAS_initialize_dataset ($1"0")
+ !-> GO LAS_initialize_dataset 0
+! Enter_GO LAS_initialize_dataset 0
+DEFINE SYMBOL num ($1"0")
+ !-> DEFINE SYMBOL num 0
+IF ($data_($num)_chained"0|1|*>1) THEN
+ !-> IF 0 THEN
+ELSE
+  DEFINE SYMBOL data_url \"($data_($num)_url)\"
+ !-> DEFINE SYMBOL data_url \"/usr/local/fer_data/data/ocean_atlas_subset.nc\"
+ENDIF
+SET DATA ($data_url)
+ !-> SET DATA "/usr/local/fer_data/data/ocean_atlas_subset.nc"
+IF ($fer_last_error"0|0|1|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF `STRINDEX(($data_url), "jnl_expr_") GT 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($num) EQ 0 AND ($data_count) GT 1 and ($check_multi_regions_done"0|*>1) EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($data_($num)_var"0|*>1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL data_var ($data_($num)_var)
+ !-> DEFINE SYMBOL data_var TEMP
+   DEFINE SYMBOL data_orig_var ($data_($num)_var)
+ !-> DEFINE SYMBOL data_orig_var TEMP
+   DEFINE SYMBOL data_var_nq ($data_($num)_var)
+ !-> DEFINE SYMBOL data_var_nq TEMP
+ENDIF
+DEFINE SYMBOL data_name ($data_($num)_name)
+ !-> DEFINE SYMBOL data_name TEMP
+IF `($data_($num)_name"0|*>1") EQ 0` THEN DEFINE SYMBOL data_name ($data_var)
+ !-> IF 0 THEN DEFINE SYMBOL data_name TEMP
+DEFINE SYM var_num ($num)
+ !-> DEFINE SYM var_num 0
+IF ($data_($num)_var"0|*>1") THEN DEFINE SYMBOL data_var = `UPCASE("($data_var)")`
+ !-> IF 1 THEN DEFINE SYMBOL data_var = `UPCASE("TEMP")`
+ !-> DEFINE SYMBOL data_var = `UPCASE("TEMP")`
+ !-> DEFINE SYMBOL data_var = TEMP
+IF ($data_($num)_var"0|*>1") THEN DEFINE SYMBOL data_var_nq = `UPCASE("($data_var_nq)")`
+ !-> IF 1 THEN DEFINE SYMBOL data_var_nq = `UPCASE("TEMP")`
+ !-> DEFINE SYMBOL data_var_nq = `UPCASE("TEMP")`
+ !-> DEFINE SYMBOL data_var_nq = TEMP
+IF ($data_($num)_var_nq"0|*>1") THEN DEFINE SYMBOL data_var_nq = `UPCASE("($data_var_nq)")`
+ !-> IF 0 THEN DEFINE SYMBOL data_var_nq = `UPCASE("TEMP")`
+LET varlen = `STRLEN("($data_var)")`
+ !-> DEFINE VARIABLE varlen = 4
+IF `STRINDEX("($data_var)", "'") EQ 1 AND STRRINDEX("($data_var)", "'") EQ varlen` THEN
+ !-> IF 0 THEN
+ELSE
+   IF ($data_($num)_var"0|*>1") THEN DEFINE SYMBOL data_var_nq = ($data_var)
+ !-> IF 1 THEN DEFINE SYMBOL data_var_nq = TEMP
+ !-> DEFINE SYMBOL data_var_nq = TEMP
+   IF ($data_($num)_var"0|*>1") THEN DEFINE SYMBOL data_var = '($data_var)'
+ !-> IF 1 THEN DEFINE SYMBOL data_var = 'TEMP'
+ !-> DEFINE SYMBOL data_var = 'TEMP'
+ENDIF
+IF ($ferret_curvi_coord_lon"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_curvi_coord_lat"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($add_to_var($num)"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($data_($num)_units%1|"">1|*>0%) OR ($data_($num)_units%1|" ">1|*>0%)`  THEN
+ !-> IF 1  THEN
+   CANCEL SYMBOL data_units
+   CANCEL SYMBOL data_($num)_units
+ !-> CANCEL SYMBOL data_0_units
+ELIF ($data_($num)_units%1|" ">1|*>0%) THEN
+ !-> ELIF 1 THEN
+ENDIF
+GO LAS_unquote_string lhs data_($num)_units
+ !-> GO LAS_unquote_string lhs data_0_units
+! Enter_GO LAS_unquote_string lhs data_0_units
+IF `STRCMP("($($1)%AAA|*%)", "AAA") EQ 0` THEN EXIT/SCRIPT
+ !-> IF 1 THEN EXIT/SCRIPT
+ !-> EXIT/SCRIPT
+! Exit_GO                                                                  
+IF ($data_units"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($data_($num)_name"0|1|*>1) THEN
+ !-> IF 1 THEN
+   IF ($data_($num)_title"0|*>1") THEN DEFINE SYMBOL data_title ($data_($num)_title)
+ !-> IF 1 THEN DEFINE SYMBOL data_title Temperature
+ !-> DEFINE SYMBOL data_title Temperature
+ELSE
+ENDIF
+GO LAS_unquote_string data_title
+! Enter_GO LAS_unquote_string data_title
+IF `STRCMP("($($1)%AAA|*%)", "AAA") EQ 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `STRINDEX("($($1))", "'") EQ 1` THEN
+ !-> IF 0 THEN
+ENDIF
+! Exit_GO                                                                              
+IF `($num) GT 0` THEN DEFINE SYMBOL variable_($num)_lab = ($data_title)
+ !-> IF 0 THEN DEFINE SYMBOL variable_0_lab = Temperature
+IF ($data_units"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL ferret_plot_title ($data_title) ($data_units)
+ !-> DEFINE SYMBOL ferret_plot_title Temperature
+SET DATA ($data_url)
+ !-> SET DATA "/usr/local/fer_data/data/ocean_atlas_subset.nc"
+DEFINE SYMBOL ulen `STRLEN("(data_($num)_units)")`
+ !-> DEFINE SYMBOL ulen 14
+IF `($ulen) LE 2` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($fer_last_error"0|0|1|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+SET DATA "($data_($num)_url)"
+ !-> SET DATA "/usr/local/fer_data/data/ocean_atlas_subset.nc"
+DEFINE SYMBOL dset($num) = `($data_var),RETURN=dsetnum`
+ !-> DEFINE SYMBOL dset0 = 1
+GO LAS_check_fer_properties
+! Enter_GO LAS_check_fer_properties
+IF ($ferret_dep_axis_scale"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF ! Checks on ferret_dep_axis_scale
+! Exit_GO                                                                              
+! Exit_GO                                                                              
+IF ($fer_last_error"0|0|1|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($error_status"0|ERROR>1|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_init_script"0|*>1") THEN GO ($ferret_init_script) ($dset($1"0"))
+ !-> IF 0 THEN GO   1
+IF ($ferret_init_commands"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($data_var"0|*>1") EQ 0` THEN DEFINE SYMBOL data_var = ($data_($num)_var)
+ !-> IF 0 THEN DEFINE SYMBOL data_var = TEMP
+IF `($data_orig_var"0|*>1") EQ 0` THEN DEFINE SYMBOL data_orig_var = ($data_($num)_var)
+ !-> IF 0 THEN DEFINE SYMBOL data_orig_var = TEMP
+GO LAS_initialize_variable
+! Enter_GO LAS_initialize_variable
+DEFINE SYMBOL data_num = `($data_var),RETURN=dsetnum`
+ !-> DEFINE SYMBOL data_num = 1
+DEFINE SYMBOL data_($num)_num = `($data_var),RETURN=dsetnum`
+ !-> DEFINE SYMBOL data_0_num = 1
+IF ($ferret_factor"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+LET attlist = ($data_($num)_var).attnames
+ !-> DEFINE VARIABLE attlist = TEMP.attnames
+IF ($data_var_nq"0|*>1") THEN LET attlist = ($data_var_nq).attnames
+ !-> IF 1 THEN LET attlist = TEMP.attnames
+ !-> LET attlist = TEMP.attnames
+DEFINE SYMBOL data_var_only = `UPCASE("($data_var)")`
+ !-> DEFINE SYMBOL data_var_only = 'TEMP'
+IF ($ferret_bad_flag"0|*>1") THEN SET VAR/BAD=($ferret_bad_flag) ($data_var)
+ !-> IF 0 THEN SET VAR/BAD=  'TEMP'
+IF ($ferret_timelab_res"0|*>1") THEN SET MODE CALENDAR:($ferret_timelab_res)
+ !-> IF 0 THEN SET MODE CALENDAR:
+    ($ferret_curvi_coord_lon"0|*>1")` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($data_units"0|*>1") THEN
+ !-> IF 0 THEN
+ELSE
+   IF `IS_ELEMENT_OF_STR (attlist, "units") OR IS_ELEMENT_OF_STR (attlist, "UNITS")` THEN
+ !-> IF 0 THEN
+   ENDIF
+ENDIF
+IF ($check_for_pseudonames"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_factor_label"0|*>1") THEN
+ !-> IF 0 THEN
+ELIF ($ferret_factor"0|*>1") THEN
+ !-> ELIF 0 THEN
+ENDIF
+IF `($data_title"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL ferret_plot_var = ($data_var)[d=($data_num),($region_full)]
+ !-> DEFINE SYMBOL ferret_plot_var = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+IF ($analysis_def"0|*>1") THEN  ! analysis_def from curvi data or transform
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL ferret_plot_var_noregion = ($data_var)[d=($data_num)]
+ !-> DEFINE SYMBOL ferret_plot_var_noregion = 'TEMP'[d=1]
+IF ($data_var_nq"0|*>1") THEN DEFINE SYMBOL ferret_plot_var_nq_noregion = ($data_var_nq)[d=($data_num)]
+ !-> IF 1 THEN DEFINE SYMBOL ferret_plot_var_nq_noregion = TEMP[d=1]
+ !-> DEFINE SYMBOL ferret_plot_var_nq_noregion = TEMP[d=1]
+DEFINE SYMBOL ferret_plot_var_($num)_noregion = ($data_var)[d=($data_num)]
+ !-> DEFINE SYMBOL ferret_plot_var_0_noregion = 'TEMP'[d=1]
+DEFINE SYMBOL ferret_plot_var_($num)_small = ($data_var)[d=($data_num),($region_small)]
+ !-> DEFINE SYMBOL ferret_plot_var_0_small = 'TEMP'[d=1,X=20.5,Y=-89.5,Z=0,T="16-Jan-0001 00:00"]
+DEFINE SYMBOL ferret_plot_base_var = ($ferret_plot_var)
+ !-> DEFINE SYMBOL ferret_plot_base_var = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+DEFINE SYMBOL ferret_plot_base_var_($num) = ($ferret_plot_var)
+ !-> DEFINE SYMBOL ferret_plot_base_var_0 = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+DEFINE SYMBOL ferret_plot_base_var_noregion = ($data_var)[d=($data_num)]
+ !-> DEFINE SYMBOL ferret_plot_base_var_noregion = 'TEMP'[d=1]
+DEFINE SYMBOL ferret_xyz_var = ($data_var)[d=($data_num),($region_xyz)]
+ !-> DEFINE SYMBOL ferret_xyz_var = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0]
+DEFINE SYMBOL ferret_t_var = ($data_var)[d=($data_num),($region_t)]
+ !-> DEFINE SYMBOL ferret_t_var = 'TEMP'[d=1,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+DEFINE SYMBOL ferret_x_var = ($data_var)[d=($data_num),($region_x)]
+ !-> DEFINE SYMBOL ferret_x_var = 'TEMP'[d=1,X=20.5:378.5]
+IF `($region_x"0|*>1) EQ 0` THEN DEFINE SYMBOL ferret_x_var = ($data_var)[d=($data_num)]
+ !-> IF 0 THEN DEFINE SYMBOL ferret_x_var = 'TEMP'[d=1]
+GO LAS_transforms ($num)
+ !-> GO LAS_transforms 0
+! Enter_GO LAS_transforms 0
+DEFINE SYMBOL num ($1"0")
+ !-> DEFINE SYMBOL num 0
+IF `($constraint_0_lhs"0|Seasonal_Regridding>1|*>0")` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `STRINDEX("($constraint_0_lhs"0")", "Season_length") GT 0` THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL do_curvi_xy = 0
+DEFINE SYMBOL do_hybrid_z = 0
+DEFINE SYMBOL do_curvi_xy_and_hybrid_z = 0
+GO LAS_get_coords_att
+! Enter_GO LAS_get_coords_att
+IF ($ferret_curvi_coord_lon"0|*>1") THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF ($ferret_curvi_coord_lat"0|*>1") THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+LET allvars = ..varnames
+LET varatts = ($data_orig_var).attnames
+ !-> DEFINE VARIABLE varatts = TEMP.attnames
+LET has_coord = IS_ELEMENT_OF_STR(varatts, "coordinates")
+IF `has_coord EQ 0` THEN exit/script
+ !-> IF 1 THEN exit/script
+ !-> exit/script
+! Exit_GO                                                                               
+IF ($ferret_curvi_coord_lat"0|*>1") THEN DEFINE SYMBOL do_curvi_xy = 1
+ !-> IF 0 THEN DEFINE SYMBOL do_curvi_xy = 1
+IF ($ferret_curvi_coord_lat"0|*>1") THEN DEFINE SYMBOL native_curvilinear_xy = 1
+ !-> IF 0 THEN DEFINE SYMBOL native_curvilinear_xy = 1
+IF ($ferret_thk_var"0|*>1") THEN  DEFINE SYMBOL do_hybrid_z = 1
+ !-> IF 0 THEN  DEFINE SYMBOL do_hybrid_z = 1
+IF `($do_curvi_xy) + ($do_hybrid_z) EQ 2` THEN DEFINE SYMBOL do_curvi_xy_and_hybrid_z = 1
+ !-> IF 0 THEN DEFINE SYMBOL do_curvi_xy_and_hybrid_z = 1
+IF ($do_curvi_xy_and_hybrid_z) THEN GO transform_hybrid_z_curvi_xy
+ !-> IF 0 THEN GO transform_hybrid_z_curvi_xy
+   GO transform_hybrid_z.jnl
+ !-> IF 0 THEN    GO transform_hybrid_z.jnl
+IF ($do_curvi_xy) THEN GO transform_curvi_xy.jnl
+ !-> IF 0 THEN GO transform_curvi_xy.jnl
+! Exit_GO                                                                      
+IF ($data_0_analysis_label"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($num)+1 EQ ($data_count)` THEN GO LAS_set_strides.jnl
+ !-> IF 1 THEN GO LAS_set_strides.jnl
+ !-> GO LAS_set_strides.jnl
+! Enter_GO LAS_set_strides.jnl
+IF `($ferret_subsample_t"1|0|1|true>1|false>0|*>1") EQ 0 AND ($ferret_view"|t>1|T>1|*>0")` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+    (STRINDEX( "($result_ferret_listing_type)", "netcdf" ) NE 0)` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF ($its_autolev_animate"0|*>1") THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF ($ferret_curvi_coord_lat"0|0|*>1") THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF ($do_hybrid_z"0|0|1|*>1") THEN  EXIT/SCRIPT
+ !-> IF 0 THEN  EXIT/SCRIPT
+IF ($its_prop_prop_plot"0|0|1|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+LET las_plotvar = ($ferret_plot_var)
+ !-> DEFINE VARIABLE las_plotvar = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+DEFINE SYMBOL memsize = ($FERRET_MEMORY"6.4")* 1.e6
+ !-> DEFINE SYMBOL memsize = 25* 1.e6
+DEFINE SYMBOL no_native = 0
+IF ($data_var_only"0|*>1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL check_for_des =  `($data_var_only)[d=($data_num)],RETURN=dsetpath`
+ !-> DEFINE SYMBOL check_for_des =  /usr/local/fer_data/data/ocean_atlas_subset.nc
+ELSE
+ENDIF
+IF `STRINDEX("($check_for_des)", ".des") GT 0 OR ($no_native_strides_xy"0|*>1")` THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL nvars = ($data_count)
+ !-> DEFINE SYMBOL nvars = 1
+LET pvar = ($ferret_plot_var)
+ !-> DEFINE VARIABLE pvar = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+DEFINE SYMBOL var_size = ($var_size"0") + `pvar,RETURN=size`
+ !-> DEFINE SYMBOL var_size = 0 + 16200
+IF `STRINDEX( "($operation_ID)", "Side" ) NE 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($num)+1 EQ ($nvars)` THEN
+ !-> IF 1 THEN
+   LET ndims = 0
+   LET xsiz = `pvar,RETURN=isize`
+ !-> DEFINE VARIABLE xsiz = 180
+   IF `xsiz GT 1` THEN LET ndims = `ndims + 1`
+ !-> IF 1 THEN LET ndims = `ndims + 1`
+ !-> LET ndims = `ndims + 1`
+ !-> DEFINE VARIABLE ndims = 1
+   LET ysiz = `pvar,RETURN=jsize`
+ !-> DEFINE VARIABLE ysiz = 90
+   IF `ysiz GT 1` THEN LET ndims = `ndims + 1`
+ !-> IF 1 THEN LET ndims = `ndims + 1`
+ !-> LET ndims = `ndims + 1`
+ !-> DEFINE VARIABLE ndims = 2
+   LET zsiz = `pvar,RETURN=ksize`
+ !-> DEFINE VARIABLE zsiz = 1
+   IF `zsiz GT 1` THEN LET ndims = `ndims + 1`
+ !-> IF 0 THEN LET ndims = `ndims + 1`
+   LET tsiz = `pvar,RETURN=lsize`
+ !-> DEFINE VARIABLE tsiz = 1
+   IF `tsiz GT 1` THEN LET ndims = `ndims + 1`
+ !-> IF 0 THEN LET ndims = `ndims + 1`
+   LET varsiz = xsiz* ysiz* zsiz* tsiz
+   DEFINE SYMBOL stride_for_mem = `INT( 1+ varsiz/(.5*($memsize)) )`
+ !-> DEFINE SYMBOL stride_for_mem = 1
+   IF `ndims EQ 2` THEN DEFINE SYMBOL stride_for_mem = `INT(($stride_for_mem)^0.5)`
+ !-> IF 1 THEN DEFINE SYMBOL stride_for_mem = `INT(1^0.5)`
+ !-> DEFINE SYMBOL stride_for_mem = `INT(1^0.5)`
+ !-> DEFINE SYMBOL stride_for_mem = 1
+   IF `ndims EQ 3` THEN DEFINE SYMBOL stride_for_mem = `INT(($stride_for_mem)^0.33)`
+ !-> IF 0 THEN DEFINE SYMBOL stride_for_mem = `INT(1^0.33)`
+   IF `ndims EQ 4` THEN DEFINE SYMBOL stride_for_mem = `INT(($stride_for_mem)^0.25)`
+ !-> IF 0 THEN DEFINE SYMBOL stride_for_mem = `INT(1^0.25)`
+ENDIF
+IF `STRINDEX( "($operation_ID)", "Grid_for_GE" ) NE 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+    STRINDEX( "($operation_ID)", "Grid_for_GE" ) EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `STRINDEX( "($operation_ID)", "vector" ) NE 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+LET maxpix = 600  ! default
+IF ($ferret_size"0|0.06667>1|*>0") THEN LET maxpix = 300  ! small
+ !-> IF 0 THEN LET maxpix = 300
+IF ($ferret_size"0|0.25>1|*>0")    THEN LET maxpix = 500  ! medium
+ !-> IF 0    THEN LET maxpix = 500
+IF ($ferret_size"0|0.5>1|*>0")     THEN LET maxpix = 600  ! default
+ !-> IF 0     THEN LET maxpix = 600
+IF ($ferret_size"0|0.8333>1|*>0")  THEN LET maxpix = 700  ! large
+ !-> IF 0  THEN LET maxpix = 700
+IF `STRLEN("($ferret_view)") EQ 1` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($region_x_range"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($region_y_range"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+CANCEL SYMBOL no*axis
+DEFINE SYMBOL xaxname = `($data_var),RETURN=xaxis`
+ !-> DEFINE SYMBOL xaxname = XAX_SUBSET
+IF `STRCMP("($xaxname)", "NORMAL") EQ 0` THEN DEFINE SYMBOL noxaxis = 1
+ !-> IF 0 THEN DEFINE SYMBOL noxaxis = 1
+    (($noxaxis"0|1|*>1") NE 1)` THEN
+ !-> IF 1 THEN
+   LET xx = x[gx=($data_var)[d=($data_num)]]
+ !-> DEFINE VARIABLE xx = x[gx='TEMP'[d=1]]
+   LET pixsize = `xx[($region_x)@ngd]`
+ !-> DEFINE VARIABLE pixsize = 180
+   IF ($ferret_google_plot"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF `pixsize GT maxpix` THEN DEFINE SYMBOL xstride = `INT((pixsize/maxpix)+1)`
+ !-> IF 0 THEN DEFINE SYMBOL xstride = `INT((pixsize/maxpix)+1)`
+   DEFINE SYMBOL xstride = `MAX(($xstride"1"), ($stride_for_mem"1"))`
+ !-> DEFINE SYMBOL xstride = 1
+   GO check_modulo_factor x
+! Enter_GO check_modulo_factor x
+DEFINE SYMBOL dir = `UPCASE("$1")`
+ !-> DEFINE SYMBOL dir = X
+IF `($($dir)stride) LE 1` THEN EXIT/SCRIPT
+ !-> IF 1 THEN EXIT/SCRIPT
+ !-> EXIT/SCRIPT
+! Exit_GO                                                                               
+   DEFINE SYMBOL axname = `($data_var)[d=($data_num)],RETURN=xaxis`
+ !-> DEFINE SYMBOL axname = XAX_SUBSET
+   IF `STRINDEX("($axname)", "(") EQ 0` THEN
+ !-> IF 1 THEN
+      IF `($xstride) GT 1 AND ($axis_stride_($axname)"0") EQ 0` THEN
+ !-> IF 0 THEN
+      ENDIF
+   ENDIF
+   IF ($SYMBOL no_region_x_range"0|*>1") THEN CANCEL SYMBOL region_x_range
+ !-> IF 0 THEN CANCEL SYMBOL region_x_range
+   IF `($xstride"0") LE 1` THEN CANCEL SYMBOL xstride
+ !-> IF 1 THEN CANCEL SYMBOL xstride
+ !-> CANCEL SYMBOL xstride
+ENDIF
+DEFINE SYMBOL xaxname = `($data_var),RETURN=yaxis`
+ !-> DEFINE SYMBOL xaxname = YAX_SUBSET
+IF `STRCMP("($xaxname)", "NORMAL") EQ 0` THEN DEFINE SYMBOL noyaxis = 1
+ !-> IF 0 THEN DEFINE SYMBOL noyaxis = 1
+    (($noyaxis"0|1|*>1") NE 1)` THEN
+ !-> IF 1 THEN
+   LET yy = y[gy=($data_var)[d=($data_num)]]
+ !-> DEFINE VARIABLE yy = y[gy='TEMP'[d=1]]
+   LET pixsize = `yy[($region_y)@ngd]`
+ !-> DEFINE VARIABLE pixsize = 90
+   IF ($ferret_google_plot"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF `pixsize GT maxpix` THEN DEFINE SYMBOL ystride = `2*INT((pixsize/maxpix)+1)`
+ !-> IF 0 THEN DEFINE SYMBOL ystride = `2*INT((pixsize/maxpix)+1)`
+   DEFINE SYMBOL ystride = `MAX(($ystride"1"), ($stride_for_mem"1"))`
+ !-> DEFINE SYMBOL ystride = 1
+   DEFINE SYMBOL axname = `($data_var)[d=($data_num)],RETURN=yaxis`
+ !-> DEFINE SYMBOL axname = YAX_SUBSET
+   IF `STRINDEX("($axname)", "(") EQ 0` THEN
+ !-> IF 1 THEN
+      IF `($ystride) GT 1 AND ($axis_stride_($axname)"0") EQ 0` THEN
+ !-> IF 0 THEN
+      ENDIF
+   ENDIF
+   IF ($SYMBOL no_region_y_range"0|*>1") THEN CANCEL SYMBOL region_y_range
+ !-> IF 0 THEN CANCEL SYMBOL region_y_range
+   IF `($ystride"0") LE 1` THEN CANCEL SYMBOL ystride
+ !-> IF 1 THEN CANCEL SYMBOL ystride
+ !-> CANCEL SYMBOL ystride
+ENDIF
+DEFINE SYMBOL xaxname = `($data_var),RETURN=zaxis`
+ !-> DEFINE SYMBOL xaxname = ZAXLEVIT19
+IF `STRCMP("($xaxname)", "NORMAL") EQ 0` THEN DEFINE SYMBOL nozaxis = 1
+ !-> IF 0 THEN DEFINE SYMBOL nozaxis = 1
+    (($nozaxis"0|1|*>1") NE 1)` THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL xaxname = `($data_var),RETURN=taxis`
+ !-> DEFINE SYMBOL xaxname = TIME
+IF `STRCMP("($xaxname)", "NORMAL") EQ 0` THEN DEFINE SYMBOL notaxis = 1
+ !-> IF 0 THEN DEFINE SYMBOL notaxis = 1
+LET trange = STRCMP("($region_t_lo%0%)", "($region_t_hi%1%)")
+ !-> DEFINE VARIABLE trange = STRCMP("16-Jan-0001 00:00", "16-Jan-0001 00:00")
+    (($notaxis"0|1|*>1") NE 1)` THEN
+ !-> IF 0 THEN
+ENDIF
+LET need_comma = 0
+IF `($xstride"0|1>0|*>1") + ($ystride"0|1>0|*>1") + ($zstride"0|1>0|*>1") + ($tstride"0|1>0|*>1") GT 0` THEN
+ !-> IF 0 THEN
+ENDIF
+! Exit_GO                                                                       
+IF `($no_native_strides_xy"0|*>1") AND ($set_ndx_strides"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+GO LAS_initialize_var_levels
+! Enter_GO LAS_initialize_var_levels
+IF ($ferret_fill_levels"0|*>1") THEN
+ !-> IF 0 THEN
+ELSE
+   IF ($ferret_contour_levels"0|*>1") THEN DEFINE SYMBOL ferret_fill_levels ($ferret_contour_levels)
+ !-> IF 0 THEN DEFINE SYMBOL ferret_fill_levels
+ENDIF
+IF `($data_num) EQ 1` THEN
+ !-> IF 1 THEN
+   IF ($ferret_fill_levels"0|*>1") THEN DEFINE SYMBOL input_fill_levels = 1
+ !-> IF 0 THEN DEFINE SYMBOL input_fill_levels = 1
+   IF `STRLEN("($ferret_view)") GE 2` THEN
+ !-> IF 1 THEN
+      LET do_levels =  `(STRINDEX("($operation_ID)", "Plot") GT 0) OR (STRINDEX("($operation_ID)", "zoom") GT 0) OR  (STRINDEX("($operation_ID)", "poly") GT 0)`
+ !-> DEFINE VARIABLE do_levels =  1
+      IF `do_levels` THEN GO LAS_auto_levels
+ !-> IF 1 THEN GO LAS_auto_levels
+ !-> GO LAS_auto_levels
+! Enter_GO LAS_auto_levels
+LET memsize = 0.5* 1.e6
+DEFINE SYMBOL op = `UPCASE("($operation_ID)")`
+ !-> DEFINE SYMBOL op = PLOT_2D_XY
+IF `STRLEN("($ferret_view)") LT 2` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `STRINDEX("($op)", "VECTOR") GT 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+  STRINDEX ("($op)", "CRUISE_SUMMARY") EQ 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `STRINDEX("($op)", "ANIMATION") GT 0`  THEN EXIT/SCRIPT
+ !-> IF 0  THEN EXIT/SCRIPT
+IF `($ferret_diff_var"1|*>0") AND STRINDEX("($op)", "COMPARE_PLOT") NE 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($ferret_diff_var"1|*>0") AND ($its_gridded_scattered"0|*>1")` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_fill_levels"0|posinteger>1|*>0" ) THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL ferret_center_levels ($ferret_center_levels"0|1|TRUE>1|*>0")
+ !-> DEFINE SYMBOL ferret_center_levels 0
+IF ($ferret_fill_levels"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL ferret_fill_levels = ($num_fine_levels)v
+ !-> DEFINE SYMBOL ferret_fill_levels =  v
+      DEFINE SYMBOL ferret_fill_levels = ($num_fine_levels)vc
+ !-> IF  0 THEN       DEFINE SYMBOL ferret_fill_levels =  vc
+! Exit_GO                                                                               
+   ENDIF
+ENDIF
+! Exit_GO                                                                                 
+! Exit_GO                                                                               
+DEFINE SYMBOL variable_($1"0")_lab = ($data_title) ($data_units)
+ !-> DEFINE SYMBOL variable_0_lab = Temperature
+IF `STRINDEX("($variable_($1"0")_lab)", "e=") GT 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($its_prop_prop_plot"0|*>1") EQ 0` THEN
+ !-> IF 1 THEN
+   IF ($variable_lab"0|*>1") THEN
+ !-> IF 0 THEN
+   ELSE
+      DEFINE SYMBOL variable_lab = ($data_title) ($data_units)
+ !-> DEFINE SYMBOL variable_lab = Temperature
+   ENDIF
+ENDIF
+IF `($its_prop_prop_plot"0|*>1")` THEN DEFINE SYMBOL variable_lab = ($data_title) ($data_units)
+ !-> IF 0 THEN DEFINE SYMBOL variable_lab = Temperature
+($itsa_vector_plot"0|*>1") EQ 0` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY=CONT
+ !-> IF 1 THEN DEFINE SYMBOL qualifiers =  /KEY=CONT
+ !-> DEFINE SYMBOL qualifiers =  /KEY=CONT
+IF ($ferret_expression"0|*>1") THEN GO LAS_expression
+ !-> IF 0 THEN GO LAS_expression
+! Exit_GO                                                                               
+GO LAS_unquote_string data_title
+! Enter_GO LAS_unquote_string data_title
+IF `STRCMP("($($1)%AAA|*%)", "AAA") EQ 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `STRINDEX("($($1))", "'") EQ 1` THEN
+ !-> IF 0 THEN
+ENDIF
+! Exit_GO                                                                           
+IF `($ferret_memory"25.6") LT 100` THEN SET MEM/SIZ=300
+ !-> IF 1 THEN SET MEM/SIZ=300
+ !-> SET MEM/SIZ=300
+GO LAS_note_from_property
+! Enter_GO LAS_note_from_property
+IF ($ferret_add_a_note"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+! Exit_GO                                                                           
+! Exit_GO                                                                           
+IF ($error_status"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+GO LAS_check_2d_region
+! Enter_GO LAS_check_2d_region
+CANCEL SYMBOL region_small*
+LET/D=($data_num) the_plot_var_noregion = ($ferret_plot_var_noregion)
+ !-> DEFINE VARIABLE/D=1 the_plot_var_noregion = 'TEMP'[d=1]
+IF ($data_analysis_expr"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($do_curvi_xy"0") OR ($native_curvilinear_xy"0")` THEN
+ !-> IF 0 THEN
+ENDIF   	
+IF `($do_curvi_xy"0") AND ($native_curvilinear_xy"0")` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `($do_hybrid_z"0") AND ($native_Z_plot"0")` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `($do_curvi_xy_and_hybrid_z)` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `($do_curvi_xy"0") OR ($do_hybrid_z"0") OR ($do_curvi_xy_and_hybrid_z"0")` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+LET/D=($data_num) the_plot_var = ($ferret_plot_var)
+ !-> DEFINE VARIABLE/D=1 the_plot_var = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+LOAD the_plot_var
+DEFINE SYMBOL varshape = `the_plot_var,RETURN=shape`
+ !-> DEFINE SYMBOL varshape = XY
+DEFINE SYMBOL viewshape =  `UPCASE("($ferret_view)")`
+ !-> DEFINE SYMBOL viewshape =  XY
+IF `STRCMP("($varshape)", "POINT") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF   ! degenerated to a point.
+IF `STRLEN("($varshape)") EQ 1` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($degenerate_2d"0|*>1") EQ 1` THEN
+ !-> IF 0 THEN
+ENDIF
+! Exit_GO                                                                  
+IF ($error_status"0|ERROR>1") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL ferret_var_0 = ($ferret_plot_var)
+ !-> DEFINE SYMBOL ferret_var_0 = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+DEFINE SYMBOL ferret_title_0 = ($ferret_plot_title"($data_var)")
+ !-> DEFINE SYMBOL ferret_title_0 = Temperature
+IF ($ferret_plot_var_m360"0|*>1") THEN DEFINE SYMBOL ferret_var_m360_0 = ($ferret_plot_var_m360)
+ !-> IF 0 THEN DEFINE SYMBOL ferret_var_m360_0 =
+GO LAS_set_plot_qualifiers
+! Enter_GO LAS_set_plot_qualifiers
+IF `STRLEN("($ferret_view)") EQ 1` THEN  DEFINE SYMBOL oneDplot = 1
+ !-> IF 0 THEN  DEFINE SYMBOL oneDplot = 1
+IF `STRLEN("($ferret_view)") EQ 1 AND ($data_count"1") EQ 1` THEN  DEFINE SYMBOL oneD_1var = 1
+ !-> IF 0 THEN  DEFINE SYMBOL oneD_1var = 1
+ DEFINE SYMBOL twoDplot = 1
+ !-> IF 1 THEN  DEFINE SYMBOL twoDplot = 1
+ !-> DEFINE SYMBOL twoDplot = 1
+IF ($ferret_plot_key"0|0>1|nokey>1|*>0") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL nlinecolors = 8
+SET MODE LINECOLORS:($nlinecolors)
+ !-> SET MODE LINECOLORS:8
+PPL COLOR,7,70,70,70     ! gray
+PPL COLOR,8,100,100,100  ! white
+LET has_t = ($fview"0|T>1|*>0")
+ !-> DEFINE VARIABLE has_t = 0
+IF `STRLEN("($fview)") EQ 2 AND STRINDEX("($fview)", "T") GT 0` THEN LET has_t = 1
+ !-> IF 0 THEN LET has_t = 1
+IF `has_t AND ($ferret_use_graticules"1|none>0|notic>0|white>0|*>1)` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_use_graticules"1|none>0|notic>0|*>1") THEN
+ !-> IF 1 THEN
+  DEFINE SYMBOL graticuleColor = black
+  IF ($ferret_use_graticules"1|default>1|gray>1|*>0") THEN
+ !-> IF 1 THEN
+     DEFINE SYMBOL graticuleColor = 7
+  ELIF ($ferret_use_graticules"0|white>1|*>0") THEN
+ !-> ELIF 0 THEN
+  ENDIF
+  SET MODE GRATICULE:(DASH,COLOR=($graticuleColor))
+ !-> SET MODE GRATICULE:(DASH,COLOR=7)
+ENDIF
+IF ($ferret_deg_min_sec"0|false>0|*>1") THEN GO LAS_set_deg_min_sec.jnl
+ !-> IF 0 THEN GO LAS_set_deg_min_sec.jnl
+IF ($twoDplot"0|*>1") THEN
+ !-> IF 1 THEN
+   IF `($FERRET_VERSION"0") GE 6.2` THEN KEYMARK 1  ! annotate plot keys with the min and max
+ !-> IF 1 THEN KEYMARK 1
+ !-> KEYMARK 1
+   IF `($ferret_key_annotate"1") EQ 0` THEN KEYMARK 0  ! override annotation with Ferret property
+ !-> IF 0 THEN KEYMARK 0
+   IF ($ferret_contour_style"0|contour_lines>1|*>0") THEN
+ !-> IF 0 THEN
+   ELSE
+       DEFINE SYMBOL qualifiers = ($qualifiers)/LEVELS=($ferret_fill_levels)
+ !-> IF 1 THEN        DEFINE SYMBOL qualifiers = /KEY=CONT/LEVELS=v
+ !-> DEFINE SYMBOL qualifiers = /KEY=CONT/LEVELS=v
+   ENDIF
+   IF `($ferret_contour_style"0|*>1") EQ 0` THEN
+ !-> IF 1 THEN
+      DEFINE SYMBOL ferret_contour_style = ($ferret_fill_type"default|raster>raster|shade>raster|fill>default|contour>contour_lines|color_filled_plus_lines|*>default")
+ !-> IF 1 THEN      DEFINE SYMBOL ferret_contour_style = default
+ !-> DEFINE SYMBOL ferret_contour_style = default
+   ENDIF
+color_filled_contours>FILL|color_filled_plus_lines>FILL|contour_lines>CONTOUR|raster_plus_lines>SHADE")
+ !-> DEFINE SYMBOL plot_type =FILL
+   DEFINE SYMBOL shade_underlay = 0
+   IF ($plot_type"0|FILL>1|*>0) THEN DEFINE SYMBOL shade_underlay = 1
+ !-> IF 1 THEN DEFINE SYMBOL shade_underlay = 1
+ !-> DEFINE SYMBOL shade_underlay = 1
+   IF `($ferret_google_plot"0") EQ 0` THEN
+ !-> IF 1 THEN
+           ($shade_underlay"0")` THEN DEFINE SYMBOL shade_qualifiers = ($shade_qualifiers)/TRIM
+ !-> IF 1 THEN DEFINE SYMBOL shade_qualifiers =  /TRIM
+ !-> DEFINE SYMBOL shade_qualifiers =  /TRIM
+   ENDIF
+   IF ($shade_underlay"0") THEN DEFINE SYMBOL shade_qualifiers = ($shade_qualifiers)/LEVELS=($ferret_fill_levels)
+ !-> IF 1 THEN DEFINE SYMBOL shade_qualifiers = /TRIM/LEVELS=v
+ !-> DEFINE SYMBOL shade_qualifiers = /TRIM/LEVELS=v
+    ($qualifiers)/PALETTE=($ferret_palette"rainbow|default>rainbow|*>*)
+ !-> IF 0 THEN DEFINE SYMBOL qualifiers =     /KEY=CONT/LEVELS=v/PALETTE=rainbow
+   IF `($ferret_contour_style"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF `($ferret_contour_style"0|default>1|raster>1|shade>1|color_filled_contours>1|fill>1|color_filled_plus_lines>1|contour_lines>1|raster_plus_lines>1|*>0") EQ 0` THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF `($ferret_contour_style"0|default>0|raster>0|shade>0|color_filled_contours>0|fill>0|color_filled_plus_lines>1|raster_plus_lines>1|*>0")` THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF ($ferret_key_centerlab"0|0|*>1") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY=CONT,CENT
+ !-> IF 0 THEN DEFINE SYMBOL qualifiers = /KEY=CONT/LEVELS=v/KEY=CONT,CENT
+ENDIF ! end of options for twoDplot
+DEFINE SYMBOL line_drawn = `($oneDplot"0|*>1") OR ($itsa_vector_plot"0|*>1") OR ($plot_type"0|CONTOUR>1|*>0")`
+ !-> IF 1 THEN DEFINE SYMBOL line_drawn = `0 OR 0 OR 0`
+ !-> DEFINE SYMBOL line_drawn = `0 OR 0 OR 0`
+ !-> DEFINE SYMBOL line_drawn = 0
+sh sym ferret_line_color
+IF `($line_drawn"0") AND ($itsa_multi_lineplot"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF ! skipped color setting if its a multi-line plot
+IF ($line_drawn) THEN
+ !-> IF 0 THEN
+ENDIF  ! end of options for plots drawn with lines
+IF ($oneDplot"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF   ! end of options for oneDplot, dependent axis scale setup
+   CANCEL SYMBOL ferret_trend_line
+ !-> IF 1 THEN    CANCEL SYMBOL ferret_trend_line
+ !-> CANCEL SYMBOL ferret_trend_line
+IF `($itsa_vector_plot"0|*>1") AND ($ferret_view"0|xy>1|*>0")` THEN
+ !-> IF 0 THEN
+ENDIF  ! end of XY vector plot settings.
+IF `($graticuleColor"0|*>1") EQ 0` THEN DEFINE SYMBOL graticuleColor = 7
+ !-> IF 0 THEN DEFINE SYMBOL graticuleColor = 7
+! Exit_GO                                                                  
+IF ($ferret_koppen_var_2"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($native_curvilinear_xy"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF `($its_GE"0|*>1") AND ($two_parter"0|*>1")` THEN GO setup_GE_2part.jnl
+ !-> IF 0 THEN GO setup_GE_2part.jnl
+GO LAS_open_window
+! Enter_GO LAS_open_window
+ DEFINE SYMBOL set_window_quals = ($set_window_quals)/SIZE=($ferret_size"0.5")
+ !-> IF 1 THEN  DEFINE SYMBOL set_window_quals =  /SIZE=1.0
+ !-> DEFINE SYMBOL set_window_quals =  /SIZE=1.0
+CANCEL MODE LOGO
+IF ($program_name"0|PyFerret>1|*>0") THEN
+ !-> IF 1 THEN
+   SET TEXT/FONT=verdana
+   SET TEXT/isiz=-1 CBAR
+ENDIF
+IF `($win_aspect"0|*>1") EQ 0` THEN DEFINE SYMBOL win_aspect = 1
+ !-> IF 0 THEN DEFINE SYMBOL win_aspect = 1
+IF `($win_aspect"0|*>1") EQ 0 AND ($ferret_view"|xy>1|xyt>1|*>0") AND ($its_prop_prop_plot"0|*>1") EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_set_aspect"1|default>1|no>0|yes>1|0|1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL set_window_quals = ($set_window_quals)/ASPECT = ($win_aspect):axis
+ !-> IF 1 THEN    DEFINE SYMBOL set_window_quals = /SIZE=1.0/ASPECT = 0.497206703910615:axis
+ !-> DEFINE SYMBOL set_window_quals = /SIZE=1.0/ASPECT = 0.497206703910615:axis
+ENDIF
+  DEFINE SYMBOL set_window_quals = ($set_window_quals)/ASPECT = 1:axis
+ !-> IF 0 THEN   DEFINE SYMBOL set_window_quals = /SIZE=1.0/ASPECT = 0.497206703910615:axis/ASPECT = 1:axis
+  DEFINE SYMBOL set_window_quals = ($set_window_quals)/ASPECT = 1:axis
+ !-> IF 0 THEN   DEFINE SYMBOL set_window_quals = /SIZE=1.0/ASPECT = 0.497206703910615:axis/ASPECT = 1:axis
+IF ($program_name"0|PyFerret>1|*>0") THEN DEFINE SYMBOL set_window_quals = ($set_window_quals)/OUTLINE=0.7 1
+ !-> IF 1 THEN DEFINE SYMBOL set_window_quals = /SIZE=1.0/ASPECT = 0.497206703910615:axis/OUTLINE=0.7 1
+ !-> DEFINE SYMBOL set_window_quals = /SIZE=1.0/ASPECT = 0.497206703910615:axis/OUTLINE=0.7 1
+SET WINDOW($set_window_quals)
+ !-> SET WINDOW/SIZE=1.0/ASPECT = 0.497206703910615:axis/OUTLINE=0.7 1
+IF `($ferret_margins"1|0|1|false>0|true>1") EQ 0` THEN
+ !-> IF 0 THEN
+ELSE
+   IF `STRLEN("($ferret_view)") GE 2` THEN
+ !-> IF 1 THEN
+      DEFINE VIEW/X=0:0.95/Y=0:1 xspace
+      SET VIEW xspace
+   ELSE
+   ENDIF
+ENDIF
+IF ($ferret_annotations"0|*>1") THEN GO set_full_margins
+ !-> IF 1 THEN GO set_full_margins
+ !-> GO set_full_margins
+! Enter_GO set_full_margins
+IF ($its_GE"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL text_size = ($ferret_text_size"0.09")
+ !-> DEFINE SYMBOL text_size = 0.09
+CAN view
+LET y_up = 0.92
+IF `STRLEN("($ferret_view)") GE 2 AND ($win_aspect"1") LT 0.2` THEN LET y_up = 0.9
+ !-> IF 0 THEN LET y_up = 0.9
+DEFINE VIEW/AXES/X=0.08:0.99/y=0.08:`y_up` full_view
+ !-> DEFINE VIEW/AXES/X=0.08:0.99/y=0.08:0.92 full_view
+DEFINE VIEW/AXES/X=0.08:0.99/y=0.08:`y_up` full_view2
+ !-> DEFINE VIEW/AXES/X=0.08:0.99/y=0.08:0.92 full_view2
+IF `($win_aspect) GT 2` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($its_prop_prop_plot"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_thumb"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_view%0|yt>1|zt>1|t>1|*>0%) THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_view%0|xt>1|*>0%) THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_view%0|t>1|*>0%) THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_view%0|x>1|y>1|z>1|*>0%) THEN
+ !-> IF 0 THEN
+ENDIF
+SET VIEW full_view
+keymark 1
+IF `($ferret_key_annotate"1") EQ 0` THEN KEYMARK 0  ! override annotation with Ferret property
+ !-> IF 0 THEN KEYMARK 0
+IF `STRINDEX("($ferret_view)", "t") GT 0 AND STRLEN("($ferret_view)") LE 3` THEN
+ !-> IF 0 THEN
+ELSE
+   PPL TICS,,,,,1,1
+ENDIF
+IF ($ferret_use_graticules"0|notic>1|*>0) THEN
+ !-> IF 0 THEN
+ENDIF
+PPL AXLSZE ($text_size),($text_size)
+ !-> PPL AXLSZE 0.09,0.09
+! Exit_GO                                                                  
+! Exit_GO                                                                       
+GO LAS_url_label 0
+! Enter_GO LAS_url_label 0
+IF `($n_right_labels"0") EQ 0` THEN DEFINE SYMBOL n_right_labels = 0
+ !-> IF 1 THEN DEFINE SYMBOL n_right_labels = 0
+ !-> DEFINE SYMBOL n_right_labels = 0
+DEFINE SYMBOL num ($1"0")
+ !-> DEFINE SYMBOL num 0
+LET got_dataset_label = 0
+IF `got_dataset_label EQ 0` THEN
+ !-> IF 1 THEN
+      DEFINE SYMBOL n_right_labels = `($n_right_labels)+1`
+ !-> IF 1 THEN       DEFINE SYMBOL n_right_labels = `0+1`
+ !-> DEFINE SYMBOL n_right_labels = `0+1`
+ !-> DEFINE SYMBOL n_right_labels = 1
+   IF ($data_$1_dataset_id"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF ($data_$1_dataset_name"0|*>1") THEN
+ !-> IF 1 THEN
+     DEFINE SYMBOL upper_right_($n_right_labels) = DATA SET: ($data_$1_dataset_name)
+ !-> DEFINE SYMBOL upper_right_1 = DATA SET: Ocean Atlas Subset
+     DEFINE SYMBOL upper_right_text_($n_right_labels) = DATA SET: ($data_$1_dataset_name)
+ !-> DEFINE SYMBOL upper_right_text_1 = DATA SET: Ocean Atlas Subset
+     LET got_dataset_label = 1
+     DEFINE SYMBOL dataset_title_($num)_lab = ($upper_right_text_($n_right_labels))
+ !-> DEFINE SYMBOL dataset_title_0_lab = DATA SET: Ocean Atlas Subset
+     DEFINE SYMBOL dataset_title_lab = ($upper_right_text_($n_right_labels))
+ !-> DEFINE SYMBOL dataset_title_lab = DATA SET: Ocean Atlas Subset
+   ENDIF
+ENDIF
+IF `got_dataset_label EQ 0` THEN
+ !-> IF 0 THEN
+ENDIF
+IF `STRINDEX("($data_$1_dataset_url)","http") NE 0` THEN
+ !-> IF 0 THEN
+ELSE
+   DEFINE SYMBOL dataset_url_($num)_lab = DATA SET: ($data_$1_dataset_url)
+ !-> DEFINE SYMBOL dataset_url_0_lab = DATA SET: /usr/local/fer_data/data/ocean_atlas_subset.nc
+ENDIF
+IF `($num) EQ 0` THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL dataset_url_lab = ($dataset_url_($num)_lab)
+ !-> DEFINE SYMBOL dataset_url_lab = DATA SET: /usr/local/fer_data/data/ocean_atlas_subset.nc
+   IF `STRINDEX("($dataset_url_lab)", "http") EQ 0` THEN
+ !-> IF 1 THEN
+     IF ($data_0_ftds_url"0|*>1") THEN DEFINE SYMBOL dataset_url_lab = ($data_0_ftds_url)
+ !-> IF 0 THEN DEFINE SYMBOL dataset_url_lab =
+   ENDIF
+ENDIF
+IF `($num) GT 0` THEN
+ !-> IF 0 THEN
+ELSE
+   IF `($dataset_url_0_lab"0|*>1")` THEN DEFINE SYMBOL dataset_url_lab ($dataset_url_0_lab)
+ !-> IF 1 THEN DEFINE SYMBOL dataset_url_lab DATA SET: /usr/local/fer_data/data/ocean_atlas_subset.nc
+ !-> DEFINE SYMBOL dataset_url_lab DATA SET: /usr/local/fer_data/data/ocean_atlas_subset.nc
+ENDIF
+IF ($data_0_dataset_institution"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+! Exit_GO                                                                  
+IF `($plot_type"0|CONTOUR>0|*>1") AND ($degenerate_2d"0|*>1") EQ 0` THEN
+ !-> IF 1 THEN
+IF ($ferret_annotations"0|*>1") THEN
+ !-> IF 1 THEN
+   CANCEL VIEW
+   SET VIEW full_view
+ENDIF
+ENDIF
+IF `($data_count"0") EQ 1` THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL split_title = ($ferret_plot_title)
+ !-> DEFINE SYMBOL split_title = Temperature
+   GO LAS_split_title
+! Enter_GO LAS_split_title
+IF ($ferret_annotations"0|*>1") THEN  EXIT/SCRIPT
+ !-> IF 1 THEN  EXIT/SCRIPT
+ !-> EXIT/SCRIPT
+! Exit_GO                                                                  
+   DEFINE SYMBOL ferret_plot_title = ($split_title)
+ !-> DEFINE SYMBOL ferret_plot_title = Temperature
+   IF ($shade_underlay"0") THEN
+ !-> IF 1 THEN
+      SHADE($qualifiers)($shade_qualifiers)/TITLE="($ferret_plot_title)"/SET ($ferret_var_0)
+ !-> SHADE/KEY=CONT/LEVELS=v/TRIM/LEVELS=v/TITLE="Temperature"/SET 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+        GO reset_labels
+! Enter_GO reset_labels
+IF ($xform_dms"0|*>1") THEN PPL XFOR (($xform_dms))
+ !-> IF 0 THEN PPL XFOR ( )
+IF ($yform_dms"0|*>1") THEN PPL YFOR (($yform_dms))
+ !-> IF 0 THEN PPL YFOR ( )
+IF ($axlab_command"0|*>1") THEN PPL ($axlab_command)
+ !-> IF 0 THEN PPL
+IF ($tnmlab_command"0|*>1") THEN PPL ($tnmlab_command)
+ !-> IF 0 THEN PPL
+IF ($axtic_command"0|*>1") THEN PPL ($axtic_command)
+ !-> IF 0 THEN PPL
+IF ($axlen_command"0|*>1") THEN PPL ($axlen_command)
+ !-> IF 0 THEN PPL
+IF ($axtype_command"0|*>1") THEN PPL ($axtype_command)
+ !-> IF 0 THEN PPL
+if ($labnum_dset"0|*>1") THEN go unlabel ($labnum_dset)
+ !-> if 1 THEN go unlabel 3
+ !-> go unlabel 3
+! Enter_GO unlabel 3
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 3
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 3,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                  
+if ($labnum_datitl"0|*>1") THEN go unlabel ($labnum_datitl)
+ !-> if 0 THEN go unlabel
+if ($labnum_dods"0|*>1") THEN go unlabel ($labnum_dods)
+ !-> if 0 THEN go unlabel
+IF `STRLEN("($ferret_view)") EQ 2` THEN
+ !-> IF 1 THEN
+   IF `($ppl$zmin"0") GE 1.e35 AND ($ppl$zmax"0") LE -1.e35` THEN DEFINE SYMBOL nokey = 1
+ !-> IF 0 THEN DEFINE SYMBOL nokey = 1
+   IF `($nokey"0") EQ 0` THEN
+ !-> IF 1 THEN
+      PPL SHAKEY 1,,,,,,,,,,1
+      IF `($ferret_key_annotate"1") EQ 0` THEN keymark 0
+ !-> IF 0 THEN keymark 0
+   ENDIF
+ENDIF
+IF `($data_count"1") EQ 1` THEN
+ !-> IF 1 THEN
+   IF ($labnum_x"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF ($labnum_y"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF ($labnum_z"0|*>1") THEN
+ !-> IF 1 THEN
+      DEFINE SYMBOL depth_lab ($lab($labnum_z))
+ !-> DEFINE SYMBOL depth_lab DEPTH (m) : 0
+   ENDIF
+   IF ($labnum_t"0|*>1") THEN
+ !-> IF 1 THEN
+      DEFINE SYMBOL time_lab ($lab($labnum_t))
+ !-> DEFINE SYMBOL time_lab TIME : 15-JAN 11:49
+   ENDIF
+   IF ($labnum_calend"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF ($labnum_year"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+     IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum) )
+ !-> REPEAT/RANGE=1:3/NAME=lnum (     DEFINE SYMBOL lnum = `lnum`;     SHOW SYMBOL lab($lnum);     IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum) )
+!-> REPEAT: LNUM:1
+ !-> (     DEFINE SYMBOL lnum = `lnum`;     SHOW SYMBOL lab($lnum);     IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum) )
+ !-> DEFINE SYMBOL lnum = `lnum`
+ !-> DEFINE SYMBOL lnum = 1
+ !->      SHOW SYMBOL lab($lnum)
+ !-> SHOW SYMBOL lab1
+LAB1 = "DEPTH (m) : 0"
+ !->      IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum)
+ !-> IF 0 THEN DEFINE SYMBOL labnum_e = 1
+!-> REPEAT: LNUM:2
+ !-> (     DEFINE SYMBOL lnum = `lnum`;     SHOW SYMBOL lab($lnum);     IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum) )
+ !-> DEFINE SYMBOL lnum = `lnum`
+ !-> DEFINE SYMBOL lnum = 2
+ !->      SHOW SYMBOL lab($lnum)
+ !-> SHOW SYMBOL lab2
+LAB2 = "TIME : 15-JAN 11:49"
+ !->      IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum)
+ !-> IF 0 THEN DEFINE SYMBOL labnum_e = 2
+!-> REPEAT: LNUM:3
+ !-> (     DEFINE SYMBOL lnum = `lnum`;     SHOW SYMBOL lab($lnum);     IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum) )
+ !-> DEFINE SYMBOL lnum = `lnum`
+ !-> DEFINE SYMBOL lnum = 3
+ !->      SHOW SYMBOL lab($lnum)
+ !-> SHOW SYMBOL lab3
+LAB3 = "DATA SET: ocean_atlas_subset"
+ !->      IF `STRINDEX("($lab($lnum))", "E :") EQ 1` THEN DEFINE SYMBOL labnum_e = ($lnum)
+ !-> IF 0 THEN DEFINE SYMBOL labnum_e = 3
+   IF ($labnum_e%0|*>1%) THEN
+ !-> IF 0 THEN
+   ENDIF
+   IF ($ferret_view"0|e>1|*>0") THEN
+ !-> IF 0 THEN
+   ENDIF
+ENDIF
+IF ($ferret_annotations"0|*>1") THEN
+ !-> IF 1 THEN
+   PPL TITLE
+   PPL XLAB
+   PPL YLAB
+   IF ($labnum_x"0|*>1") THEN GO unlabel ($labnum_x)
+ !-> IF 0 THEN GO unlabel
+   IF ($labnum_y"0|*>1") THEN GO unlabel ($labnum_y)
+ !-> IF 0 THEN GO unlabel
+   IF ($labnum_z"0|*>1") THEN GO unlabel ($labnum_z)
+ !-> IF 1 THEN GO unlabel 1
+ !-> GO unlabel 1
+! Enter_GO unlabel 1
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 1
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 1,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   IF ($labnum_t"0|*>1") THEN GO unlabel ($labnum_t)
+ !-> IF 1 THEN GO unlabel 2
+ !-> GO unlabel 2
+! Enter_GO unlabel 2
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 2
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 2,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   IF ($labnum_calend"0|*>1") THEN GO unlabel ($labnum_calend)
+ !-> IF 0 THEN GO unlabel
+   GO unlabel 1  ! Just for good measure
+! Enter_GO unlabel 1
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 1
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 1,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   GO unlabel 2
+! Enter_GO unlabel 2
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 2
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 2,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   GO unlabel 3
+! Enter_GO unlabel 3
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 3
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 3,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   GO unlabel 4
+! Enter_GO unlabel 4
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 4
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 4,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   GO unlabel 5
+! Enter_GO unlabel 5
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 5
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 5,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   GO unlabel 6
+! Enter_GO unlabel 6
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 6
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 6,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+   GO unlabel 7
+! Enter_GO unlabel 7
+QUERY/IGNORE $1"<Usage: GO unlabel n,  where n is a PLOT+ movable label number"
+ !-> QUERY/IGNORE 7
+PPL LABS/NOUSER $1,0,0 @AS
+ !-> PPL LABS/NOUSER 7,0,0 @AS
+set mode/last verify
+! Exit_GO                                                                    
+ENDIF
+IF ($ferret_annotations"0|*>1") THEN GO key_at_top
+ !-> IF 1 THEN GO key_at_top
+ !-> GO key_at_top
+! Enter_GO key_at_top
+IF ($its_GE"0|*>1") THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+IF `($ferret_plot_key"1|0|*>1") EQ 0` THEN EXIT/SCRIPT
+ !-> IF 0 THEN EXIT/SCRIPT
+DEFINE SYMBOL horizontal_key = 1
+IF `key_label_size,RETURN=defined` THEN CANCEL VAR key_label_size
+ !-> IF 0 THEN CANCEL VAR key_label_size
+IF `x1,RETURN=defined` THEN  THEN CANCEL VAR x1
+ !-> IF 0 THEN  THEN CANCEL VAR x1
+IF `x2,RETURN=defined` THEN  THEN CANCEL VAR x2
+ !-> IF 0 THEN  THEN CANCEL VAR x2
+IF `y1,RETURN=defined` THEN  THEN CANCEL VAR y1
+ !-> IF 0 THEN  THEN CANCEL VAR y1
+IF `y2,RETURN=defined` THEN  THEN CANCEL VAR y2
+ !-> IF 0 THEN  THEN CANCEL VAR y2
+LET key_label_size = 0.08
+ppl ylab
+ppl xlab
+let x1 = `($ppl$xorg)+0.5`
+ !-> DEFINE VARIABLE x1 = 1.446
+let x2 = `($ppl$xorg)+($ppl$xlen)-0.5`
+ !-> DEFINE VARIABLE x2 = 11.21
+let y1 = `($ppl$yorg)+($ppl$ylen)+0.04`
+ !-> DEFINE VARIABLE y1 = 7.021
+let y2 = `y1+0.2`
+ !-> DEFINE VARIABLE y2 = 7.221
+IF ($custom_dataset"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_plot_key"0|date_key>1|*>0") THEN
+ !-> IF 0 THEN
+ELSE
+   ppl shakey ,0,`-1*key_label_size`,,,,`x1`,`x2`,`y1`,`y2`
+ !-> ppl shakey ,0,-0.08,,,,1.446,11.21,7.021,7.221
+ENDIF
+! Exit_GO                                                                    
+IF `add_urls,RETURN=defined` THEN CANCEL VAR add_urls
+ !-> IF 0 THEN CANCEL VAR add_urls
+IF `STRCMP("($data_0_dataset_name)", "($data_0_dataset_url)") EQ 0` THEN
+ !-> IF 0 THEN
+ELSE
+   LET add_urls = 1
+ENDIF
+DEFINE SYMBOL dataset_title_lab = DATASET: ($data_0_dataset_name)
+ !-> DEFINE SYMBOL dataset_title_lab = DATASET: Ocean Atlas Subset
+! Exit_GO                                                                    
+      PPL SHADE
+      IF ($two_parter"0|*>1") THEN SHADE($qualifiers)($shade_qualifiers)/OVER/NOLAB ($ferret_plot_var_part2)
+ !-> IF 0 THEN SHADE/KEY=CONT/LEVELS=v/TRIM/LEVELS=v/OVER/NOLAB
+      IF `($LEV_NUM"0") GT 245/2` THEN PPL SHASET RESET
+ !-> IF 0 THEN PPL SHASET RESET
+      ($plot_type)/NOKEY($qualifiers)/OVER/NOLAB ($ferret_var_0)
+ !-> CONTOUR/FILL/NOKEY/KEY=CONT/LEVELS=v/OVER/NOLAB 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+      IF ($two_parter"0|*>1") THEN ($plot_type)($qualifiers)/OVER/NOLAB ($ferret_plot_var_part2)
+ !-> IF 0 THEN FILL/KEY=CONT/LEVELS=v/OVER/NOLAB
+      IF ($native_curvilinear_xy"0|*>1") THEN
+ !-> IF 0 THEN
+      ENDIF
+   ELSE
+   ENDIF
+   DEFINE SYMBOL data_plotted_min = ($ppl$zmin)
+ !-> DEFINE SYMBOL data_plotted_min = -3.000000
+   DEFINE SYMBOL data_plotted_max = ($ppl$zmax)
+ !-> DEFINE SYMBOL data_plotted_max = 30.11650
+   IF ($contour_over"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   DEFINE SYMBOL data_plotted_min = ($ppl$zmin)
+ !-> DEFINE SYMBOL data_plotted_min = -3.000000
+   DEFINE SYMBOL data_plotted_max = ($ppl$zmax)
+ !-> DEFINE SYMBOL data_plotted_max = 30.11650
+ENDIF
+GO labels_above_plot
+! Enter_GO labels_above_plot
+IF ($ferret_xy_location_mark"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+LET labdel = 0.2
+LET labsiz = 0.1
+IF ($ferret_annotations%0|*>1%) THEN EXIT/SCRIPT
+ !-> IF 1 THEN EXIT/SCRIPT
+ !-> EXIT/SCRIPT
+! Exit_GO                                                                  
+IF `($degenerate_2d"0|*>1") EQ 0` THEN GO land_overlay
+ !-> IF 1 THEN GO land_overlay
+ !-> GO land_overlay
+! Enter_GO land_overlay
+IF ($ferret_land_script"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($LEV_NUM"0|*>1") THEN
+ !-> IF 1 THEN
+   IF ($LEV_OPNLEVS"0|*>1") THEN DEFINE SYMBOL SAVE_OPNLEVS = ($LEV_OPNLEVS)
+ !-> IF 1 THEN DEFINE SYMBOL SAVE_OPNLEVS = (-4,1.5,1.1)(2,26,1)(25,26.1,1.1)(inf)
+ !-> DEFINE SYMBOL SAVE_OPNLEVS = (-4,1.5,1.1)(2,26,1)(25,26.1,1.1)(inf)
+   IF ($LEV_MIN"0|*>1") THEN DEFINE SYMBOL SAVE_MINLEV = ($LEV_MIN)
+ !-> IF 1 THEN DEFINE SYMBOL SAVE_MINLEV = -4
+ !-> DEFINE SYMBOL SAVE_MINLEV = -4
+   IF ($LEV_MAX"0|*>1") THEN DEFINE SYMBOL SAVE_MAXLEV = ($LEV_MAX)
+ !-> IF 1 THEN DEFINE SYMBOL SAVE_MAXLEV = open-ended
+ !-> DEFINE SYMBOL SAVE_MAXLEV = open-ended
+   IF ($LEV_DEL"0|*>1") THEN DEFINE SYMBOL SAVE_DELLEV = ($LEV_DEL)
+ !-> IF 1 THEN DEFINE SYMBOL SAVE_DELLEV = irregular
+ !-> DEFINE SYMBOL SAVE_DELLEV = irregular
+ENDIF
+IF `($its_GE"0|*>1") AND ($ferret_vector_1"0|*>1")` THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ferret_land_type"1|none>0|contour>0|filled>1|shade>1|default>1|*>0") THEN
+ !-> IF 1 THEN
+  GO LAS_fland
+! Enter_GO LAS_fland
+DEFINE SYMBOL fland_palette ($1"gray")
+ !-> DEFINE SYMBOL fland_palette gray
+LET lon_range = ($region_x_range)
+ !-> DEFINE VARIABLE lon_range = 358
+LET lat_range = ($region_y_range)
+ !-> DEFINE VARIABLE lat_range = 178
+LET fland_area = `ABS(lon_range * lat_range) / (360 * 180)`
+ !-> DEFINE VARIABLE fland_area = 0.9833950617283951
+DEFINE SYMBOL fland_area = `fland_area`
+ !-> DEFINE SYMBOL fland_area = 0.9833950617283951
+CANCEL SYMBOL topo_url
+GO LAS_define_etopo
+! Enter_GO LAS_define_etopo
+DEFINE SYMBOL topo20_url = etopo20
+DEFINE SYMBOL topo5_url = etopo5
+USE etopo5
+LET epath = "`rose,RETURN=dsetpath`"
+ !-> DEFINE VARIABLE epath = "/usr/local/fer_data/data/etopo5.cdf"
+LET eloc = STRINDEX(epath,"etopo")
+LET justpath = SUBSTRING(epath,1,eloc-1)
+IF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo2.nc") EQ 0` THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL topo2_url = http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo2.nc
+ELSE
+ENDIF
+IF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo1.nc") EQ 0` THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL topo1_url = http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo1.nc
+ELIF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo01.nc") EQ 0` THEN
+ !-> ELIF 1 THEN
+ENDIF
+IF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc") EQ 0` THEN
+ !-> IF 0 THEN
+ELIF `TEST_OPENDAP("/home/data/topography/topo15_compressed.nc") EQ 0` THEN
+ !-> ELIF 0 THEN
+ENDIF
+CANCEL DATA etopo5
+! Exit_GO                                                                  
+DEFINE SYMBOL topo_url = ($topo20_url)
+ !-> DEFINE SYMBOL topo_url = etopo20
+LET fland_cutoff = 0.05
+IF `($ferret_thumb_qc2"0|*>1") AND (fland_area LT 0.05)` THEN LET fland_cutoff = 0.008
+ !-> IF 0 THEN LET fland_cutoff = 0.008
+IF `fland_area LT fland_cutoff` THEN
+ !-> IF 0 THEN
+ELIF `fland_area LT 0.25` THEN
+ !-> ELIF 0 THEN
+ELSE
+  DEFINE SYMBOL fland_resolution 20
+ENDIF
+GO fland ($fland_resolution) ($fland_palette)
+ !-> IF 1 THEN GO fland 20 gray
+ !-> GO fland 20 gray
+! Enter_GO fland 20 gray
+query/ignore $3%overlay|overlay|basemap|transparent<3rd argument of GO fland must be "overlay", "basemap", or "transparent"%
+ !-> query/ignore overlay
+query/ignore $4%not_required|detailed|solid|all> <4th argument of GO basemap may be "detailed", "solid" or "all" (ocean, too)%
+ !-> query/ignore not_required
+set data/save
+def sym xlo_hack ($xaxis_min%0%)
+ !-> def sym xlo_hack 20.5000000
+def sym xhi_hack ($xaxis_max%360%)
+ !-> def sym xhi_hack 378.500000
+def sym map_reg = [$5%x=($xlo_hack):($xhi_hack)%]
+ !-> def sym map_reg = [x=20.5000000:378.500000]
+set data etopo$1"20"
+ !-> set data etopo20
+shade/nolab/nokey/lev=$4"(0,10000,10000)|detailed>(0,200,50)(200,1000,100)(1000,10000,1000)|solid>(0,10000,10000)|all>(-200,200,50)(-1000,1000,200)(-8000,8000,1000)"/pal=$2"gray"$3"/overlay|basemap> |*>/overlay"$5" |*>/*"$6" |*>/*"$3" |transparent>/pattern=tiny_grid|*>/pattern=solid" $3"rose($map_reg)|base>rose($map_reg)|*>rose($map_reg)"
+ !-> shade/nolab/nokey/lev=(0,10000,10000)/pal=gray/overlay    rose[x=20.5000000:378.500000]
+cancel data etopo$1"20"
+ !-> cancel data etopo20
+set data/restore
+set mode/last verify
+! Exit_GO                                                                 
+! Exit_GO                                                                 
+ELIF ($ferret_land_type"0|none>0|contour>1|filled>0|*>0") THEN
+ !-> ELIF 0 THEN
+ENDIF
+IF ($LEV_NUM"0|*>1") THEN
+ !-> IF 1 THEN
+   IF ($SAVE_OPNLEVS"0|*>1") THEN DEFINE SYMBOL LEV_OPNLEVS = ($SAVE_OPNLEVS)
+ !-> IF 1 THEN DEFINE SYMBOL LEV_OPNLEVS = (-4,1.5,1.1)(2,26,1)(25,26.1,1.1)(inf)
+ !-> DEFINE SYMBOL LEV_OPNLEVS = (-4,1.5,1.1)(2,26,1)(25,26.1,1.1)(inf)
+   IF ($SAVE_MINLEV"0|*>1") THEN DEFINE SYMBOL LEV_MIN = ($SAVE_MINLEV)
+ !-> IF 1 THEN DEFINE SYMBOL LEV_MIN = -4
+ !-> DEFINE SYMBOL LEV_MIN = -4
+   IF ($SAVE_MAXLEV"0|*>1") THEN DEFINE SYMBOL LEV_MAX = ($SAVE_MAXLEV)
+ !-> IF 1 THEN DEFINE SYMBOL LEV_MAX = open-ended
+ !-> DEFINE SYMBOL LEV_MAX = open-ended
+   IF ($SAVE_DELLEV"0|*>1") THEN DEFINE SYMBOL LEV_DEL = ($SAVE_DELLEV)
+ !-> IF 1 THEN DEFINE SYMBOL LEV_DEL = irregular
+ !-> DEFINE SYMBOL LEV_DEL = irregular
+ENDIF
+! Exit_GO                                                                    
+IF ($ferret_mark_grid"0|no>0|all>1|subsample>1|*>0") THEN GO mark_grid
+ !-> IF 0 THEN GO mark_grid
+GO LAS_results box
+! Enter_GO LAS_results box
+cancel region
+IF ($have_las_plotvar"0") THEN
+ !-> IF 0 THEN
+ELSE
+   IF ($native_curvilinear_xy"0|0|*>1") THEN
+ !-> IF 0 THEN
+   ELIF ($do_hybrid_z"0|0|*>1") THEN
+ !-> ELIF 0 THEN
+   ELIF ($native_Z_plot"0|0|*>1") THEN
+ !-> ELIF 0 THEN
+   ELIF ($ferret_plot_var"0|0|*>1") THEN
+ !-> ELIF 1 THEN
+      LET the_plot_var = ($ferret_plot_var)
+ !-> DEFINE VARIABLE the_plot_var = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+      IF ($ferret_plot_var"0|sampled_var>1|*>0) THEN LET the_plot_var = ($ferret_plot_var)
+ !-> IF 0 THEN LET the_plot_var = 'TEMP'[d=1,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+   ELSE
+   ENDIF
+ENDIF
+IF `($ngood_data"-1|*>1") NE -1` THEN
+ !-> IF 0 THEN
+ELSE
+   IF `($ferret_annotations"0|*>1") AND ($plotvar_is_basemap"0|*>1") EQ 0 AND ($no_novalid_lab"0|*>1") NE 1` THEN
+ !-> IF 1 THEN
+      stat the_plot_var
+ 
+             'TEMP'[D=ocean_atlas_subset,X=20.5:378.5,Y=-89.5:88.5,Z=0:0,T="16-Jan-0001 00:00":"16-Jan-0001 00:00"]
+             LONGITUDE: 19.5E to 19.5E(379.5)
+             LATITUDE: 90.5S to 89.5N
+             DEPTH (m): 0
+             TIME: 15-JAN 11:49
+             E:  N/A
+             F:  N/A
+             DATA SET: /usr/local/fer_data/data/ocean_atlas_subset.nc
+ 
+ Total # of data points: 16200 (180*90*1*1*1*1)
+ # flagged as bad  data: 5684
+ Minimum value: -3
+ Maximum value: 30.117
+ Mean    value: 13.908 (unweighted average)
+ Standard deviation: 11.242
+       annotate/norm/x=0.02/y=0.92/halign=-1/siz=0.1 "No Valid Data in the selection"
+ !-> IF 0 THEN        annotate/norm/x=0.02/y=0.92/halign=-1/siz=0.1 "No Valid Data in the selection"
+  ENDIF
+ENDIF
+SAY _________________ Saving the image: clock seconds:                            ($clock_secs)
+ !-> MESSAGE/CONTINUE _________________ Saving the image: clock seconds:                            2.144
+_________________ Saving the image: clock seconds:                            2.144
+LET pre_plot = ($clock_secs)
+ !-> DEFINE VARIABLE pre_plot = 2.144
+IF `($its_GE"0|*>1")` THEN DEFINE SYMBOL trans = /TRANS
+ !-> IF 0 THEN DEFINE SYMBOL trans = /TRANS
+IF ($program_name"0|PyFerret>1|*>0") THEN
+ !-> IF 1 THEN
+   IF ($result_plot_image_filename%0|*>1%) THEN FRAME($trans)/FILE="($result_plot_image_filename)"
+ !-> IF 1 THEN FRAME /FILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_plot_image.png"
+ !-> FRAME /FILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_plot_image.png"
+ELSE
+ENDIF
+SAY _________________ END Saving the image: clock seconds:                              ($clock_secs)
+ !-> MESSAGE/CONTINUE _________________ END Saving the image: clock seconds:                              2.278
+_________________ END Saving the image: clock seconds:                              2.278
+SAY _________________ total time Saving the image, seconds                                  ----- `($clock_secs) - pre_plot`
+ !-> MESSAGE/CONTINUE _________________ total time Saving the image, seconds                                  ----- 0.134
+_________________ total time Saving the image, seconds                                  ----- 0.134
+IF ($insitu_blankvar"0|*>1) THEN SHADE/PAL=white/NOLAB/NOKEY/LEV=(0,1,1) ($insitu_blankvar)
+ !-> IF 0 THEN SHADE/PAL=white/NOLAB/NOKEY/LEV=(0,1,1)
+   IF `($xstride"0|*>1) EQ 0` THEN DEFINE SYMBOL xstride = 1
+ !-> IF 1 THEN DEFINE SYMBOL xstride = 1
+ !-> DEFINE SYMBOL xstride = 1
+   IF `($ystride"0|*>1) EQ 0` THEN DEFINE SYMBOL ystride = 1
+ !-> IF 1 THEN DEFINE SYMBOL ystride = 1
+ !-> DEFINE SYMBOL ystride = 1
+      "XSTRIDE","YSTRIDE"}
+   DEFINE SYMBOL has_xaxis_sym = ($XAXIS_MIN"0|*>1")
+ !-> DEFINE SYMBOL has_xaxis_sym = 1
+   IF `($has_xaxis_sym) EQ 0` THEN
+ !-> IF 0 THEN
+   ENDIF
+   DEFINE SYMBOL xaxlo = ($XAXIS_MIN)
+ !-> DEFINE SYMBOL xaxlo = 20.5000000
+   DEFINE SYMBOL xaxhi = ($XAXIS_MAX)
+ !-> DEFINE SYMBOL xaxhi = 378.500000
+   IF ($region_0_x_lo_orig"0|*>1") THEN
+ !-> IF 0 THEN
+   ENDIF
+   DEFINE SYMBOL taxis_dir = 0
+      "($xstride)","($ystride)"}
+ !-> DEFINE VARIABLE syms_vals = {      "20.50000", "378.5000",       "-89.50000", "88.50000",       "1136", "728",      "11.8290", "7.58800",      "0.946000", "0.607000",      "10.7640", "6.37400",      "20.5000000", "378.500000",      "-89.5000000", "88.5000000",      "0.607","0.118",      "1","1"}
+      "($xstride)","($ystride)"}
+ !-> IF 0 THEN LET syms_vals = {      "20.50000", "378.5000",       "-89.50000", "88.50000",       "1136", "728",      "11.8290", "7.58800",      "0.946000", "0.607000",      "10.7640", "6.37400",      " ", " ",       " ", " ",       "0.607","0.118",      "1","1"}
+   LIST/CLOBBER/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals
+ !-> LIST/CLOBBER/FILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_map_scale.xml"/NOHEAD/NOROWLAB syms_names, syms_vals
+   IF ($HAXIS_tstart"0|*>1") THEN
+ !-> IF 0 THEN
+   ELSE
+      IF ($ax_horiz"0|T>1|*>0") THEN
+ !-> IF 0 THEN
+      ENDIF
+   ENDIF
+   IF ($VAXIS_tstart"0|*>1") THEN
+ !-> IF 0 THEN
+   ELSE
+      IF ($ax_vert"0|T>1|*>0") THEN
+ !-> IF 0 THEN
+      ENDIF
+   ENDIF
+   LET dummyvar = x[i=1:5] + y[i=1:5]
+   IF `($ferret_plot_var"0|*>1") EQ 0` THEN DEFINE SYMBOL ferret_plot_var = dummyvar
+ !-> IF 0 THEN DEFINE SYMBOL ferret_plot_var = dummyvar
+   IF `($ax_horiz"0|*>1") OR ($ax_vert"0|*>1")`  THEN
+ !-> IF 1  THEN
+      "DATA_EXISTS", "DATA_MIN", "DATA_MAX"}
+      IF `($native_curvilinear_xy"0") EQ 0` THEN
+ !-> IF 1 THEN
+      IF `($ferret_version) GE 6.98` THEN LET coordnames = ..coordnames
+ !-> IF 1 THEN LET coordnames = ..coordnames
+ !-> LET coordnames = ..coordnames
+      IF ($ax_horiz"0|*>1") THEN
+ !-> IF 1 THEN
+         DEFINE SYMBOL the_axis =  `the_plot_var,RETURN=($ax_horiz)axis`
+ !-> DEFINE SYMBOL the_axis =  XAX_SUBSET
+         IF `STRINDEX("($the_axis)", "(") GT 0` THEN
+ !-> IF 0 THEN
+         ENDIF
+         IF `($ferret_version) GE 6.98` THEN
+ !-> IF 1 THEN
+	    IF `IS_ELEMENT_OF_STR_N(coordnames, "($the_axis)") GT 0`  THEN
+ !-> IF 1  THEN
+	       DEFINE SYMBOL the_axis = (($the_axis))
+ !-> DEFINE SYMBOL the_axis = (XAX_SUBSET)
+	       LET attlist = ($the_axis).attnames
+ !-> DEFINE VARIABLE attlist = (XAX_SUBSET).attnames
+	       DEFINE SYMBOL AX_HORIZ_POSTV = `($the_axis).positive`
+ !-> IF 0 THEN 	       DEFINE SYMBOL AX_HORIZ_POSTV = `(XAX_SUBSET).positive`
+	    ENDIF
+	 ENDIF
+      ELSE
+      ENDIF
+      IF ($ax_vert"0|*>1") THEN
+ !-> IF 1 THEN
+      IF `($ax_vert_postv"0|*>1") NE 1` THEN   ! AX_VERT_POSTV already defined for waterfall plot?
+ !-> IF 1 THEN
+         DEFINE SYMBOL the_axis =  `the_plot_var,RETURN=($ax_vert)axis`
+ !-> DEFINE SYMBOL the_axis =  YAX_SUBSET
+         IF `STRINDEX("($the_axis)", "(") GT 0` THEN
+ !-> IF 0 THEN
+         ENDIF
+         IF `($ferret_version) GE 6.98` THEN
+ !-> IF 1 THEN
+	    IF `IS_ELEMENT_OF_STR_N(coordnames, "($the_axis)") GT 0`  THEN
+ !-> IF 1  THEN
+	       DEFINE SYMBOL the_axis = (($the_axis))
+ !-> DEFINE SYMBOL the_axis = (YAX_SUBSET)
+	       LET attlist = ($the_axis).attnames
+ !-> DEFINE VARIABLE attlist = (YAX_SUBSET).attnames
+	       DEFINE SYMBOL AX_VERT_POSTV = `($the_axis).positive`
+ !-> IF 0 THEN 	       DEFINE SYMBOL AX_VERT_POSTV = `(YAX_SUBSET).positive`
+	    ENDIF
+	 ENDIF
+      ENDIF  ! AX_VERT_POSTV already defined
+      ELSE
+      ENDIF
+      ENDIF  ! not curvilinear
+      IF ($ax_horiz"0|*>1") THEN DEFINE SYMBOL ax_horiz = `DNCASE("($ax_horiz)")`
+ !-> IF 1 THEN DEFINE SYMBOL ax_horiz = `DNCASE("X")`
+ !-> DEFINE SYMBOL ax_horiz = `DNCASE("X")`
+ !-> DEFINE SYMBOL ax_horiz = x
+      IF ($ax_vert"0|*>1") THEN DEFINE SYMBOL ax_vert = `DNCASE("($ax_vert)")`
+ !-> IF 1 THEN DEFINE SYMBOL ax_vert = `DNCASE("Y")`
+ !-> DEFINE SYMBOL ax_vert = `DNCASE("Y")`
+ !-> DEFINE SYMBOL ax_vert = y
+      LET pplus_default_zmin = 1.E38  ! PPLUS initializes zmin = 1.E38 and zmax = -1.E38
+      IF `($data_plotted_min"1.E38") EQ pplus_default_zmin` THEN
+ !-> IF 0 THEN
+      ELSE
+         DEFINE SYMBOL DATA_EXISTS = 1
+         DEFINE SYMBOL DATA_MIN = ($data_plotted_min)
+ !-> DEFINE SYMBOL DATA_MIN = -3.000000
+         DEFINE SYMBOL DATA_MAX = ($data_plotted_max)
+ !-> DEFINE SYMBOL DATA_MAX = 30.11650
+         IF ($data_max"0|bad>1|1.E+34>1|*>0") THEN
+ !-> IF 0 THEN
+         ENDIF
+         IF ($data_min"0|bad>1|1.E+34>1|*>0") THEN
+ !-> IF 0 THEN
+         ENDIF
+      ENDIF
+      IF ($its_prop_prop_plot"0|*>1") THEN
+ !-> IF 0 THEN
+      ENDIF
+       "($DATA_EXISTS)", "($DATA_MIN)", "($DATA_MAX)"}
+ !-> DEFINE VARIABLE syms_vals = {"x", " ", "y", " ",       "1", "-3.000000", "30.11650"}
+      LIST/APPEND/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals
+ !-> LIST/APPEND/FILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_map_scale.xml"/NOHEAD/NOROWLAB syms_names, syms_vals
+   ENDIF  ! ax_horiz ax_vert defined
+   IF ($LEV_NUM"0|*>1") THEN
+ !-> IF 1 THEN
+      LET syms_names = "LEVELS_STRING"
+      IF ($LEV_OPNLEVS"0|*>1") THEN
+ !-> IF 1 THEN
+         LET syms_vals = "($LEV_OPNLEVS)"
+ !-> DEFINE VARIABLE syms_vals = "(-4,1.5,1.1)(2,26,1)(25,26.1,1.1)(inf)"
+      ELIF `(($LEV_MIN"0|*>1") + ($LEV_MAX"0|*>1") + ($LEV_DEL"0|*>1")) EQ 3` THEN
+ !-> ELIF 1 THEN
+      ENDIF
+      LIST/APPEND/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals
+ !-> LIST/APPEND/FILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_map_scale.xml"/NOHEAD/NOROWLAB syms_names, syms_vals
+   ENDIF
+IF ($ferret_annotations%0|*>1%) THEN GO LAS_annotations_xml
+ !-> IF 1 THEN GO LAS_annotations_xml
+ !-> GO LAS_annotations_xml
+! Enter_GO LAS_annotations_xml
+GO LAS_ferret_las_version_header
+! Enter_GO LAS_ferret_las_version_header
+   DEFINE SYMBOL ferret_las_version = 8.
+ !-> IF 1 THEN    DEFINE SYMBOL ferret_las_version = 8.
+ !-> DEFINE SYMBOL ferret_las_version = 8.
+DEFINE SYMBOL las_ferret_header_label = LAS ($ferret_las_version)/Ferret ($FERRET_VERSION)     NOAA/PMEL
+ !-> DEFINE SYMBOL las_ferret_header_label = LAS 8./Ferret 7.21     NOAA/PMEL
+DEFINE SYMBOL ferret_version_lab = ($FERRET_VERSION)
+ !-> DEFINE SYMBOL ferret_version_lab = 7.21
+DEFINE SYMBOL las_version_lab = LAS($ferret_las_version"8.")
+ !-> DEFINE SYMBOL las_version_lab = LAS8.
+DEFINE SYMBOL header_lab = (NOAA/PMEL)
+IF ($ferret_annotations%0|*>1%) THEN EXIT/SCRIPT
+ !-> IF 1 THEN EXIT/SCRIPT
+ !-> EXIT/SCRIPT
+! Exit_GO                                                                  
+IF `STRCMP("($dataset_url_lab%0)", "($dataset_title_lab%99%)") EQ 0` THEN CAN SYM dataset_url_lab
+ !-> IF 0 THEN CAN SYM dataset_url_lab
+IF ($dataset_title_lab%0|*>1%) THEN
+ !-> IF 1 THEN
+  IF `STRINDEX("($dataset_url_lab%0%)", "http") EQ 0` THEN CANCEL SYMBOL dataset_url_lab
+ !-> IF 1 THEN CANCEL SYMBOL dataset_url_lab
+ !-> CANCEL SYMBOL dataset_url_lab
+ENDIF
+IF ($ferret_diff_list_title"0|*>1") THEN DEFINE SYMBOL dataset_title_lab = ($ferret_diff_list_title)
+ !-> IF 0 THEN DEFINE SYMBOL dataset_title_lab =
+DEFINE SYMBOL out = <?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/CLOBBER ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/CLOBBER <?xml version="1.0" encoding="ISO-8859-1" ?>
+DEFINE SYMBOL lquals = /NOHEAD/NOROWLAB/FILE="($result_annotations_filename)"/FORMAT=(a)/APPEND
+ !-> DEFINE SYMBOL lquals = /NOHEAD/NOROWLAB/FILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/FORMAT=(a)/APPEND
+DEFINE SYMBOL out = <annotations>
+GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotations>
+! Exit_GO                                                                           
+    GO annotation_orthogonal_axes
+ !-> IF 1 THEN     GO annotation_orthogonal_axes
+ !-> GO annotation_orthogonal_axes
+! Enter_GO annotation_orthogonal_axes
+sh sym longitude_lab, latitude_lab, depth_lab, time_lab, ens_lab, forecast_lab
+DEPTH_LAB = "DEPTH (m) : 0"
+TIME_LAB = "TIME : 15-JAN 11:49"
+IF ($alt_x_lab%0|*>1%) THEN DEFINE SYMBOL longitude_lab = ($alt_x_lab)
+ !-> IF 0 THEN DEFINE SYMBOL longitude_lab =
+IF ($alt_y_lab%0|*>1%) THEN DEFINE SYMBOL latitude_lab  = ($alt_y_lab)
+ !-> IF 0 THEN DEFINE SYMBOL latitude_lab  =
+IF ($alt_z_lab%0|*>1%) THEN DEFINE SYMBOL depth_lab     = ($alt_z_lab)
+ !-> IF 0 THEN DEFINE SYMBOL depth_lab     =
+IF ($alt_t_lab%0|*>1%) THEN DEFINE SYMBOL time_lab      = ($alt_t_lab)
+ !-> IF 0 THEN DEFINE SYMBOL time_lab      =
+IF ($alt_e_lab%0|*>1%) THEN DEFINE SYMBOL ens_lab       = ($alt_e_lab)
+ !-> IF 0 THEN DEFINE SYMBOL ens_lab       =
+DEFINE SYMBOL out = 	<annotation_group type="orthogonal_axes">
+GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation_group type="orthogonal_axes">
+! Exit_GO                                                                           
+IF ($longitude_lab%0|*>1%) THEN
+ !-> IF 0 THEN
+ ENDIF
+IF ($latitude_lab%0|*>1%) THEN
+ !-> IF 0 THEN
+ ENDIF
+IF ($depth_lab%0|*>1%) THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL out = <annotation type="z-axis">
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation type="z-axis">
+! Exit_GO                                                                                  
+   DEFINE SYMBOL out = `LIST_VALUE_XML("value", "($depth_lab)", 1, "($result_annotations_filename)" )`
+ !-> DEFINE SYMBOL out = 1
+   DEFINE SYMBOL out = </annotation>
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation>
+! Exit_GO                                                                                  
+ ENDIF
+IF ($time_lab%0|*>1%) THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL out = <annotation type="t-axis">
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation type="t-axis">
+! Exit_GO                                                                                  
+   DEFINE SYMBOL out = `LIST_VALUE_XML("value", "($time_lab)", 1, "($result_annotations_filename)" )`
+ !-> DEFINE SYMBOL out = 1
+   DEFINE SYMBOL out = </annotation>
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation>
+! Exit_GO                                                                                  
+ENDIF
+IF ($year_lab"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ens_lab%0|*>1%) THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($forecast_lab%0|*>1%) THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($ensemble_names"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL out = </annotation_group>
+GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation_group>
+! Exit_GO                                                                                  
+! Exit_GO                                                                                  
+    GO annotation_data
+ !-> IF 1 THEN     GO annotation_data
+ !-> GO annotation_data
+! Enter_GO annotation_data
+DEFINE SYMBOL out = <annotation_group type="data">
+GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation_group type="data">
+! Exit_GO                                                                           
+IF `($variable_lab"0|*>1")  OR  ($variable_lab_var"0|*>1")` THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL out = <annotation type="variable_title">
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation type="variable_title">
+! Exit_GO                                                                       
+   IF ($variable_lab_var"0|*>1") THEN
+ !-> IF 0 THEN
+   ELSE
+      DEFINE SYMBOL out = `LIST_VALUE_XML("value",  "($variable_lab)", 1, "($result_annotations_filename)" )`
+ !-> DEFINE SYMBOL out = 1
+   ENDIF
+   DEFINE SYMBOL out = </annotation>
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation>
+! Exit_GO                                                                       
+ENDIF
+IF ($dataset_title_lab"0|*>1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL out = <annotation type="dataset_title">
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation type="dataset_title">
+! Exit_GO                                                                       
+   DEFINE SYMBOL out = `LIST_VALUE_XML("value", "($dataset_title_lab)", 1, "($result_annotations_filename)" )`
+ !-> DEFINE SYMBOL out = 1
+   DEFINE SYMBOL out = </annotation>
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation>
+! Exit_GO                                                                       
+ENDIF
+IF ($data_0_dataset_ID"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($data_1_dataset_ID"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($dataset_ID_lab"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+IF ($dataset_url_lab"0|*>1") THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL out = </annotation_group>
+GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation_group>
+! Exit_GO                                                                       
+! Exit_GO                                                                       
+IF ($las_ferret_header_label"0|*>1") THEN
+ !-> IF 1 THEN
+   DEFINE SYMBOL out = <annotation_group type="las">
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation_group type="las">
+! Exit_GO                                                                           
+   DEFINE SYMBOL out = <annotation type="header">
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND <annotation type="header">
+! Exit_GO                                                                           
+   DEFINE SYMBOL out = `LIST_VALUE_XML("value", "($las_ferret_header_label)", 1, "($result_annotations_filename)" )`
+ !-> DEFINE SYMBOL out = 1
+   DEFINE SYMBOL out = </annotation>
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation>
+! Exit_GO                                                                           
+   DEFINE SYMBOL out = </annotation_group>
+   GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotation_group>
+! Exit_GO                                                                           
+ENDIF
+IF `($note_num"0") GT 0 OR ($calendar_lab"0|*>1") OR ($dataset_institute_lab"0|*>1")` THEN
+ !-> IF 0 THEN
+ENDIF
+DEFINE SYMBOL out = </annotations>
+GO write_to_xml
+! Enter_GO write_to_xml
+MESSAGE/QUIET/CONTINUE/OUTFILE="($result_annotations_filename)"/APPEND ($out)
+ !-> MESSAGE/QUIET/CONTINUE/OUTFILE="/home/rhs/IdeaProjects/las/src/main/webapp/output/e22b7c555082028737c88f3a3b230136_annotations.xml"/APPEND </annotations>
+! Exit_GO                                                                           
+! Exit_GO                                                                           
+IF ($result_colorbar_filename%0|*>1%) THEN GO colorbar
+ !-> IF 0 THEN GO colorbar
+IF  ($ferret_use_ref_map%0|false>0|*>1%) THEN
+ !-> IF  0 THEN
+ENDIF
+IF ($fland_area"0|*>1") THEN
+ !-> IF 1 THEN
+   SAY _________________Map plot:  Region and topo file used:
+_________________Map plot:  Region and topo file used:
+   SAY _________________Map plot:    XY region      ($region_xy)
+ !-> MESSAGE/CONTINUE _________________Map plot:    XY region      X=20.5:378.5,Y=-89.5:88.5
+_________________Map plot:    XY region      X=20.5:378.5,Y=-89.5:88.5
+   SAY _________________Map plot:    $fland_area    ($fland_area)
+ !-> MESSAGE/CONTINUE _________________Map plot:    $fland_area    0.9833950617283951
+_________________Map plot:    $fland_area    0.9833950617283951
+   SAY _________________Map plot:    topo file      ($topo_url)
+ !-> MESSAGE/CONTINUE _________________Map plot:    topo file      etopo20
+_________________Map plot:    topo file      etopo20
+ENDIF
+! Exit_GO                                                                   
+! Exit_GO                                                                  
+ELSE
+ENDIF
+! Exit_GO                                                                  
+ 
+! Exit_GO                           
+ !->  exit /program

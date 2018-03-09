@@ -1,0 +1,29 @@
+! LAS_pp_set_feature_shapes.jnl
+
+! Set the shapes to be used for features. 
+! and by 200symbols.jnl which makes the icons
+! used in the key of feature shapes and colors.
+
+
+DEFINE SYMBOL shape1 = trianglec
+DEFINE SYMBOL shape2 = plus
+DEFINE SYMBOL shape3 = square
+DEFINE SYMBOL shape4 = uright
+DEFINE SYMBOL shape5 = tright
+DEFINE SYMBOL shape6 = deltac
+DEFINE SYMBOL shape7 = vleft
+DEFINE SYMBOL shape8 = bslash
+DEFINE SYMBOL shape9 = tletter
+DEFINE SYMBOL shape10 = ltriangle
+DEFINE SYMBOL shape11 = rectanglec
+DEFINE SYMBOL shape12 = fslash
+DEFINE SYMBOL shape13 = tupside
+DEFINE SYMBOL shape14 = vright
+DEFINE SYMBOL shape15 = tallboxc
+DEFINE SYMBOL shape16 = tleft
+DEFINE SYMBOL shape17 = rtriangle
+DEFINE SYMBOL shape18= diamond
+DEFINE SYMBOL shape19 = uleft
+DEFINE SYMBOL shape20 = circle
+
+! End of file ------------ LAS_pp_set_feature_shapes.jnl--------------------------

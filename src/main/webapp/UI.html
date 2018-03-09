@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)http://getbootstrap.com/examples/dashboard/# -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="images/favicon.ico">
+
+    <title>LAS</title>
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+
+    <!--
+
+     Default:
+
+     WMS-SERVER: http://vmap0.tiles.osgeo.org/wms/vmap0
+     WMS-LAYER: basic
+
+     Alternatives:
+
+     WMS-SERVER: http://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv
+     WMS-LAYER: layer: GEBCO_LATEST
+
+     WMS-SERVER: http://www.cmar.csiro.au/geoserver/ows
+     WMS-LAYER: ea-be:World_Bright-Earth-e-Atlas-basemap
+
+     WMS-SERVER: http://data.fao.org/maps/ows
+     WMS-LAYER: COMMON:dark_bluemarble
+    -->
+
+    <meta content="http://vmap0.tiles.osgeo.org/wms/vmap0" name="WMS-SERVER" id="wms-server" />
+    <meta content="basic" name="WMS-LAYER" id="wms-layer" />
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript" src="js/highcharts.js"></script>
+    <script src="js/bootstrap/js/bootstrap.min.js"></script>
+    <script src="js/jasny/js/jasny-bootstrap.js"></script>
+
+    <script type="text/javascript" language="javascript" src="js/OpenLayers/OpenLayers.js"></script>
+    <script type="text/javascript" language="javascript" src="js/OpenLayers/util.js"></script>
+    <script type="text/javascript" language="javascript" src="js/OpenLayersExtensions/DrawSingleFeature.js"></script>
+    <script type="text/javascript" language="javascript" src="js/OpenLayersExtensions/HorizontalPath.js"></script>
+    <script type="text/javascript" language="javascript" src="js/OpenLayersExtensions/VerticalPath.js"></script>
+    <script type="text/javascript" language="javascript" src="js/OpenLayersExtensions/JumpPath.js"></script>
+    <script type="text/javascript" language="javascript" src="js/highcharts/highcharts.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        //google.charts.load('current', {'packages':['corechart']})
+        google.charts.load('current', {'packages':['annotationchart']})
+        google.charts.load('current', {'packages':['table']});
+    </script>
+
+
+    <link rel="stylesheet" href="css/OLMapWidget.css" type="text/css"/>
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/UI.css" type="text/css"/>
+    <link rel="stylesheet" href="js/jasny/css/jasny-bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/navmenu-push.css"/>
+
+    <!-- My GWT code -->
+    <script type="text/javascript" language="javascript" src="js/gwt/pmel.sdig.las.UI/pmel.sdig.las.UI.nocache.js"></script>
+
+</head>
+
+  <body>
+    <div id="load">
+        <h3>Live Access Serever is loading...</h3>
+        <img src="images/44frgm.gif" alt="Loading animation..."/>
+    </div>
+    <div id="las_main">
+
+ 
+   </div>
+
+
+
+<script id="hiddenlpsubmitdiv" style="display: none;"></script><script>try{for(var lastpass_iter=0; lastpass_iter < document.forms.length; lastpass_iter++){ var lastpass_f = document.forms[lastpass_iter]; if(typeof(lastpass_f.lpsubmitorig2)=="undefined"){ lastpass_f.lpsubmitorig2 = lastpass_f.submit; if (typeof(lastpass_f.lpsubmitorig2)=='object'){ continue;}lastpass_f.submit = function(){ var form=this; var customEvent = document.createEvent("Event"); customEvent.initEvent("lpCustomEvent", true, true); var d = document.getElementById("hiddenlpsubmitdiv"); if (d) {for(var i = 0; i < document.forms.length; i++){ if(document.forms[i]==form){ if (typeof(d.innerText) != 'undefined') { d.innerText=i.toString(); } else { d.textContent=i.toString(); } } } d.dispatchEvent(customEvent); }form.lpsubmitorig2(); } } }}catch(e){}</script></body></html>

@@ -1,0 +1,13 @@
+#!/bin/sh
+APPDIR=`pwd`
+GWTDIR="/usr/local/gwt-2.8.0"
+LIBS=/home/rhs/IdeaProjects/las/lib/*
+JAVAOPS="-Xmx1024M -Xms1024M"
+CMPNTDIR="/home/rhs/IdeaProjects/las/src/main/webapp/js/gwt"
+CLASSPATH="${LIBS}:${GWTDIR}/*:${APPDIR}/gwtui"
+#GWTOPTIONS="-strict"
+GWTOPTIONS="-strict -XnoclassMetadata -optimize 9"
+
+
+echo java ${JAVAOPS} -cp "${CLASSPATH}" com.google.gwt.dev.Compiler -style DETAILED -war "${CMPNTDIR}" "$@" ${GWTOPTIONS} pmel.sdig.las.UI
+java ${JAVAOPS} -cp "${CLASSPATH}" com.google.gwt.dev.Compiler -style DETAILED -war "${CMPNTDIR}" "$@" ${GWTOPTIONS} pmel.sdig.las.UI

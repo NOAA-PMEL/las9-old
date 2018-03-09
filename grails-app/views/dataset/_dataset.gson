@@ -1,0 +1,10 @@
+import pmel.sdig.las.Dataset
+
+model {
+    Dataset dataset
+}
+//json g.render(dataset)
+json g.render(dataset, [excludes: ["datasets","variables"]]) {
+    datasets g.render(dataset.datasets, [excludes: ["variables", "datasets", "parent"]])
+    variables g.render(dataset.variables, [excludes: ["dataset","geoAxisX","geoAxisY","timeAxis","verticalAxis"]])
+}

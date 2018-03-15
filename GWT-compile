@@ -1,6 +1,6 @@
 #!/bin/sh
 APPDIR=`pwd`
-GWTDIR="/usr/local/gwt-2.8.0"
+GWTDIR="/usr/local/gwt-2.8.2"
 LIBS=/home/rhs/IdeaProjects/las/lib/*
 JAVAOPS="-Xmx1024M -Xms1024M"
 CMPNTDIR="/home/rhs/IdeaProjects/las/src/main/webapp/js/gwt"

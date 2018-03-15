@@ -9,7 +9,7 @@ buildscript {
         classpath "gradle.plugin.com.energizedwork:idea-gradle-plugins:1.4"
         classpath "org.grails.plugins:hibernate5:${gormVersion-".RELEASE"}"
         classpath "com.bertramlabs.plugins:asset-pipeline-gradle:2.14.6"
-        classpath 'org.grails.plugins:views-json:1.2.6'
+        classpath "org.grails.plugins:views-gradle:1.2.7"
     }
 }
 
@@ -24,7 +24,7 @@ apply plugin:"com.energizedwork.webdriver-binaries"
 apply plugin:"com.energizedwork.idea-project-components"
 apply plugin:"asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
-//apply plugin:"org.grails.plugins.views-json"
+apply plugin:"org.grails.plugins.views-json"
 
 repositories {
     mavenLocal()
@@ -106,6 +106,13 @@ dependencies {
 
 
 }
+
+
+task compileGWT (type:Exec) {
+    commandLine 'sh','./GWT-compile'
+}
+
+war.dependsOn compileGWT
 
 bootRun {
     jvmArgs('-Dspring.output.ansi.enabled=always')

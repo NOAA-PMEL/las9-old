@@ -1,0 +1,29 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'
+             xmlns:m='urn:import:gwt.material.design.client.ui'>
+    <m:MaterialPanel>
+        <m:MaterialRow marginTop="0" marginBottom="0">
+            <m:MaterialColumn grid="s12" margin="0">
+                <m:MaterialCollapsible padding="0" margin="0" shadow="0" grid="s12">
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader padding="0">
+                            <m:MaterialLink lineHeight="32" textColor="BLUE" iconType="HELP" iconSize="TINY" iconPosition="LEFT" text="The Menu Option" ui:field="title"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody>
+                            <m:MaterialRow>
+                                <m:MaterialColumn lineHeight="32" ui:field="help" grid="s12">
+
+                                </m:MaterialColumn>
+                            </m:MaterialRow>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                </m:MaterialCollapsible>
+            </m:MaterialColumn>
+        </m:MaterialRow>
+        <m:MaterialRow>
+            <m:MaterialColumn lineHeight="32" grid="s12">
+                <m:MaterialSwitch lineHeight="32" ui:field="ynswitch"></m:MaterialSwitch>
+            </m:MaterialColumn>
+        </m:MaterialRow>
+    </m:MaterialPanel>
+</ui:UiBinder>

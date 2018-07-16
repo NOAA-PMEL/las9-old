@@ -22,6 +22,8 @@ public class ProductButtonList extends MaterialContainer {
 
         String first = products.get(0).getName();
 
+        setLineHeight(32.0d);
+
         for (int i = 0; i < products.size(); i++) {
             Product product = products.get(i);
             String ui_group = product.getUi_group();
@@ -30,7 +32,6 @@ public class ProductButtonList extends MaterialContainer {
                 productGroup = new ProductGroup();
                 productGroup.setUi_group(ui_group);
                 productGroup.setProduct_header(ui_group);
-                add(productGroup);
                 groups.put(ui_group, productGroup);
             } else {
                 productGroup = groups.get(ui_group);
@@ -100,8 +101,7 @@ public class ProductButtonList extends MaterialContainer {
     public void clearProducts() {
 
         groups.clear();
-        for ( int i = 0; i < getWidgetCount(); i++ ) {
-            remove(i);
-        }
+        clear();
+
     }
 }

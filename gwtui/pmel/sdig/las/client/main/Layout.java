@@ -4,17 +4,23 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
 import gwt.material.design.addins.client.window.MaterialWindow;
 import gwt.material.design.client.constants.Color;
+import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.HeadingSize;
 import gwt.material.design.client.constants.ProgressType;
+import gwt.material.design.client.events.SideNavClosedEvent;
+import gwt.material.design.client.events.SideNavOpenedEvent;
 import gwt.material.design.client.ui.MaterialButton;
 import gwt.material.design.client.ui.MaterialCardContent;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
@@ -31,20 +37,27 @@ import gwt.material.design.client.ui.MaterialNavBrand;
 import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialProgress;
 import gwt.material.design.client.ui.MaterialRow;
+import gwt.material.design.client.ui.MaterialSideNavPush;
+import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.html.Div;
 import gwt.material.design.client.ui.html.Heading;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.event.PanelCount;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
+import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.client.widget.AxisWidget;
 import pmel.sdig.las.client.widget.Breadcrumb;
+import pmel.sdig.las.client.widget.ComparePanel;
 import pmel.sdig.las.client.widget.DataItem;
 import pmel.sdig.las.client.widget.DateTimeWidget;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
 import pmel.sdig.las.client.widget.ProductButton;
 import pmel.sdig.las.client.widget.ProductButtonList;
 import pmel.sdig.las.client.widget.ResultsPanel;
+import pmel.sdig.las.client.widget.TextOptionsWidget;
+import pmel.sdig.las.shared.autobean.Analysis;
+import pmel.sdig.las.shared.autobean.AnalysisAxis;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 import pmel.sdig.las.shared.autobean.Variable;
@@ -69,10 +82,16 @@ public class Layout extends Composite {
     MaterialButton plotsButton;
     @UiField
     MaterialDropDown plotsDropdown;
+
+    @UiField
+    MaterialButton overButton;
+    @UiField
+    MaterialButton analysisButton;
+
     @UiField
     ResultsPanel panel1;
     @UiField
-    MaterialColumn panel2;
+    ComparePanel panel2;
     @UiField
     MaterialColumn panel3;
     @UiField
@@ -90,7 +109,7 @@ public class Layout extends Composite {
     MaterialPanel zaxisPanel;
 
     @UiField
-    Breadcrumb home;
+    MaterialIcon home;
 
     @UiField
     MaterialIcon back;
@@ -101,7 +120,16 @@ public class Layout extends Composite {
     MaterialPanel options;
 
     @UiField
-    MaterialWindow controlsWindow;
+    MaterialSwitch analysisSwitch;
+
+    @UiField
+    MaterialSideNavPush sideNav;
+
+    @UiField
+    MaterialRow outputRow01;
+
+    @UiField
+    MaterialRow outputRow02;
 
     Widget root;
 
@@ -112,12 +140,101 @@ public class Layout extends Composite {
 
     int kern = 15;
 
+    public Analysis getAnalysis() {
+        if ( analysisSwitch.getValue() ) {
+            Analysis analysis = new Analysis();
+            String axes = "";
+            String type = analysisButton.getText();
+            String over = overButton.getText();
+            if ( !type.equals("Computer") && !over.equals("Over")) {
+                analysis.setTransformation(type);
+                if ( over.equals("Area") ) {
+                    AnalysisAxis x = new AnalysisAxis();
+                    x.setType("x");
+                    AnalysisAxis y = new AnalysisAxis();
+                    y.setType("y");
+                    List<AnalysisAxis> ax = new ArrayList<>();
+                    ax.add(x);
+                    ax.add(y);
+                    analysis.setAnalysisAxes(ax);
+                    analysis.setAxes("xy");
+                } else if ( over.equals("Longitude") ) {
+                    AnalysisAxis x = new AnalysisAxis();
+                    x.setType("x");
+                    List<AnalysisAxis> ax = new ArrayList<>();
+                    ax.add(x);
+                    analysis.setAnalysisAxes(ax);
+                    analysis.setAxes("x");
+                } else if ( over.equals("Latitude") ) {
+                    AnalysisAxis y = new AnalysisAxis();
+                    y.setType("y");
+                    List<AnalysisAxis> ax = new ArrayList<>();
+                    ax.add(y);
+                    analysis.setAnalysisAxes(ax);
+                    analysis.setAxes("y");
+                } else if ( over.equals("Time") ) {
+                    AnalysisAxis t = new AnalysisAxis();
+                    t.setType("t");
+                    List<AnalysisAxis> ax = new ArrayList<>();
+                    ax.add(t);
+                    analysis.setAnalysisAxes(ax);
+                    analysis.setAxes("t");
+                }
+
+            } else {
+                return null;
+            }
+            return analysis;
+        } else {
+            return null;
+        }
+    }
+
     interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
     private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
 
     public Layout() {
         root = ourUiBinder.createAndBindUi(this);
         initWidget(root);
+        panel2.setIndex(2);
+        analysisSwitch.addValueChangeHandler(analysisSwitchChange);
+        outputRow01.setPaddingLeft(Constants.navWidth);
+        outputRow02.setPaddingLeft(Constants.navWidth);
+        sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
+            @Override
+            public void onSideNavOpened(SideNavOpenedEvent sideNavOpenedEvent) {
+                outputRow01.setPaddingLeft(Constants.navWidth);
+                outputRow02.setPaddingLeft(Constants.navWidth);
+                scale(Constants.navWidth);
+            }
+        });
+        sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
+            @Override
+            public void onSideNavClosed(SideNavClosedEvent sideNavOpenedEvent) {
+                outputRow01.setPaddingLeft(4);
+                outputRow02.setPaddingLeft(4);
+                scale(8);
+            }
+        });
+    }
+    public void scale(int navWidth) {
+        State state = panel1.getOutputPanel().getState();
+        int panelCount = 1;
+        if ( state != null ) {
+            panelCount = state.getPanelCount();
+        }
+        if ( panelCount == 1 ) {
+            panel1.scale(navWidth);;
+        } else if ( panelCount == 2 ) {
+            panel1.scale(navWidth);
+            panel2.scale(navWidth);
+        } else if ( panelCount == 4 ) {
+            panel1.scale(navWidth);
+            panel2.scale(navWidth);
+            // TODO the other 4 panels
+//                    panel3.scale(navWidth);
+//                    panel4.scale(navWidth);
+        }
     }
     public void setBrand(String title) {
         brand.setText(title);
@@ -132,43 +249,33 @@ public class Layout extends Composite {
 //    public void showMap() {
 //        mapCollapse.setIn(true);
 //    }
-//    public void showDateTime() {
-//        dateTime.setVisible(true);
-//    }
+    public void showDateTime() {
+        dateTimePanel.setVisible(true);
+    }
+    public void hideDateTime() {
+        dateTimePanel.setVisible(false);
+    }
     public void showVertialAxis() {
-        zaxisPanel.setVisible(true);
+        zaxisPanel.setDisplay(Display.BLOCK);
     }
     public void hideVerticalAxis() {
-        zaxisPanel.setVisible(false);
+        zaxisPanel.setDisplay(Display.NONE);
     }
-//
-//    public void hideDateTime() {
-//        dateTime.setVisible(false);
-//    }
-//
+
     public void addSelection(Object selection) {
 
         DataItem dataItem = new DataItem(selection);
+        dataItem.addNavSelectClickHandler();
         datasets.add(dataItem);
 
     }
 //
     public void addBreadcrumb(Breadcrumb breadcrumb, int panel) {
-        // TODO this is probably right, but confusing. resultsPanel.getBreadcrumbTail(); ??
-        int index = panel1.getBreadcrumbs().size();
-        if ( index > 0 ) {
-            Breadcrumb tail = (Breadcrumb) panel1.getBreadcrumbs().get(index - 1);
-            Object tailObject = tail.getSelected();
-            if ( tailObject instanceof Variable) {
-                panel1.removeBreadcrumb(tail);
-                panel1.addBreadcrumb(breadcrumb);
-            } else {
-                panel1.addBreadcrumb(breadcrumb);
-            }
-        } else {
+        if ( panel == 1 ) {
             panel1.addBreadcrumb(breadcrumb);
+        } else if ( panel == 2 ) {
+            panel2.addBreadcrumb(breadcrumb);
         }
-
     }
 
     public void removeBreadcrumbs(Object selected, int targetPanel) {
@@ -195,9 +302,14 @@ public class Layout extends Composite {
     public int getBreadcrumbCount(int targetPanel) {
         if ( targetPanel == 1 ) {
             return panel1.getBreadcrumbs().size();
-        } else { // Other panels
-            return 0;
+        } else if ( targetPanel == 2 ){ // Other panels
+            return panel2.getBreadcrumbs().size();
+        } else if ( targetPanel == 3 ){
+//            return panel3.getBreadcrumbs().size();
+        } else if ( targetPanel == 4 ){
+//            return panel4.getBreadcrumbs().size();
         }
+        return -1;
     }
 
     /**
@@ -214,14 +326,9 @@ public class Layout extends Composite {
         zaxisPanel.clear();
         zaxisPanel.add(zAxisWidget);
     }
-    public void addProducts(ProductButtonList productButtonList) {
+    public void setProducts(ProductButtonList productButtonList) {
         products.clear();
         products.add(productButtonList);
-    }
-
-    // For debugging for now
-    public void clearProducts() {
-        products.clear();
     }
     public void addProductButton(MaterialRow pb) {
         products.add(pb);
@@ -229,35 +336,36 @@ public class Layout extends Composite {
     public void setUpdate(Color color) {
         update.setBackgroundColor(color);
     }
-    public Dataset getDataset(int panel) {
-        Dataset d = null;
-        // Return the last one...
-        List<Breadcrumb> crumbs = panel1.getBreadcrumbs();
-        for (int i = 0; i < crumbs.size(); i++ ) {
-            Breadcrumb crumb = (Breadcrumb) crumbs.get(i);
-            if ( crumb.getSelected() instanceof Dataset) {
-                d = (Dataset) crumb.getSelected();
-            }
-        }
-        return d;
-    }
-    public String getVariableHash(int panel) {
-        String hash = null;
-        // Return the last one...
-        List<Breadcrumb> crumbs = panel1.getBreadcrumbs();
-        for (int i = 0; i < crumbs.size(); i++ ) {
-            Breadcrumb crumb = (Breadcrumb) crumbs.get(i);
-            if ( crumb.getSelected() instanceof Variable) {
-                Variable d = (Variable) crumb.getSelected();
-                hash = d.getHash();
-            }
-        }
-        return hash;
-    }
     public void setState(int panel, State state) {
-        panel1.setState(state);
-//        int main_height = Window.getClientHeight() - 100;
-//        output_column_01.setHeight(main_height+"px");
+        if ( panel == 1 ) {
+            panel1.setState(state);
+        } else if ( panel == 2 ) {
+            panel2.setState(state);
+        }
+    }
+    public Dataset getDataset(int panel) {
+        // Dataset for penal 1 kept in UI class
+        if ( panel == 2 ) {
+            return panel2.getDataset();
+        } else if ( panel == 3 ) {
+            // TODO when we get around to implementing 3 and 4
+//            return panel3.getDataset();
+        } else if ( panel == 4 ) {
+//            return panel4.getDataset();
+        }
+        return null;
+    }
+    public Variable getVariable(int panel) {
+        // Variable for panel 1 kept in UI class
+        if ( panel == 2 ) {
+            return panel2.getVariable();
+        } else if ( panel == 3 ) {
+            // TODO when we get around to implementing 3 and 4
+//            return panel3.getVariable();
+        } else if ( panel == 4 ) {
+//            return panel4.getVariable();
+        }
+        return null;
     }
     public void addMouse(int panel, UI.Mouse mouse) {
         panel1.getOutputPanel().addMouse(mouse);
@@ -270,6 +378,9 @@ public class Layout extends Composite {
             if ( w instanceof MenuOptionsWidget ) {
                 MenuOptionsWidget mo = (MenuOptionsWidget) w;
                 properties.addAll(mo.getOptions());
+            } else if ( w instanceof TextOptionsWidget ) {
+                TextOptionsWidget to = (TextOptionsWidget) w;
+                properties.addAll(to.getOptions());
             }
         }
         return properties;
@@ -287,25 +398,53 @@ public class Layout extends Composite {
         int count = 1;
         if ( title.contains("1") ) {
             count = 1;
-            panel1.setGrid("s10 m10 l10");
-            panel2.setVisibility(Style.Visibility.HIDDEN);
+            panel1.setGrid("s12 m12 l12");
+            panel2.setVisibility(false);
             panel3.setVisibility(Style.Visibility.HIDDEN);
             panel4.setVisibility(Style.Visibility.HIDDEN);
         } else if ( title.contains("2") ) {
             count = 2;
-            panel1.setGrid("s5 m5 l5");
-            panel2.setVisibility(Style.Visibility.VISIBLE);
+            panel1.setGrid("s6 m6 l6");
+            panel2.setVisibility(true);
+            // Initialize the second panel with the breadcrumbs from the first..
+            List<Breadcrumb> b = panel1.getBreadcrumbs();
+            for ( int i = 0; i < b.size(); i++ ) {
+                Breadcrumb nb = new Breadcrumb();
+                panel2.addBreadcrumb(new Breadcrumb(b.get(i).getSelected(), i != 0 ));
+            }
             panel3.setVisibility(Style.Visibility.HIDDEN);
             panel4.setVisibility(Style.Visibility.HIDDEN);
         } else if ( title.contains("4") ) {
             count = 4;
-            panel1.setGrid("s5 m5 l5");
-            panel2.setVisibility(Style.Visibility.VISIBLE);
+            panel1.setGrid("s6 m6 l6");
+            panel2.setVisibility(true);
             panel3.setVisibility(Style.Visibility.VISIBLE);
             panel4.setVisibility(Style.Visibility.VISIBLE);
         }
 
         eventBus.fireEventFromSource(new PanelCount(count), selection);
+    }
+
+    @UiHandler("analysis")
+    void onAnalysisDropDown(SelectionEvent<Widget> selection) {
+        String title = ((MaterialLink)selection.getSelectedItem()).getText();
+        analysisButton.setText(title);
+        setUpdate(Color.RED);
+        analysisSwitch.setValue(true);
+        String over = overButton.getText();
+        boolean active = analysisSwitch.getValue();
+        eventBus.fireEventFromSource(new AnalysisActive(title, over, active), overButton);
+    }
+
+    @UiHandler("over")
+    void onOverDropDown(SelectionEvent<Widget> selection) {
+        String title = ((MaterialLink)selection.getSelectedItem()).getText();
+        overButton.setText(title);
+        setUpdate(Color.RED);
+        analysisSwitch.setValue(true);
+        String type = analysisButton.getText();
+        boolean active = analysisSwitch.getValue();
+        eventBus.fireEventFromSource(new AnalysisActive(type, title, active), overButton);
     }
 
     public void setMap(OLMapWidget map) {
@@ -333,6 +472,14 @@ public class Layout extends Composite {
     public void addOptions(Widget widget) {
         options.add(widget);
     }
+    ValueChangeHandler<Boolean> analysisSwitchChange = new ValueChangeHandler<Boolean>() {
+        @Override
+        public void onValueChange(ValueChangeEvent<Boolean> event) {
+            String over = overButton.getTitle();
+            String type = analysisButton.getTitle();
+            eventBus.fireEventFromSource(new AnalysisActive(type, over, event.getValue()), overButton);
+        }
+    };
     @UiHandler("home")
     public void onHome(ClickEvent event) {
         eventBus.fireEventFromSource(new BreadcrumbSelect(), home);
@@ -351,5 +498,15 @@ public class Layout extends Composite {
             eventBus.fireEventFromSource(new BreadcrumbSelect(), home);
             event.stopPropagation();
         }
+    }
+    public boolean isDifference(int panel) {
+        if ( panel == 1 ) {
+            // Should need to ask
+            return false;
+        } else if ( panel == 2 ) {
+            // TODO othter panels
+            return panel2.isDifference();
+        }
+        return false;
     }
 }

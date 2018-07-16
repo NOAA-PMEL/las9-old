@@ -6,6 +6,7 @@ class TextOption {
     String title
     String help
     String value;
+    String hint;
     String defaultValue
 
     static hasMany = [operations: Operation]
@@ -15,5 +16,6 @@ class TextOption {
         help nullable: true, type: "text"
         defaultValue nullable: true
         value nullable: true
+        hint nullable: true
     }
 }

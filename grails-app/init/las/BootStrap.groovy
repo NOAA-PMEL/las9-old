@@ -1,5 +1,7 @@
 package las
 
+import grails.converters.JSON
+import org.grails.core.exceptions.DefaultErrorsPrinter
 import pmel.sdig.las.AddProperty
 import pmel.sdig.las.AddRequest
 import pmel.sdig.las.Dataset
@@ -24,6 +26,12 @@ class BootStrap {
         if ( !ferret && !ferretEnvironment ) {
             initializationService.initEnvironment()
         }
+
+        JSON.use("deep") {
+            def ferretJ = Ferret.first() as JSON
+            new File("ferret.json").write(ferretJ.toString(true))
+        }
+
 
         initializationService.createOptions()
 

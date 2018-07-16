@@ -33,7 +33,7 @@ public class DataItem extends MaterialCollectionItem {
     MaterialBadge badge = new MaterialBadge("?", Color.WHITE, Color.BLUE);
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
-        public DataItem(Object selection) {
+    public DataItem(Object selection) {
         super();
         this.selection = selection;
         badge.addClickHandler(new ClickHandler() {
@@ -48,20 +48,24 @@ public class DataItem extends MaterialCollectionItem {
             badge.setCircle(false);
             link.add(badge);
             link.setText(d.getTitle());
+            link.setTextColor(Color.BLUE);
             add(link);
         } else if ( selection instanceof Variable) {
             Variable v = (Variable) selection;
             link.setText(v.getTitle());
             add(link);
         }
-        addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                eventBus.fireEventFromSource(new NavSelect(selection, 0), selection);
-            }
-        });
+
         link.addStyleName("datasetwrap");
         link.setWidth("250px");
         link.setPaddingTop(15);
+    }
+    public void addNavSelectClickHandler() {
+        addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                eventBus.fireEventFromSource(new NavSelect(selection, 1), selection);
+            }
+        });
     }
 }

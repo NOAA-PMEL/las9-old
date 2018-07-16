@@ -6,6 +6,7 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
 import gwt.material.design.client.ui.MaterialCollection;
 import gwt.material.design.client.ui.MaterialContainer;
+import gwt.material.design.client.ui.MaterialPanel;
 import pmel.sdig.las.shared.autobean.MenuOption;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 
@@ -14,9 +15,9 @@ import java.util.List;
 
 public class MenuOptionsWidget extends Composite {
     @UiField
-    MaterialContainer menuoptions;
+    MaterialPanel menuoptions;
 
-    interface MenuOptionsWidgetUiBinder extends UiBinder<MaterialContainer, MenuOptionsWidget> {
+    interface MenuOptionsWidgetUiBinder extends UiBinder<MaterialPanel, MenuOptionsWidget> {
     }
 
     private static MenuOptionsWidgetUiBinder ourUiBinder = GWT.create(MenuOptionsWidgetUiBinder.class);

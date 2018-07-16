@@ -10,10 +10,15 @@ buildscript {
         classpath "org.grails.plugins:hibernate5:${gormVersion-".RELEASE"}"
         classpath "com.bertramlabs.plugins:asset-pipeline-gradle:2.14.6"
         classpath "org.grails.plugins:views-gradle:1.2.7"
+        // this is the gwt gradle plug0-in
+        classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
+
     }
 }
 
-version "0.1"
+
+
+version "9.1"
 group "las"
 
 apply plugin:"eclipse"
@@ -25,6 +30,9 @@ apply plugin:"com.energizedwork.idea-project-components"
 apply plugin:"asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
 apply plugin:"org.grails.plugins.views-json"
+// Add the GWT plug-in RHS
+apply plugin: 'gwt'
+
 
 repositories {
     mavenLocal()
@@ -104,15 +112,41 @@ dependencies {
     // https://mvnrepository.com/artifact/com.google.visualization/visualization-datasource
     compile group: 'com.google.visualization', name: 'visualization-datasource', version: '1.1.1'
 
+    // Get a gwt sdk for plugin to use
+    compile group: 'com.google.gwt', name: 'gwt-dev', version: '2.8.2'
 
 }
 
+// My stuff -- RHS
 
+// GWT Modules
+gwt {
+    modules 'pmel.sdig.las.UI'
+    compileGwt.enabled = false;
+}
+
+// Source set for the GWT source so Intellij knows it's source code
+sourceSets {
+    client {
+        java {
+            srcDirs = ['gwtui']
+        }
+    }
+}
+// Library directory for the GWT code so that Intellij knows where this stuff is
+dependencies {
+    clientCompile fileTree(dir: './lib', include: '*.jar')
+}
+
+// A task to comppile the GWT code using a scripts, 'cause that's what I find easiest
 task compileGWT (type:Exec) {
     commandLine 'sh','./GWT-compile'
 }
 
+// Make the assembly of the war file depend on compiling the GWT
 war.dependsOn compileGWT
+
+// end of my stuff
 
 bootRun {
     jvmArgs('-Dspring.output.ansi.enabled=always')

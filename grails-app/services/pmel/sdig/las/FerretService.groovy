@@ -17,10 +17,7 @@ class FerretService {
 		def result = [:]
 		
 		def ferret = Ferret.first()
-		def tempFile = new File(ferret.tempDir);
-		if ( !tempFile.exists() ) {
-			tempFile.mkdirs()
-		}
+
 		
 		File sp = File.createTempFile("script", ".jnl", new File(ferret.tempDir));
 		

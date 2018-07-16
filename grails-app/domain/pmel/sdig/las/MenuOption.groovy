@@ -1,6 +1,6 @@
 package pmel.sdig.las
 
-class MenuOption {
+class  MenuOption {
 	
 	String name
     String title

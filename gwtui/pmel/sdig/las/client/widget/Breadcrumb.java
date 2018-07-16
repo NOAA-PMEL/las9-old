@@ -43,8 +43,6 @@ public class Breadcrumb extends Div {
         icon.setIconColor(Color.BLUE);
         add(icon);
         add(link);
-        link.setMarginLeft(-8.0d);
-        setDisplay(Display.INLINE);
     }
     public Breadcrumb(String text, IconType iconType) {
         link.setText(text);

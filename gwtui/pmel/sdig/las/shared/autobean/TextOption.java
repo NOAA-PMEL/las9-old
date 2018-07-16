@@ -10,6 +10,7 @@ public class TextOption {
     String help;
     String value;
     String defaultValue;
+    String hint;
 
     public String getName() {
         return name;
@@ -49,5 +50,11 @@ public class TextOption {
 
     public void setValue(String value) {
         this.value = value;
+    }
+    public void setHing(String hint) {
+        this.hint = hint;
+    }
+    public String getHint() {
+        return this.hint;
     }
 }

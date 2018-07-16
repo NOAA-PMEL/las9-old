@@ -24,6 +24,7 @@ public class PanelControlOpen extends GwtEvent<PanelControlOpen.Handler> {
     protected void dispatch(Handler handler) {
         handler.onPanelControlOpen(this);
     }
+
     public interface Handler extends EventHandler {
         public void onPanelControlOpen(PanelControlOpen event);
     }

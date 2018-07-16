@@ -1,11 +1,9 @@
 package pmel.sdig.las
 
-class RequestAxis {
+class AnalysisAxis {
 
     String hi;
     String lo;
     String type;
 
-    static constraints = {
-    }
 }

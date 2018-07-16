@@ -25,6 +25,7 @@ import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialListBox;
 import gwt.material.design.client.ui.MaterialModal;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.MaterialTitle;
 import gwt.material.design.client.ui.MaterialToast;
@@ -53,8 +54,7 @@ public class MenuOptionItem extends Composite {
 
     HTML helph;
 
-    interface MenuOptionItemUiBinder extends UiBinder<MaterialContainer, MenuOptionItem> {
-    }
+    interface MenuOptionItemUiBinder extends UiBinder<MaterialPanel, MenuOptionItem> {}
 
     private static MenuOptionItemUiBinder ourUiBinder = GWT.create(MenuOptionItemUiBinder.class);
 
@@ -64,7 +64,9 @@ public class MenuOptionItem extends Composite {
     public MenuOptionItem(MenuOption option) {
         this.option = option;
         initWidget(ourUiBinder.createAndBindUi(this));
+        String defaultValue = option.getDefaultValue();
         title.setText(option.getTitle());
+        title.addStyleName("h32");
         List<MenuItem> menuList = option.getMenuItems();
         for (int i = 0; i < menuList.size(); i++) {
             MenuItem item = menuList.get(i);
@@ -72,6 +74,10 @@ public class MenuOptionItem extends Composite {
             menuLink.setText(item.getTitle());
             menuLink.setValue(item.getValue());
             menu.add(menuLink);
+        }
+
+        if ( defaultValue != null ) {
+            menu.setSelectedValue(defaultValue);
         }
 
         helph = new HTML(option.getHelp());

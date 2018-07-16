@@ -38,80 +38,92 @@
     </ui:style>
     <m:MaterialPanel>
         <m:MaterialHeader ui:field="header">
-            <m:MaterialNavBar ui:field="navbar" backgroundColor="BLUE" shadow="1">
-                <m:MaterialButton marginLeft="8" ui:field="closenav" iconColor="BLUE_DARKEN_4" iconType="MENU" iconSize="LARGE" backgroundColor="WHITE"></m:MaterialButton>
+            <m:MaterialNavBar activates="sidenav" ui:field="navbar" backgroundColor="BLUE" shadow="1">
                 <m:MaterialButton ui:field="update" text="Update" textColor="BLUE_DARKEN_4" backgroundColor="WHITE"></m:MaterialButton>
-                <m:MaterialButton ui:field="plotsButton" text="Plot 1" activates="plots" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="WHITE" textColor="BLUE_DARKEN_4"></m:MaterialButton>
-                <m:MaterialDropDown ui:field="plotsDropdown" activator="plots" backgroundColor="WHITE">
-                    <m:MaterialLink text="Plot 1" textColor="BLUE_DARKEN_4"/>
-                    <m:MaterialLink text="Plot 2" textColor="BLUE_DARKEN_4"/>
-                    <m:MaterialLink text="Plot 4" textColor="BLUE_DARKEN_4"/>
-                </m:MaterialDropDown>
                 <m:MaterialNavBrand ui:field="brand" text="LAS title will go here." float="RIGHT"/>
             </m:MaterialNavBar>
         </m:MaterialHeader>
+        <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav">
+            <m:MaterialSideNavContent padding="0">
+                <m:MaterialNavBrand>
+                    <m:MaterialButton ui:field="plotsButton" text="Plot 1" activates="plots" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="WHITE" textColor="BLUE_DARKEN_4"></m:MaterialButton>
+                    <m:MaterialDropDown ui:field="plotsDropdown" activator="plots" backgroundColor="WHITE">
+                        <m:MaterialLink text="Plot 1" textColor="BLUE_DARKEN_4"/>
+                        <m:MaterialLink text="Plot 2" textColor="BLUE_DARKEN_4"/>
+                        <m:MaterialLink text="Plot 4" textColor="BLUE_DARKEN_4"/>
+                    </m:MaterialDropDown>
+                </m:MaterialNavBrand>
+        <m:MaterialCollapsible accordion="false">
+            <m:MaterialCollapsibleItem active="true" ui:field="dataItem">
+                <m:MaterialCollapsibleHeader>
+                    <m:MaterialIcon ui:field="home" iconType="HOME" iconColor="BLUE" text=""></m:MaterialIcon>
+                    <m:MaterialLink display="INLINE" paddingTop="16" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Data"></m:MaterialLink>
+                    <m:MaterialIcon display="INLINE" ui:field="back" paddingTop="2" iconColor="BLUE" iconPosition="RIGHT" iconType="ARROW_BACK"/>
+                </m:MaterialCollapsibleHeader>
+                <m:MaterialCollapsibleBody padding="0">
+                    <m:MaterialCollection lineHeight="32" ui:field="datasets"/>
+                </m:MaterialCollapsibleBody>
+            </m:MaterialCollapsibleItem>
+            <m:MaterialCollapsibleItem>
+                <m:MaterialCollapsibleHeader>
+                    <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Axes and Analysis"></m:MaterialLink>
+                </m:MaterialCollapsibleHeader>
+                <m:MaterialCollapsibleBody padding="0">
+                    <m:MaterialPanel m:id="timeRegion" padding="2" overflow="HIDDEN" width="375px">
+                        <m:MaterialPanel padding="8" ui:field="mapPanel"></m:MaterialPanel>
+                        <m:MaterialPanel padding="8" ui:field="dateTimePanel" width="375px" grid="s12"></m:MaterialPanel>
+                        <m:MaterialPanel padding="8" ui:field="zaxisPanel" grid="s12"/>
+                    </m:MaterialPanel>
+                    <m:MaterialPanel marginBottom="16" textAlign="LEFT" overflow="AUTO">
 
-        <m:MaterialContainer>
-            <m:MaterialRow>
-                <m:MaterialColumn grid="s2">
-                    <m:MaterialCollapsible>
-                        <m:MaterialCollapsibleItem active="true" ui:field="dataItem">
-                            <m:MaterialCollapsibleHeader>
-                                <las:Breadcrumb ui:field="home" iconType="HOME" text=""></las:Breadcrumb>
-                                <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Data"></m:MaterialLink>
-                                <m:MaterialIcon ui:field="back" paddingTop="2" iconColor="BLUE" iconPosition="RIGHT" iconType="ARROW_BACK"/>
-                            </m:MaterialCollapsibleHeader>
-                            <m:MaterialCollapsibleBody padding="0">
-                            <m:MaterialCollection ui:field="datasets"/>
-                                </m:MaterialCollapsibleBody>
-                        </m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleItem>
-                            <m:MaterialCollapsibleHeader>
-                                <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Orthogonal Axes"></m:MaterialLink>
-                            </m:MaterialCollapsibleHeader>
-                            <m:MaterialCollapsibleBody padding="0">
-                                <m:MaterialPanel m:id="timeRegion" padding="2" overflow="HIDDEN" width="375px">
-                                    <m:MaterialPanel padding="8" ui:field="mapPanel"></m:MaterialPanel>
-                                    <m:MaterialPanel padding="8" ui:field="dateTimePanel" width="375px" grid="s12"></m:MaterialPanel>
-                                    <m:MaterialPanel padding="8" ui:field="zaxisPanel" grid="s12"/>
-                                </m:MaterialPanel>
-                            </m:MaterialCollapsibleBody>
-                        </m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleItem>
-                            <m:MaterialCollapsibleHeader>
-                                <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Plot Types"></m:MaterialLink>
-                            </m:MaterialCollapsibleHeader>
-                            <m:MaterialCollapsibleBody padding="0">
-                                <m:MaterialPanel ui:field="products" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Pick a data set and variable and plot choices will appear here."/></m:MaterialPanel>
-                            </m:MaterialCollapsibleBody>
-                        </m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleItem>
-                            <m:MaterialCollapsibleHeader>
-                                <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Plot Options"></m:MaterialLink>
-                            </m:MaterialCollapsibleHeader>
-                            <m:MaterialCollapsibleBody padding="0">
-                                <m:MaterialPanel ui:field="options" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Options to modify the plot will appear here."/></m:MaterialPanel>
-                            </m:MaterialCollapsibleBody>
-                        </m:MaterialCollapsibleItem>
-                    </m:MaterialCollapsible>
-                </m:MaterialColumn>
-                <las:ResultsPanel ui:field="panel1"></las:ResultsPanel>
-                <m:MaterialColumn  ui:field="panel2" paddingLeft="2" paddingRight="2" grid="s5" visibility="HIDDEN">
-                    <m:MaterialCollapsible>
-                        <m:MaterialCollapsibleItem>
-                            <m:MaterialCollapsibleHeader paddingLeft="2">
-                                <m:MaterialIcon iconType="SETTINGS" iconColor="BLUE" marginLeft="-4" marginRight="2" iconPosition="LEFT"></m:MaterialIcon>
-                                <m:MaterialIcon iconType="ADD" iconPosition="RIGHT"></m:MaterialIcon>
-                            </m:MaterialCollapsibleHeader>
-                            <m:MaterialCollapsibleBody>
-                                <m:MaterialLabel text="Fetching annotations..."></m:MaterialLabel>
-                            </m:MaterialCollapsibleBody>
-                        </m:MaterialCollapsibleItem>
-                    </m:MaterialCollapsible>
-                    <m:MaterialImage url="http://i.imgur.com/7JpG0F4.gif" />
-                </m:MaterialColumn>
+                        <m:MaterialLabel paddingBottom="16" paddingLeft="8" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Do Analysis"></m:MaterialLabel>
+                        <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="analysisSwitch" display="INLINE" paddingLeft="8" paddingRight="8" title="Activate a data reduction calculation." onLabel="Analysis On" offLabel="Analysis Off" enabled="true" value="false" />
+
+                        <m:MaterialButton paddingBottom="8" ui:field="analysisButton" text="Compute" activates="analysis" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="BLUE" textColor="WHITE"></m:MaterialButton>
+                        <m:MaterialDropDown ui:field="analysis" activator="analysis" backgroundColor="WHITE">
+                            <m:MaterialLink text="Average" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Minimum" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Maximum" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Sum" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Variance" backgroundColor="BLUE" textColor="WHITE"/>
+                        </m:MaterialDropDown>
+                        <m:MaterialButton ui:field="overButton" text="Over" activates="over" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="BLUE" textColor="WHITE"></m:MaterialButton>
+                        <m:MaterialDropDown ui:field="over" activator="over" backgroundColor="WHITE">
+                            <m:MaterialLink text="Area" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Longitude" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Latitude" backgroundColor="BLUE" textColor="WHITE"/>
+                            <m:MaterialLink text="Time" backgroundColor="BLUE" textColor="WHITE"/>
+                        </m:MaterialDropDown>
+                    </m:MaterialPanel>
+                </m:MaterialCollapsibleBody>
+            </m:MaterialCollapsibleItem>
+            <m:MaterialCollapsibleItem>
+                <m:MaterialCollapsibleHeader>
+                    <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Plot Types"></m:MaterialLink>
+                </m:MaterialCollapsibleHeader>
+                <m:MaterialCollapsibleBody padding="0">
+                    <m:MaterialPanel ui:field="products" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Pick a data set and variable and plot choices will appear here."/></m:MaterialPanel>
+                </m:MaterialCollapsibleBody>
+            </m:MaterialCollapsibleItem>
+            <m:MaterialCollapsibleItem>
+                <m:MaterialCollapsibleHeader>
+                    <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Plot Options"></m:MaterialLink>
+                </m:MaterialCollapsibleHeader>
+                <m:MaterialCollapsibleBody padding="0">
+                    <m:MaterialPanel ui:field="options" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Options to modify the plot will appear here."/></m:MaterialPanel>
+                </m:MaterialCollapsibleBody>
+            </m:MaterialCollapsibleItem>
+        </m:MaterialCollapsible>
+            </m:MaterialSideNavContent>
+        </m:MaterialSideNavPush>
+        <m:MaterialContainer paddingTop="60">
+            <m:MaterialRow ui:field="outputRow01">
+
+                <las:ResultsPanel ui:field="panel1" title="panel01"></las:ResultsPanel>
+                <las:ComparePanel ui:field="panel2" title="panel02" grid="s6" visibility="false"></las:ComparePanel>
+
             </m:MaterialRow>
-            <m:MaterialRow>
+            <m:MaterialRow ui:field="outputRow02">
                 <m:MaterialColumn  ui:field="panel3" grid="s5" offset="s2" paddingLeft="2" paddingRight="0" visibility="HIDDEN">
                     <m:MaterialCollapsible>
                         <m:MaterialCollapsibleItem>
@@ -142,9 +154,8 @@
                 </m:MaterialColumn>
             </m:MaterialRow>
         </m:MaterialContainer>
-        <ma:window.MaterialWindow ui:field="controlsWindow" title="Main Panel Controls" top="70" left="-1000" layoutPosition="ABSOLUTE" toolbarColor="BLUE">
 
-        </ma:window.MaterialWindow>
+
         <m:MaterialFooter  type="FIXED" backgroundColor="BLUE_DARKEN_1">
             <m:MaterialLink marginLeft="-400" paddingBottom="15" text="NOAA" href="http://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>
             <m:MaterialLabel display="INLINE" textColor="WHITE" text="|" paddingLeft="8" paddingRight="8"></m:MaterialLabel>

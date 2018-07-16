@@ -7,6 +7,8 @@ class Product {
     String geometry
     String view
     String data_view
+    String product_order
+    boolean hidden
 
     /*
       Use this to put related operations together (like line plots, or 2D slices)

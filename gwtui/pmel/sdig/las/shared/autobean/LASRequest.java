@@ -11,17 +11,22 @@ public class LASRequest {
 
     int targetPanel;
 
-    String xlo;
-    String xhi;
-    String ylo;
-    String yhi;
-    String zlo;
-    String zhi;
-    String tlo;
-    String thi;
+    AxesSet axesSet1 = new AxesSet();
+    AxesSet axesSet2 = new AxesSet();
+    // Will there ever be more than 4 unique axes sets?
+
     String operation;
     List<String> variableHashes;
     List<String> datasetHashes;
+    List<Analysis> analysis;
+
+    public List<Analysis> getAnalysis() {
+        return analysis;
+    }
+
+    public void setAnalysis(List<Analysis> analysis) {
+        this.analysis = analysis;
+    }
 
     List<RequestProperty> requestProperties;
 
@@ -39,70 +44,6 @@ public class LASRequest {
 
     public void setTargetPanel(int targetPanel) {
         this.targetPanel = targetPanel;
-    }
-
-    public String getXlo() {
-        return xlo;
-    }
-
-    public void setXlo(String xlo) {
-        this.xlo = xlo;
-    }
-
-    public String getXhi() {
-        return xhi;
-    }
-
-    public void setXhi(String xhi) {
-        this.xhi = xhi;
-    }
-
-    public String getYlo() {
-        return ylo;
-    }
-
-    public void setYlo(String ylo) {
-        this.ylo = ylo;
-    }
-
-    public String getYhi() {
-        return yhi;
-    }
-
-    public void setYhi(String yhi) {
-        this.yhi = yhi;
-    }
-
-    public String getZlo() {
-        return zlo;
-    }
-
-    public void setZlo(String zlo) {
-        this.zlo = zlo;
-    }
-
-    public String getZhi() {
-        return zhi;
-    }
-
-    public void setZhi(String zhi) {
-        this.zhi = zhi;
-    }
-
-    public String getTlo() {
-        return tlo;
-    }
-
-    public void setTlo(String tlo) {
-        this.tlo = tlo;
-    }
-
-    public String getThi() {
-        return thi;
-    }
-
-    public void setThi(String thi) {
-        this.thi = thi;
     }
 
     public String getOperation() {
@@ -135,6 +76,22 @@ public class LASRequest {
 
     public void setRequestProperties(List<RequestProperty> requestProperties) {
         this.requestProperties = requestProperties;
+    }
+
+    public AxesSet getAxesSet1() {
+        return axesSet1;
+    }
+
+    public void setAxesSet1(AxesSet axesSet1) {
+        this.axesSet1 = axesSet1;
+    }
+
+    public AxesSet getAxesSet2() {
+        return axesSet2;
+    }
+
+    public void setAxesSet2(AxesSet axesSet2) {
+        this.axesSet2 = axesSet2;
     }
 }
 

@@ -11,6 +11,7 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
+import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.ui.MaterialButton;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
@@ -28,9 +29,12 @@ import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
+import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Annotation;
 import pmel.sdig.las.shared.autobean.AnnotationGroup;
+import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.LASRequest;
+import pmel.sdig.las.shared.autobean.Variable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -66,7 +70,7 @@ public class ResultsPanel extends Composite {
     @UiField
     MaterialCollapsible annotationsCollapse;
 
-
+    int index;
 
     interface ResultsPanelUiBinder extends UiBinder<MaterialColumn, ResultsPanel> {
     }
@@ -75,26 +79,11 @@ public class ResultsPanel extends Composite {
 
     public ResultsPanel() {
         initWidget(ourUiBinder.createAndBindUi(this));
-//        eventBus.addHandler(ClickEvent.getType(), new ClickHandler() {
-//
-//            @Override
-//            public void onClick(ClickEvent event) {
-//                if ( event.getSource() instanceof Button ) {
-//                    if ( ((Button) event.getSource()).getTitle().equals("Hide/Show Annotations")) {
-//                        Button at = (Button) event.getSource();
-//                        if ( at.getIcon().equals(IconType.CARET_DOWN) ) {
-//                            at.setIcon(IconType.CARET_RIGHT);
-//                            annotationsPanel.setVisible(false);
-//                        } else if (at.getIcon().equals(IconType.CARET_RIGHT) ) {
-//                            at.setIcon(IconType.CARET_DOWN);
-//                            annotationsPanel.setVisible(true);
-//                        }
-//                    }
-//                }
-//            }
-//        });
     }
 
+    public void setVisibility(boolean visibility) {
+        this.setVisible(visibility);
+    }
     public void clearAnnotations() {
         annotationPanel.clear();
     }
@@ -103,7 +92,7 @@ public class ResultsPanel extends Composite {
     }
     public void setState(State state) {
         outputPanel.setState(state);
-        List<AnnotationGroup> groups = state.getPanelState(1).getProductResults().getAnnotationGroups();
+        List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getProductResults().getAnnotationGroups();
         annotationPanel.clear();
         for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
             AnnotationGroup ag = gIt.next();
@@ -125,7 +114,21 @@ public class ResultsPanel extends Composite {
     public Div getChart() { return chart; }
 
     public void addBreadcrumb(Breadcrumb b) {
-        breadcrumbs.add(b);
+
+        int index = getBreadcrumbs().size();
+
+        if ( index > 0 ) {
+            Breadcrumb tail = (Breadcrumb) getBreadcrumbs().get(index - 1);
+            Object tailObject = tail.getSelected();
+            if ( tailObject instanceof Variable) {
+                removeBreadcrumb(tail);
+                breadcrumbs.add(b);
+            } else {
+                breadcrumbs.add(b);
+            }
+        } else {
+            breadcrumbs.add(b);
+        }
     }
 
     public void removeBreadcrumb(Breadcrumb tail) {
@@ -155,7 +158,9 @@ public class ResultsPanel extends Composite {
     public void scale() {
         outputPanel.scale();
     }
-
+    public void scale(int navWidth) {
+        outputPanel.scale(navWidth);
+    }
 
 
     public void setLayoutPosition(Style.Position postion) {
@@ -166,5 +171,8 @@ public class ResultsPanel extends Composite {
     }
     public void setTop(double top) {
         panel.setTop(top);
+    }
+    public void setIndex(int index) {
+        this.index = index;
     }
 }

@@ -3,9 +3,27 @@ package pmel.sdig.las
 import grails.transaction.Transactional
 import pmel.sdig.las.MapScale
 
-@Transactional
 class ProductService {
 
+    List<Product> findProductsByInterval(String grid, String intervals) {
+        List<String> combos = ConfigController.combo(intervals);
+
+        def products = new ArrayList<Product>();
+
+        // TODO handle the data view for other geometries.
+        // For grids the view and data view are the same.
+        combos.each {view ->
+            List<Product> productsByGeoAndView = Product.findAllByGeometryAndViewAndHidden(grid, view, false)
+            log.debug("Checking view + "+view)
+            if ( productsByGeoAndView ) {
+                productsByGeoAndView.each {product ->
+                    products.add(product)
+                }
+            }
+        }
+        products.sort{it.product_order}
+        products
+    }
     def makeAnnotations(String filename) {
 
         List<AnnotationGroup> annotationGroups = new ArrayList<AnnotationGroup>();
@@ -291,4 +309,5 @@ class ProductService {
         mapScaleInstance
 
     }
+
 }

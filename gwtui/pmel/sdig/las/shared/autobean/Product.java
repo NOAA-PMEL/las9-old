@@ -13,6 +13,7 @@ public class Product {
     String view;
     String data_view;
     String ui_group;
+    String product_order;
     List<Operation> operations;
 
     public String getName() {
@@ -71,6 +72,12 @@ public class Product {
         this.operations = operations;
     }
 
+    public String getProduct_order() {
+        return this.product_order;
+    }
+    public void setProduct_order(String product_order) {
+        this.product_order = product_order;
+    }
     public boolean isClientPlot() {
         for (int i = 0; i < operations.size(); i++) {
             if ( operations.get(i).getService_action().equals("client_plot") ) {

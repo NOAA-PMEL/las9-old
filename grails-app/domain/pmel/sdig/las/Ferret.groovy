@@ -20,6 +20,9 @@ class Ferret {
         // Whether the configuration has been tested and produced a plot.
         boolean tested
 
+        // Time limit, the maximum number of milliseconds a Ferret process will be allowed to run, default value 5 minutes
+        long productServerTimeout = 1000 * 60 * 5;
+
         // All FER_ and other necessary environment variables
         static hasOne = [ferretEnvironment: FerretEnvironment]
 

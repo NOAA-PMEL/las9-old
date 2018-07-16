@@ -9,6 +9,7 @@ public class Variable implements Comparable {
 	String name;
 	String title;
 	String hash;
+	String intervals;
 	String geometry;
 	String units;
 	Dataset dataset;
@@ -104,7 +105,15 @@ public class Variable implements Comparable {
 		this.geoAxisY = geoAxisY;
 	}
 
-	public VerticalAxis getVerticalAxis() {
+    public String getIntervals() {
+        return intervals;
+    }
+
+    public void setIntervals(String intervals) {
+        this.intervals = intervals;
+    }
+
+    public VerticalAxis getVerticalAxis() {
 		return verticalAxis;
 	}
 
@@ -145,4 +154,5 @@ public class Variable implements Comparable {
 			return 0;
 		}
 	}
+
 }

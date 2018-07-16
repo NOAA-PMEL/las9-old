@@ -15,9 +15,10 @@ public class Constants {
     public static final String productCreate = base + "product/make";
     public static final String erddapDataRequest = base + "product/erddapDataRequest";
     public static final String datatable = base + "product/datatable";
+    public static final String productsByInterval = base + "config/productsByInterval";
 
-//    public final static int navWidth = 360;
-    public final static int navWidth = 500;
+    public final static int navWidth = 400;
+    public final static int imageBorderFactor = 200;
 
 
     public static final int rndRedColor = 244;

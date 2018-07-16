@@ -2,22 +2,18 @@ package pmel.sdig.las
 
 class LASRequest {
 
-    String xlo
-    String xhi
-    String ylo
-    String yhi
-    String zlo
-    String zhi
-    String tlo
-    String thi
+    AxesSet axesSet1
+    AxesSet axesSet2
+
     String operation
     int targetPanel;
 
-    static hasMany = [requestProperties: RequestProperty, datasetHashes: String, variableHashes: String]
+    static hasMany = [requestProperties: RequestProperty, datasetHashes: String, variableHashes: String, analysis: Analysis]
 
     List variableHashes
     List datasetHashes
     List requestProperties;
+    List analysis;
 
     static constraints = {
         targetPanel(nullable: true)

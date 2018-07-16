@@ -1,9 +1,10 @@
 ---
 server:
-    port: 8989
+    port: 8282
     contextPath: /las
 ---
 grails:
+    reload: true
     resources:
         pattern: '/**'
     profile: web

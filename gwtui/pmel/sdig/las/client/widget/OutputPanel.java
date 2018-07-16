@@ -88,7 +88,7 @@ public class OutputPanel extends AbsolutePanel {
 
     boolean draw = false;
 
-    State state;
+    State state = new State();
 
     public OutputPanel() {
         super();
@@ -98,6 +98,7 @@ public class OutputPanel extends AbsolutePanel {
         add(drawingCanvas, 0, 0);
         imageCanvasContext = imageCanvas.getContext2d();
         drawingCanvasContext = drawingCanvas.getContext2d();
+        state.setPanelCount(1);
         // Don't make it fixed so the annotations will push it down.
 //        addStyleName("output");
 
@@ -105,22 +106,20 @@ public class OutputPanel extends AbsolutePanel {
     public void scale() {
         // Decide the image scale based on the available width
 
-        scale(525);
+        scale(Constants.navWidth);
 
-    }
-    public void setPanelCount(int count) {
-        state.setPanelCount(count);
     }
     public void scale(int navWidth) {
         // Decide the image scale based on the available width
 
-        int w = Window.getClientWidth() - navWidth;
+        int w = Window.getClientWidth() - (navWidth + Constants.imageBorderFactor) ;
 
-        if ( state.getPanelCount() == 1 ) {
+        if (state.getPanelCount() == 1) {
             imageScaleRatio = 1.0d;
-        } else if ( state.getPanelCount() > 1 ) {
-            w = w/2;
+        } else if (state.getPanelCount() > 1) {
+            w = w / 2;
         }
+
 
         if ( w < x_plot_size ) {
             double x = Double.valueOf(x_plot_size);
@@ -139,7 +138,7 @@ public class OutputPanel extends AbsolutePanel {
 
         this.state = state;
 
-        PanelState myState = state.getPanelState(1);
+        PanelState myState = state.getPanelState(this.getTitle());
 
         // Set up from map scale.
 
@@ -391,81 +390,86 @@ public class OutputPanel extends AbsolutePanel {
     private ImageData scaleImage(Image image, double scaleToRatio) {
         Canvas canvasTmp = Canvas.createIfSupported();
         Context2d context = canvasTmp.getContext2d();
-
-        int imageHeight = image.getHeight();
-
-        double ch = (imageHeight * scaleToRatio);
-        int imageWidth = image.getWidth();
-
-        double cw = (imageWidth * scaleToRatio);
-
-        canvasTmp.setCoordinateSpaceHeight((int) ch);
-        canvasTmp.setCoordinateSpaceWidth((int) cw);
-
-        // TODO: make a temp imageElement?
-        ImageElement imageElement = ImageElement.as(image.getElement());
-
-        // s = source
-        // d = destination
-        double sx = 0;
-        double sy = 0;
-        int imageElementWidth = imageElement.getWidth();
-        if (imageElementWidth <= 0) {
-            imageElementWidth = imageWidth;
-        }
-        double sw = imageElementWidth;
-        int imageElementHeight = imageElement.getHeight();
-        if (imageElementHeight <= 0) {
-            imageElementHeight = imageHeight;
-        }
-        double sh = imageElementHeight;
-
-        double dx = 0;
-        double dy = 0;
-        double dw = imageElementWidth;
-        double dh = imageElementHeight;
-
-        // tell it to scale image
-        context.scale(scaleToRatio, scaleToRatio);
-
-        // draw image to canvas
-        context.drawImage(imageElement, sx, sy, sw, sh, dx, dy, dw, dh);
-
-        // get image data
-        double w = dw * scaleToRatio;
-        double h = dh * scaleToRatio;
         ImageData imageData = null;
-        try {
-            imageData = context.getImageData(0, 0, w, h);
-        } catch (Exception e) {
-            // no image data. we'll try againg...
-            String b = e.getLocalizedMessage();
+        if ( image != null ) {
+            int imageHeight = image.getHeight();
+
+            double ch = (imageHeight * scaleToRatio);
+            int imageWidth = image.getWidth();
+
+            double cw = (imageWidth * scaleToRatio);
+
+            canvasTmp.setCoordinateSpaceHeight((int) ch);
+            canvasTmp.setCoordinateSpaceWidth((int) cw);
+
+            // TODO: make a temp imageElement?
+            ImageElement imageElement = ImageElement.as(image.getElement());
+
+            // s = source
+            // d = destination
+            double sx = 0;
+            double sy = 0;
+            int imageElementWidth = imageElement.getWidth();
+            if (imageElementWidth <= 0) {
+                imageElementWidth = imageWidth;
+            }
+            double sw = imageElementWidth;
+            int imageElementHeight = imageElement.getHeight();
+            if (imageElementHeight <= 0) {
+                imageElementHeight = imageHeight;
+            }
+            double sh = imageElementHeight;
+
+            double dx = 0;
+            double dy = 0;
+            double dw = imageElementWidth;
+            double dh = imageElementHeight;
+
+            // tell it to scale image
+            context.scale(scaleToRatio, scaleToRatio);
+
+            // draw image to canvas
+            context.drawImage(imageElement, sx, sy, sw, sh, dx, dy, dw, dh);
+
+            // get image data
+            double w = dw * scaleToRatio;
+            double h = dh * scaleToRatio;
+
+            try {
+                imageData = context.getImageData(0, 0, w, h);
+            } catch (Exception e) {
+                // no image data. we'll try againg...
+                String b = e.getLocalizedMessage();
+            }
+
+            int ht = (int) h + 10;
+            int wt = (int) w + 10;
+
+            // Clear the div, clear the drawing canvas then reinsert.  Otherwise, ghosts of the previous image appear.
+            clear();
+
+            imageCanvasContext.clearRect(0, 0, imageCanvas.getCoordinateSpaceWidth(), imageCanvas.getCoordinateSpaceHeight());
+
+            add(imageCanvas, 0, 0);
+            add(drawingCanvas, 0, 0);
+
+            imageCanvas.setCoordinateSpaceHeight(ht);
+            imageCanvas.setCoordinateSpaceWidth(wt);
+
+            drawingCanvas.setCoordinateSpaceHeight(ht);
+            drawingCanvas.setCoordinateSpaceWidth(wt);
+
+            setSize(wt + "px", ht + "px");
         }
+            return imageData;
 
-        int ht = (int) h + 10;
-        int wt = (int) w + 10;
-
-        // Clear the div, clear the drawing canvas then reinsert.  Otherwise, ghosts of the previous image appear.
-        clear();
-
-        imageCanvasContext.clearRect(0, 0, imageCanvas.getCoordinateSpaceWidth(), imageCanvas.getCoordinateSpaceHeight());
-
-        add(imageCanvas, 0, 0);
-        add(drawingCanvas, 0, 0);
-
-        imageCanvas.setCoordinateSpaceHeight(ht);
-        imageCanvas.setCoordinateSpaceWidth(wt);
-
-        drawingCanvas.setCoordinateSpaceHeight(ht);
-        drawingCanvas.setCoordinateSpaceWidth(wt);
-
-        setSize(wt + "px", ht + "px");
-
-        return imageData;
     }
     public void addMouse(UI.Mouse m) {
         mouseMoves.add(m);
     }
 
+    public State getState() {
+        return state;
+    }
 
 }

@@ -54,7 +54,7 @@ import pmel.sdig.las.shared.autobean.TimeAxis;
  * @author rhs
  *
  */
-public class DateTimeWidget extends MaterialContainer {
+public class DateTimeWidget extends MaterialPanel {
 
     private DateTimeFormatter longForm;
     private DateTimeFormatter mediumForm;
@@ -949,7 +949,6 @@ public class DateTimeWidget extends MaterialContainer {
             }
         }
         String l = getISODateLo();
-        Window.alert("lo="+l);
     }
     public void setHi(String thi) {
 
@@ -990,7 +989,6 @@ public class DateTimeWidget extends MaterialContainer {
                     }
                 }
             }
-            Window.alert("hi year="+hi_year.getSelectedValue());
             if ( hasMonth ) {
                 String month = monthFormat.print(hi.getMillis());
                 int monthIndex = hi_month.getSelectedIndex();
@@ -1005,7 +1003,6 @@ public class DateTimeWidget extends MaterialContainer {
                 }
 
             }
-            Window.alert("hi month="+hi_month.getSelectedValue());
             if ( hasDay ) {
                 String day = GeoUtil.format_two(hi.getDayOfMonth());
                 int dayIndex = hi_day.getSelectedIndex();
@@ -1019,7 +1016,6 @@ public class DateTimeWidget extends MaterialContainer {
                     }
                 }
             }
-            Window.alert("hi day="+hi_day.getSelectedValue());
             if ( hasHour ) {
                 int hour = hi.getHourOfDay();
                 int min = hi.getMinuteOfHour();
@@ -1058,9 +1054,7 @@ public class DateTimeWidget extends MaterialContainer {
             }
             // The new value is set.  Check the range (even it it's not visible).
             if ( hasYear ) {
-                Window.alert(" pre range yearhi year="+hi_year.getSelectedValue());
                 checkRangeStartYear();
-                Window.alert("post range year hi year="+hi_year.getSelectedValue());
             } else if ( hasMonth ) {
                 checkRangeStartMonth();
             } else if ( hasDay ) {
@@ -1071,9 +1065,7 @@ public class DateTimeWidget extends MaterialContainer {
                 checkRangeStartMinute();
             }
         }
-        Window.alert("post all range checks:  year hi year="+hi_year.getSelectedValue());
         String h = getISODateHi();
-        Window.alert("hi="+h);
     }
 
     private void loadAndSetMonthDayHour(MaterialListBox month_list, MaterialListBox day_list, HourListBox hour_list, MaterialListBox minute_list, int year, int month, int day, int hour, int min) {

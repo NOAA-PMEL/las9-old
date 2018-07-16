@@ -4,6 +4,7 @@ import grails.converters.JSON
 
 class ConfigController {
 
+    ProductService productService;
     /**
      * A config is the set of Products and Regions that apply to a variable.
      *
@@ -27,21 +28,9 @@ class ConfigController {
         def grid = v.geometry;
         def intervals = v.intervals;
 
-        List<String> combos = ConfigController.combo(intervals);
+        def products = productService.findProductsByInterval(grid, intervals)
 
-        def products = new ArrayList<Product>();
 
-        // TODO handle the data view for other geometries.
-        // For grids the view and data view are the same.
-        combos.each {view ->
-            List<Product> productsByGeoAndView = Product.findAllByGeometryAndView(grid, view)
-            log.debug("Checking view + "+view)
-            if ( productsByGeoAndView ) {
-                productsByGeoAndView.each {product ->
-                    products.add(product)
-                }
-            }
-        }
 
         def regions = new ArrayList<Region>()
         regions.addAll(Region.findAll())
@@ -86,4 +75,13 @@ class ConfigController {
         return comboList;
     }
 
+
+    def productsByInterval (){
+        String intervals = params.intervals
+        String grid = params.grid
+        List<Product> products = productService.findProductsByInterval(grid, intervals)
+        JSON.use("deep") {
+            render products as JSON
+        }
+    }
 }

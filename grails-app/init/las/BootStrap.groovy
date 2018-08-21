@@ -23,17 +23,15 @@ class BootStrap {
         Ferret ferret = Ferret.first()
         FerretEnvironment ferretEnvironment = FerretEnvironment.first()
 
-        if ( !ferret && !ferretEnvironment ) {
+        if ( !ferret || !ferretEnvironment ) {
             initializationService.initEnvironment()
         }
 
-        JSON.use("deep") {
-            def ferretJ = Ferret.first() as JSON
-            new File("ferret.json").write(ferretJ.toString(true))
-        }
+//        JSON.use("deep") {
+//            def ferretJ = Ferret.first() as JSON
+//            new File("ferret.json").write(ferretJ.toString(true))
+//        }
 
-
-        initializationService.createOptions()
 
         initializationService.createProducts()
 

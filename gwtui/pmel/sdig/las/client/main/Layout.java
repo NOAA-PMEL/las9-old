@@ -56,6 +56,7 @@ import pmel.sdig.las.client.widget.ProductButton;
 import pmel.sdig.las.client.widget.ProductButtonList;
 import pmel.sdig.las.client.widget.ResultsPanel;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
+import pmel.sdig.las.client.widget.YesNoOptionsWidget;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
 import pmel.sdig.las.shared.autobean.Dataset;
@@ -140,6 +141,54 @@ public class Layout extends Composite {
 
     int kern = 15;
 
+
+
+    interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
+    private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
+
+    public Layout() {
+        root = ourUiBinder.createAndBindUi(this);
+        initWidget(root);
+        panel2.setIndex(2);
+        analysisSwitch.addValueChangeHandler(analysisSwitchChange);
+        outputRow01.setPaddingLeft(Constants.navWidth);
+        outputRow02.setPaddingLeft(Constants.navWidth);
+        sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
+            @Override
+            public void onSideNavOpened(SideNavOpenedEvent sideNavOpenedEvent) {
+                outputRow01.setPaddingLeft(Constants.navWidth);
+                outputRow02.setPaddingLeft(Constants.navWidth);
+                scale(Constants.navWidth);
+            }
+        });
+        sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
+            @Override
+            public void onSideNavClosed(SideNavClosedEvent sideNavOpenedEvent) {
+                outputRow01.setPaddingLeft(4);
+                outputRow02.setPaddingLeft(4);
+                scale(8);
+            }
+        });
+    }
+    public void scale(int navWidth) {
+        State state = panel1.getOutputPanel().getState();
+        int panelCount = 1;
+        if ( state != null ) {
+            panelCount = state.getPanelCount();
+        }
+        if ( panelCount == 1 ) {
+            panel1.scale(navWidth);;
+        } else if ( panelCount == 2 ) {
+            panel1.scale(navWidth);
+            panel2.scale(navWidth);
+        } else if ( panelCount == 4 ) {
+            panel1.scale(navWidth);
+            panel2.scale(navWidth);
+            // TODO the other 4 panels
+//                    panel3.scale(navWidth);
+//                    panel4.scale(navWidth);
+        }
+    }
     public Analysis getAnalysis() {
         if ( analysisSwitch.getValue() ) {
             Analysis analysis = new Analysis();
@@ -189,53 +238,6 @@ public class Layout extends Composite {
             return null;
         }
     }
-
-    interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
-    private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
-
-    public Layout() {
-        root = ourUiBinder.createAndBindUi(this);
-        initWidget(root);
-        panel2.setIndex(2);
-        analysisSwitch.addValueChangeHandler(analysisSwitchChange);
-        outputRow01.setPaddingLeft(Constants.navWidth);
-        outputRow02.setPaddingLeft(Constants.navWidth);
-        sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
-            @Override
-            public void onSideNavOpened(SideNavOpenedEvent sideNavOpenedEvent) {
-                outputRow01.setPaddingLeft(Constants.navWidth);
-                outputRow02.setPaddingLeft(Constants.navWidth);
-                scale(Constants.navWidth);
-            }
-        });
-        sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
-            @Override
-            public void onSideNavClosed(SideNavClosedEvent sideNavOpenedEvent) {
-                outputRow01.setPaddingLeft(4);
-                outputRow02.setPaddingLeft(4);
-                scale(8);
-            }
-        });
-    }
-    public void scale(int navWidth) {
-        State state = panel1.getOutputPanel().getState();
-        int panelCount = 1;
-        if ( state != null ) {
-            panelCount = state.getPanelCount();
-        }
-        if ( panelCount == 1 ) {
-            panel1.scale(navWidth);;
-        } else if ( panelCount == 2 ) {
-            panel1.scale(navWidth);
-            panel2.scale(navWidth);
-        } else if ( panelCount == 4 ) {
-            panel1.scale(navWidth);
-            panel2.scale(navWidth);
-            // TODO the other 4 panels
-//                    panel3.scale(navWidth);
-//                    panel4.scale(navWidth);
-        }
-    }
     public void setBrand(String title) {
         brand.setText(title);
     }
@@ -246,7 +248,7 @@ public class Layout extends Composite {
     public void addMap(OLMapWidget map) {
 //        mapPanelBody.add(map);
     }
-//    public void showMap() {
+    //    public void showMap() {
 //        mapCollapse.setIn(true);
 //    }
     public void showDateTime() {
@@ -269,7 +271,47 @@ public class Layout extends Composite {
         datasets.add(dataItem);
 
     }
-//
+
+    public void toDatasetChecks() {
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            Widget w = datasets.getWidget(i);
+            if ( w instanceof DataItem ) {
+                DataItem d = (DataItem) w;
+                d.toCheck();
+            }
+
+        }
+    }
+    public void toDatasetRadios() {
+        boolean checked = false;
+        int index = 0;
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            Widget w = datasets.getWidget(i);
+            if ( w instanceof DataItem ) {
+                DataItem d = (DataItem) w;
+                if (d.isChecked()) {
+                    if ( !checked ) {
+                        index = i;
+                        checked = true;
+                    }
+                }
+                d.toRadio();
+            }
+        }
+        DataItem s = (DataItem) datasets.getWidget(index);
+        s.setRadioSelected();
+    }
+    public Variable getSelectedVariable() {
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            DataItem di = (DataItem) datasets.getWidget(i);
+            Object s = di.getSelection();
+            if ( s instanceof Variable && di.getRadioSelected() ) {
+                return (Variable) s;
+            }
+        }
+        return null;
+    }
+    //
     public void addBreadcrumb(Breadcrumb breadcrumb, int panel) {
         if ( panel == 1 ) {
             panel1.addBreadcrumb(breadcrumb);
@@ -381,6 +423,9 @@ public class Layout extends Composite {
             } else if ( w instanceof TextOptionsWidget ) {
                 TextOptionsWidget to = (TextOptionsWidget) w;
                 properties.addAll(to.getOptions());
+            } else if ( w instanceof YesNoOptionsWidget ) {
+                YesNoOptionsWidget yno = (YesNoOptionsWidget) w;
+                properties.addAll(yno.getOptions());
             }
         }
         return properties;
@@ -394,6 +439,11 @@ public class Layout extends Composite {
     @UiHandler("plotsDropdown")
     void onDropDown(SelectionEvent<Widget> selection) {
         String title = ((MaterialLink)selection.getSelectedItem()).getText();
+        int count = setPanels(title);
+        eventBus.fireEventFromSource(new PanelCount(count), selection);
+    }
+
+    public int setPanels(String title) {
         plotsButton.setText(title);
         int count = 1;
         if ( title.contains("1") ) {
@@ -421,10 +471,8 @@ public class Layout extends Composite {
             panel3.setVisibility(Style.Visibility.VISIBLE);
             panel4.setVisibility(Style.Visibility.VISIBLE);
         }
-
-        eventBus.fireEventFromSource(new PanelCount(count), selection);
+        return count;
     }
-
     @UiHandler("analysis")
     void onAnalysisDropDown(SelectionEvent<Widget> selection) {
         String title = ((MaterialLink)selection.getSelectedItem()).getText();

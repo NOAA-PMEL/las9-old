@@ -14,6 +14,8 @@ public class Product {
     String data_view;
     String ui_group;
     String product_order;
+    int minArgs;
+    int maxArgs;
     List<Operation> operations;
 
     public String getName() {
@@ -85,6 +87,22 @@ public class Product {
             }
         }
         return false;
+    }
+
+    public int getMinArgs() {
+        return minArgs;
+    }
+
+    public void setMinArgs(int minArgs) {
+        this.minArgs = minArgs;
+    }
+
+    public int getMaxArgs() {
+        return maxArgs;
+    }
+
+    public void setMaxArgs(int maxArgs) {
+        this.maxArgs = maxArgs;
     }
 }
 

@@ -30,6 +30,13 @@ class ProductController {
     def make() {
 
         Ferret ferret = Ferret.first();
+        // TODO are we really going to have multiple sites? Each request will have to ID it's site. Easy enough...
+        Site site = Site.first()
+        def base = site.getBase()
+        if ( !base ) {
+            base = request.requestURL.toString()
+            base = base.substring(0, base.indexOf("product/make"))
+        }
 
         def requestJSON = request.JSON
 
@@ -39,8 +46,7 @@ class ProductController {
 
         def lasRequest = new LASRequest(requestJSON);
 
-        Dataset dataset = Dataset.findByHash(lasRequest.getDatasetHashes().get(0))
-        Variable variable = dataset.variables.find { Variable v -> v.hash == lasRequest.getVariableHashes().get(0) }
+
         Product product = Product.findByName(lasRequest.operation)
         String view = product.getView()
         List<RequestProperty> properties = lasRequest.getRequestProperties();
@@ -248,101 +254,130 @@ class ProductController {
         // TODO for each data set hash and variasble hash, print the data symbols
         // TODO same with properties
 
-        // Apply the analysis to the variable URL
-        String variable_url = variable.getUrl()
-        String variable_title = variable.getTitle()
-        String variable_name = variable.getName()
-        String varable_hash = variable.getHash()
-        String dataset_hash = dataset.getHash()
+        List<String> datasetHashes = lasRequest.getDatasetHashes()
+        List<String> variableHashes = lasRequest.getVariableHashes()
+        for (int h = 0; h < datasetHashes.size(); h++) {
 
-        def analysis_axes = ""
-        // TODO other variables?
-        if (analysis != null && analysis.get(0) != null) {
-
-            Analysis a = analysis.get(0)
-
-            String type = a.getTransformation();
-
-            // Make dataset specific directory
-            String dir = ferret.tempDir + File.separator + "dynamic" + File.separator + dataset_hash + File.separator + varable_hash
-            File ftds_dir = new File(dir)
-            if (!ftds_dir.exists()) {
-                ftds_dir.mkdirs()
-            }
+            // Apply the analysis to the variable URL
+            Dataset dataset = Dataset.findByHash(datasetHashes.get(h))
+            Variable variable = dataset.variables.find { Variable v -> v.hash == variableHashes.get(h) }
+            String variable_url = variable.getUrl()
+            String variable_name = variable.getName()
+            String variable_title = variable.getTitle()
+            String varable_hash = variable.getHash()
+            String dataset_hash = dataset.getHash()
 
 
-            analysis_axes = a.getAxes()
-            List<AnalysisAxis> axes = a.getAnalysisAxes()
+            def analysis_axes = new ArrayList<String>();
+            // TODO other variables?
+            // TODO for now only analysis on first variable, but don't really know what this should look like
+            if (h == 0 && analysis != null && analysis.get(h) != null) {
 
+                Analysis a = analysis.get(i)
 
-            StringBuffer ftds_jnl = new StringBuffer()
+                String type = a.getTransformation();
 
-            ftds_jnl.append("use \"" + variable_url + "\";\n");
-
-            for (int i = 0; i < axes.size(); i++) {
-                AnalysisAxis ax = axes.get(i)
-                String axisType = ax.getType()
-                String hi = ax.getHi()
-                String lo = ax.getLo()
-                String axisString = axisType + "="
-                if (axisType.equals("t")) {
-                    axisString = axisString + "\"" + lo + "\":\"" + hi + "\"";
-                } else {
-                    axisString = axisString + "" + lo + ":" + hi + "";
+                // Make dataset specific directory
+                String dir = ferret.tempDir + File.separator + "dynamic" + File.separator + dataset_hash + File.separator + varable_hash
+                File ftds_dir = new File(dir)
+                if (!ftds_dir.exists()) {
+                    ftds_dir.mkdirs()
                 }
-                ftds_jnl.append("let/d=1 " + variable.getName() + "_transformed = " + variable.getName() + "[d=1," + axisString + "@" + type + "];\n")
-                variable_title = variable.getName() + "[d=1," + axisString.replace("\"", "") + "@" + type + "]"
-                variable_name = variable.getName() + "_transformed"
+
+
+                analysis_axes = a.getAxes()
+                List<AnalysisAxis> axes = a.getAnalysisAxes()
+
+
+                StringBuffer ftds_jnl = new StringBuffer()
+
+                ftds_jnl.append("use \"" + variable_url + "\";\n");
+
+                for (int i = 0; i < axes.size(); i++) {
+                    AnalysisAxis ax = axes.get(i)
+                    String axisType = ax.getType()
+                    String hi = ax.getHi()
+                    String lo = ax.getLo()
+                    String axisString = axisType + "="
+                    if (axisType.equals("t")) {
+                        axisString = axisString + "\"" + lo + "\":\"" + hi + "\"";
+                    } else {
+                        axisString = axisString + "" + lo + ":" + hi + "";
+                    }
+                    ftds_jnl.append("let/d=1 " + variable.getName() + "_transformed = " + variable.getName() + "[d=1," + axisString + "@" + type + "];\n")
+                    variable_title = variable.getName() + "[d=1," + axisString.replace("\"", "") + "@" + type + "]"
+                    variable_name = variable.getName() + "_transformed"
+
+                }
+                ftds_jnl.append("SET ATT/LIKE=" + variable.getName() + " " + variable.getName() + "_transformed ;\n")
+
+                File sp = File.createTempFile("ftds_" + a.hash() + "_", ".jnl", ftds_dir);
+                sp.withWriter { out ->
+                    out.writeLine(ftds_jnl.toString().stripIndent())
+                }
+
+                // TODO Assign the new title
+                // TODO Redefine the URL that will be used, data_set_hash/variable_hash/jnl_hash.nc
+
+                variable_url = base + "thredds/dodsC/las/" + dataset_hash + "/" + varable_hash + "/" + sp.getName()
+
+
 
             }
-            ftds_jnl.append("SET ATT/LIKE=" + variable.getName() + " " + variable.getName() + "_transformed ;\n")
 
-            File sp = File.createTempFile("ftds_" + a.hash() + "_", ".jnl", ftds_dir);
-            sp.withWriter { out ->
-                out.writeLine(ftds_jnl.toString().stripIndent())
-            }
+            // TODO merge variable, dataset and global properties
 
-            // TODO Assign the new title
-            // TODO Redefine the URL that will be used, data_set_hash/variable_hash/jnl_hash.nc
-            //variable_url = "http://bilbo.weathertopconsulting.com:8482/las/thredds/dodsC/las/" + dataset_hash + "/" + varable_hash + "/" + sp.getName()
-            variable_url = "http://dunkel.pmel.noaa.gov:8920/las/thredds/dodsC/las/" + dataset_hash + "/" + varable_hash + "/" + sp.getName()
-
-
-        }
-
-
-        // TODO merge variable, dataset and global properties
-        jnl.append("DEFINE SYMBOL data_0_dataset_name = ${dataset.title}\n")
-        jnl.append("DEFINE SYMBOL data_0_dataset_url = ${variable_url}\n")
-        // TODO GRID vs regular
-        jnl.append("DEFINE SYMBOL data_0_grid_type = regular\n")
-        jnl.append("DEFINE SYMBOL data_0_name = ${variable_name}\n")
-        jnl.append("DEFINE SYMBOL data_0_region = region_0\n")
-        jnl.append("DEFINE SYMBOL data_0_title = ${variable_title}\n")
-        if (variable.units) jnl.append("DEFINE SYMBOL data_0_units = ${variable.units}\n")
-        jnl.append("DEFINE SYMBOL data_0_url = ${variable_url}\n")
-        jnl.append("DEFINE SYMBOL data_0_var = ${variable_name}\n")
-
-        if ( lasRequest.getDatasetHashes().size() == 2 ) {
-            Dataset d2 = Dataset.findByHash(lasRequest.getDatasetHashes().get(1))
-            Variable v2 = dataset.variables.find { Variable v -> v.hash == lasRequest.getVariableHashes().get(1) }
-            jnl.append("DEFINE SYMBOL data_1_dataset_name = ${d2.title}\n")
-            jnl.append("DEFINE SYMBOL data_1_dataset_url = ${v2.url}\n")
             // TODO GRID vs regular
-            jnl.append("DEFINE SYMBOL data_1_grid_type = regular\n")
-            jnl.append("DEFINE SYMBOL data_1_name = ${v2.name}\n")
-            jnl.append("DEFINE SYMBOL data_1_region = region_1\n")
-            jnl.append("DEFINE SYMBOL data_1_title = ${v2.title}\n")
-            if (variable.units) jnl.append("DEFINE SYMBOL data_0_units = ${v2.units}\n")
-            jnl.append("DEFINE SYMBOL data_1_url = ${v2.url}\n")
-            jnl.append("DEFINE SYMBOL data_1_var = ${v2.name}\n")
-        }
 
-        jnl.append("DEFINE SYMBOL data_count = ${lasRequest.datasetHashes.size()}\n")
+            jnl.append("DEFINE SYMBOL data_${h}_dataset_name = ${dataset.title}\n")
+            jnl.append("DEFINE SYMBOL data_${h}_dataset_url = ${variable_url}\n")
+            jnl.append("DEFINE SYMBOL data_${h}_grid_type = regular\n")
+            jnl.append("DEFINE SYMBOL data_${h}_name = ${variable_name}\n")
+            jnl.append("DEFINE SYMBOL data_${h}_region = region_0\n")
+            jnl.append("DEFINE SYMBOL data_${h}_title = ${variable_title}\n")
+            if (variable.units) jnl.append("DEFINE SYMBOL data_${h}_units = ${variable.units}\n")
+            jnl.append("DEFINE SYMBOL data_${h}_url = ${variable_url}\n")
+            jnl.append("DEFINE SYMBOL data_${h}_var = ${variable_name}\n")
+
+            if (!analysis_axes.contains("t")) {
+                jnl.append("DEFINE SYMBOL region_${h}_t_hi = ${lasRequest.getAxesSet1().getThi()}\n")
+                jnl.append("DEFINE SYMBOL region_${h}_t_lo = ${lasRequest.getAxesSet1().getTlo()}\n")
+            }
+            if (!analysis_axes.contains("x")) {
+                jnl.append("DEFINE SYMBOL region_${h}_x_hi = ${lasRequest.getAxesSet1().getXhi()}\n")
+                jnl.append("DEFINE SYMBOL region_${h}_x_lo = ${lasRequest.getAxesSet1().getXlo()}\n")
+            }
+            if ( !analysis_axes.contains("y") ) {
+                jnl.append("DEFINE SYMBOL region_${h}_y_hi = ${lasRequest.getAxesSet1().getYhi()}\n")
+                jnl.append("DEFINE SYMBOL region_${h}_y_lo = ${lasRequest.getAxesSet1().getYlo()}\n")
+            }
+            if ( !analysis_axes.contains("z") ) {
+                if (lasRequest.getAxesSet1().getZlo()) jnl.append("DEFINE SYMBOL region_${h}_z_lo = ${lasRequest.getAxesSet1().getZlo()}\n")
+                if (lasRequest.getAxesSet1().getZhi()) jnl.append("DEFINE SYMBOL region_${h}_z_hi = ${lasRequest.getAxesSet1().getZhi()}\n")
+            }
+
+            if ( lasRequest.getAxesSet2() != null ) {
+
+                if (lasRequest.getAxesSet2().getThi()) jnl.append("DEFINE SYMBOL region_1_t_hi = ${lasRequest.getAxesSet2().getThi()}\n")
+                if (lasRequest.getAxesSet2().getTlo()) jnl.append("DEFINE SYMBOL region_1_t_lo = ${lasRequest.getAxesSet2().getTlo()}\n")
+
+                if (lasRequest.getAxesSet2().getXhi()) jnl.append("DEFINE SYMBOL region_1_x_hi = ${lasRequest.getAxesSet2().getXhi()}\n")
+                if (lasRequest.getAxesSet2().getXlo()) jnl.append("DEFINE SYMBOL region_1_x_lo = ${lasRequest.getAxesSet2().getXlo()}\n")
+
+                if (lasRequest.getAxesSet2().getYhi()) jnl.append("DEFINE SYMBOL region_1_y_hi = ${lasRequest.getAxesSet2().getYhi()}\n")
+                if (lasRequest.getAxesSet2().getYlo()) jnl.append("DEFINE SYMBOL region_1_y_lo = ${lasRequest.getAxesSet2().getYlo()}\n")
+
+                if (lasRequest.getAxesSet2().getZlo()) jnl.append("DEFINE SYMBOL region_1_z_lo = ${lasRequest.getAxesSet2().getZlo()}\n")
+                if (lasRequest.getAxesSet2().getZhi()) jnl.append("DEFINE SYMBOL region_1_z_hi = ${lasRequest.getAxesSet2().getZhi()}\n")
+
+            }
+
+        }
+        jnl.append("DEFINE SYMBOL data_count = ${datasetHashes.size()}\n")
         jnl.append("DEFINE SYMBOL ferret_annotations = file\n")
-        jnl.append("DEFINE SYMBOL ferret_fill_type = fill\n")
-        jnl.append("DEFINE SYMBOL ferret_image_format = gif\n")
-        jnl.append("DEFINE SYMBOL ferret_land_type = shade\n")
+//        jnl.append("DEFINE SYMBOL ferret_fill_type = fill\n")
+//        jnl.append("DEFINE SYMBOL ferret_image_format = gif\n")
+//        jnl.append("DEFINE SYMBOL ferret_land_type = shade\n")
         jnl.append("DEFINE SYMBOL ferret_service_action = ${product.operations.get(0).service_action}\n")
         jnl.append("DEFINE SYMBOL ferret_size = 1.0\n")
         jnl.append("DEFINE SYMBOL ferret_view = "+view +"\n")
@@ -363,38 +398,6 @@ class ProductController {
         // TODO check the value for null before applying
 
 
-        if (!analysis_axes.contains("t")) {
-            jnl.append("DEFINE SYMBOL region_0_t_hi = ${lasRequest.getAxesSet1().getThi()}\n")
-            jnl.append("DEFINE SYMBOL region_0_t_lo = ${lasRequest.getAxesSet1().getTlo()}\n")
-        }
-        if (!analysis_axes.contains("x")) {
-            jnl.append("DEFINE SYMBOL region_0_x_hi = ${lasRequest.getAxesSet1().getXhi()}\n")
-            jnl.append("DEFINE SYMBOL region_0_x_lo = ${lasRequest.getAxesSet1().getXlo()}\n")
-        }
-        if ( !analysis_axes.contains("y") ) {
-            jnl.append("DEFINE SYMBOL region_0_y_hi = ${lasRequest.getAxesSet1().getYhi()}\n")
-            jnl.append("DEFINE SYMBOL region_0_y_lo = ${lasRequest.getAxesSet1().getYlo()}\n")
-        }
-        if ( !analysis_axes.contains("z") ) {
-            if (lasRequest.getAxesSet1().getZlo()) jnl.append("DEFINE SYMBOL region_0_z_lo = ${lasRequest.getAxesSet1().getZlo()}\n")
-            if (lasRequest.getAxesSet1().getZhi()) jnl.append("DEFINE SYMBOL region_0_z_hi = ${lasRequest.getAxesSet1().getZhi()}\n")
-        }
-
-        if ( lasRequest.getAxesSet2() != null ) {
-
-            if (lasRequest.getAxesSet2().getThi()) jnl.append("DEFINE SYMBOL region_1_t_hi = ${lasRequest.getAxesSet2().getThi()}\n")
-            if (lasRequest.getAxesSet2().getTlo()) jnl.append("DEFINE SYMBOL region_1_t_lo = ${lasRequest.getAxesSet2().getTlo()}\n")
-
-            if (lasRequest.getAxesSet2().getXhi()) jnl.append("DEFINE SYMBOL region_1_x_hi = ${lasRequest.getAxesSet2().getXhi()}\n")
-            if (lasRequest.getAxesSet2().getXlo()) jnl.append("DEFINE SYMBOL region_1_x_lo = ${lasRequest.getAxesSet2().getXlo()}\n")
-
-            if (lasRequest.getAxesSet2().getYhi()) jnl.append("DEFINE SYMBOL region_1_y_hi = ${lasRequest.getAxesSet2().getYhi()}\n")
-            if (lasRequest.getAxesSet2().getYlo()) jnl.append("DEFINE SYMBOL region_1_y_lo = ${lasRequest.getAxesSet2().getYlo()}\n")
-
-            if (lasRequest.getAxesSet2().getZlo()) jnl.append("DEFINE SYMBOL region_1_z_lo = ${lasRequest.getAxesSet2().getZlo()}\n")
-            if (lasRequest.getAxesSet2().getZhi()) jnl.append("DEFINE SYMBOL region_1_z_hi = ${lasRequest.getAxesSet2().getZhi()}\n")
-
-        }
 
 
         for (int i = 0; i < properties.size(); i++) {
@@ -443,7 +446,8 @@ class ProductController {
         def error = ferretResult["error"];
         if ( error ) {
             log.error(ferretResult["message"]);
-            return null
+            def errorMessage = [error: ferretResult["message"], targetPanel: lasRequest.getTargetPanel(),]
+            render errorMessage as JSON
         }
 
         def mapScaleResult = resultSet.results.find{Result result -> result.name == "map_scale"}

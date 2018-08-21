@@ -6,39 +6,51 @@ class ConfigController {
 
     ProductService productService;
     /**
-     * A config is the set of Products and Regions that apply to a variable.
+     * A config is the set of Products and Regions that apply to a geometry type and set of "intervals" or axes.
+     *
+     * For example, a rectangular grid with intervals of xyt has a set of products and regions not including any z-axis products.
      *
      *   The set of Products is defined by all the combinations of Product.geometry, Product.view and Product.data_view
      *
      *   Right now a data view is implied by the Product.geometry. For example, a profile map has a view of "xy" and a
      *   data_view of "xyzt".
+     *
+     *   We'll send all combinations back in a map with each geometry type and set of intervals named in a string of the form: type_xyzt
      */
     def json() {
 
         def id = params.id
 
-        Variable v = Variable.get(id)
-
-        Dataset parent = v.getDataset()
+        Dataset parent = Dataset.get(id)
         DatasetProperty p = parent.getDatasetProperties().find{it.name=="default"}
 
         //TODO use the default data set property to find operations if defined.
 
+        Map<String, Map<String, Object>> config = new HashMap<>()
 
-        def grid = v.geometry;
-        def intervals = v.intervals;
+        List<Variable> variables = parent.getVariables();
+        for (int i = 0; i < variables.size(); i++) {
 
-        def products = productService.findProductsByInterval(grid, intervals)
+            Variable var = variables.get(i)
+            String grid = var.getGeometry()
+            String intervals = var.getIntervals()
+            String config_key = grid+"_"+intervals
 
+            if ( !config.containsKey(config_key) ) {
+                def products = productService.findProductsByInterval(grid, intervals)
+                def regions = new ArrayList<Region>()
+                regions.addAll(Region.findAll())
 
+                def c = [products: products, regions: regions]
+                config.put(config_key, c)
+            }
 
-        def regions = new ArrayList<Region>()
-        regions.addAll(Region.findAll())
+        }
 
-        def config = [products: products, regions: regions, variable: v]
+        def configSet = [config: config]
 
         JSON.use("deep") {
-            render config as JSON
+            render configSet as JSON
         }
 
 

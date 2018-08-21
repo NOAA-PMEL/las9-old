@@ -44,7 +44,9 @@ class DatasetController {
             html { respond dataset }
             json {
                 if ( dataset ) {
-                    respond dataset
+                    JSON.use("deep") {
+                        render dataset as JSON
+                    }
                 }
             }
         }

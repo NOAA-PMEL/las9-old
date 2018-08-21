@@ -47,6 +47,7 @@ import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Annotation;
 import pmel.sdig.las.shared.autobean.AnnotationGroup;
 import pmel.sdig.las.shared.autobean.Config;
+import pmel.sdig.las.shared.autobean.ConfigSet;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.Site;
 import pmel.sdig.las.shared.autobean.TimeAxis;
@@ -94,7 +95,9 @@ public class ComparePanel extends Composite {
     MaterialSwitch difference;
 
     Dataset dataset;
-    Variable variable;
+    Variable variable; // ?? do we need the list?
+    Variable newVariable; // Used to hold new variable when switching...
+
     double xlo;
     double xhi;
     double ylo;
@@ -297,54 +300,6 @@ public class ComparePanel extends Composite {
             dataItem.hideProgress();
         }
     };
-    public MethodCallback<Config> configCallback = new MethodCallback<Config>() {
-        @Override
-        public void onFailure(Method method, Throwable exception) {
-            Window.alert("Failed to download data set information for this dataset." + exception.getMessage());
-        }
-
-        @Override
-        public void onSuccess(Method method, Config config) {
-            // Apply the config
-
-            if ( variable != null ) {
-                // Save current state
-                xlo = refMap.getXlo();
-                xhi = refMap.getXhi();
-                ylo = refMap.getYlo();
-                yhi = refMap.getYhi();
-                if (variable.getVerticalAxis() != null) {
-                    zlo = zAxisWidget.getLo();
-                    zhi = zAxisWidget.getHi();
-                } else {
-                    zlo = null;
-                    zhi = null;
-                }
-                if (variable.getTimeAxis() != null) {
-                    tlo = dateTimeWidget.getISODateLo();
-                    thi = dateTimeWidget.getISODateHi();
-                } else {
-                    tlo = null;
-                    thi = null;
-                }
-            }
-            Variable newVariable = config.getVariable();
-            initializeAxes(view, newVariable);
-
-            // Put the values back if we've been here before
-            if ( variable != null ) {
-                refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
-                dateTimeWidget.setLo(tlo);
-                dateTimeWidget.setHi(thi);
-                if (variable.getVerticalAxis() != null) {
-                    zAxisWidget.setLo(zlo);
-                    zAxisWidget.setHi(zhi);
-                }
-            }
-            variable = newVariable;
-
-        }
-    };
     public void setVisibility(boolean visibility) {
         this.setVisible(visibility);
     }
@@ -441,14 +396,30 @@ public class ComparePanel extends Composite {
     }
 
     public void initializeAxes(String view, Variable variable) {
+
+        // Turn them all on
+        mapPanel.setDisplay(Display.BLOCK);
+        dateTimePanel.setDisplay(Display.BLOCK);
+        zaxisPanel.setDisplay(Display.BLOCK);
+
         TimeAxis tAxis = variable.getTimeAxis();
 
-        dateTimeWidget.init(tAxis, false);
+        if ( tAxis != null ) {
+            dateTimeWidget.init(tAxis, false);
+        }
+
         if ( variable.getVerticalAxis() != null ) {
             zAxisWidget.init(variable.getVerticalAxis());
         }
 
-        refMap.setDataExtent(variable.getGeoAxisY().getMin(), variable.getGeoAxisY().getMax(), variable.getGeoAxisX().getMin(), variable.getGeoAxisX().getMax(), variable.getGeoAxisX().getDelta());
+
+        double xmin = variable.getGeoAxisX().getMin();
+        double xmax = variable.getGeoAxisX().getMax();
+        double ymin = variable.getGeoAxisY().getMin();
+        double ymax = variable.getGeoAxisY().getMax();
+        refMap.setDataExtent(ymin, ymax, xmin, xmax, variable.getGeoAxisX().getDelta());
+        refMap.setTool(view);
+
 
         String display_hi = tAxis.getDisplay_hi();
         String display_lo = tAxis.getDisplay_lo();
@@ -463,10 +434,8 @@ public class ComparePanel extends Composite {
     }
     public void hideViewAxes(String view, Variable variable) {
         this.view = view;
-        mapPanel.setDisplay(Display.BLOCK);
-        dateTimePanel.setDisplay(Display.BLOCK);
-        zaxisPanel.setDisplay(Display.BLOCK);
-        if ( view.contains("x") || view.contains("y") ) {
+
+        if ( view.contains("xy") ) {
             mapPanel.setDisplay(Display.NONE);
         }
         if ( view.contains("z") || variable.getVerticalAxis() == null ) {
@@ -523,7 +492,7 @@ public class ComparePanel extends Composite {
         dateTimeWidget.setHi(hi);
     }
     public void setMapSelection(double ylo, double yhi, double xlo, double xhi) {
-        refMap.setCurrentSelection(ylo, yhi, xlo, yhi);
+        refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
     }
     public void setZlo(String zlo) {
         zAxisWidget.setLo(zlo);
@@ -542,5 +511,44 @@ public class ComparePanel extends Composite {
     }
     public boolean isDifference() {
         return difference.getValue();
+    }
+    public void switchVariables(Variable newVariable) {
+        this.newVariable = newVariable;
+        if ( variable != null ) {
+            // Save current state
+            xlo = refMap.getXlo();
+            xhi = refMap.getXhi();
+            ylo = refMap.getYlo();
+            yhi = refMap.getYhi();
+            if (variable.getVerticalAxis() != null) {
+                zlo = zAxisWidget.getLo();
+                zhi = zAxisWidget.getHi();
+            } else {
+                zlo = null;
+                zhi = null;
+            }
+            if (variable.getTimeAxis() != null) {
+                tlo = dateTimeWidget.getISODateLo();
+                thi = dateTimeWidget.getISODateHi();
+            } else {
+                tlo = null;
+                thi = null;
+            }
+        }
+
+        // newVariable was set before rpc to get config.
+        initializeAxes(view, newVariable);
+
+        // Put the values back if we've been here before
+        if ( variable != null ) {
+            refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
+            dateTimeWidget.setLo(tlo);
+            dateTimeWidget.setHi(thi);
+            if (variable.getVerticalAxis() != null) {
+                zAxisWidget.setLo(zlo);
+                zAxisWidget.setHi(zhi);
+            }
+        }
+        variable = newVariable;
     }
 }

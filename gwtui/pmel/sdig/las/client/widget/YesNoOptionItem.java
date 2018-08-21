@@ -22,6 +22,8 @@ public class YesNoOptionItem extends Composite {
 
     HTML hhelp;
 
+    YesNoOption yno;
+
     interface YesNoOptionItemUiBinder extends UiBinder<MaterialPanel, YesNoOptionItem> {
     }
 
@@ -33,6 +35,7 @@ public class YesNoOptionItem extends Composite {
     }
     public YesNoOptionItem(YesNoOption yno) {
         MaterialPanel rootElement = ourUiBinder.createAndBindUi(this);
+        this.yno = yno;
         initWidget(rootElement);
         ynswitch.setOffLabel("No");
         ynswitch.setOnLabel("Yes");
@@ -45,5 +48,16 @@ public class YesNoOptionItem extends Composite {
         } else {
             ynswitch.setValue(false);
         }
+    }
+    public String getValue() {
+        boolean b = ynswitch.getValue();
+        if ( b ) {
+            return "1";
+        } else {
+            return "0";
+        }
+    }
+    public YesNoOption getOption() {
+        return yno;
     }
 }

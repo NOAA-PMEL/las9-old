@@ -13,6 +13,8 @@ public class ProductResults {
 
     int targetPanel;
 
+    String error;
+
     public ResultSet getResultSet() {
         return resultSet;
     }
@@ -43,5 +45,13 @@ public class ProductResults {
 
     public void setAnnotationGroups(List<AnnotationGroup> annotationGroups) {
         this.annotationGroups = annotationGroups;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 }

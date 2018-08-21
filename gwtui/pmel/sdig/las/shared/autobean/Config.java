@@ -9,7 +9,6 @@ public class Config {
 
     public List<Product> products;
     public List<Region> regions;
-    public Variable variable;
 
     public List<Product> getProducts() {
         return products;
@@ -17,10 +16,6 @@ public class Config {
 
     public List<Region> getRegions() {
         return regions;
-    }
-
-    public Variable getVariable() {
-        return variable;
     }
 
     public void setProducts(List<Product> products) {
@@ -31,7 +26,4 @@ public class Config {
         this.regions = regions;
     }
 
-    public void setVariable(Variable variable) {
-        this.variable = variable;
-    }
 }

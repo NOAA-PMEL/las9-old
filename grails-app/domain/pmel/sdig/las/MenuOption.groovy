@@ -8,12 +8,11 @@ class  MenuOption {
     String defaultValue
     List menuItems
 
-	static hasMany = [menuItems: MenuItem, operations: Operation]
-    static belongsTo = Operation
+	static hasMany = [menuItems: MenuItem]
+    static belongsTo = [operation: Operation]
 
     static constraints = {
         help type: "text"
-        operations nullable: true
         defaultValue nullable: true
     }
 }

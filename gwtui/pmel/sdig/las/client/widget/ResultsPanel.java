@@ -91,16 +91,24 @@ public class ResultsPanel extends Composite {
         annotationPanel.add(w);
     }
     public void setState(State state) {
-        outputPanel.setState(state);
-        List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getProductResults().getAnnotationGroups();
-        annotationPanel.clear();
-        for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
-            AnnotationGroup ag = gIt.next();
-            for (Iterator<Annotation> aIt = ag.getAnnotations().iterator(); aIt.hasNext(); ) {
-                MaterialLabel l = new MaterialLabel();
-                Annotation a = aIt.next();
-                l.setText(a.getValue());
-                annotationPanel.add(l);
+        String error = state.getPanelState(this.getTitle()).getProductResults().getError();
+        if ( error != null && !error.equals("") ) {
+            annotationPanel.clear();
+            MaterialLabel l = new MaterialLabel();
+            l.setText(error);
+            annotationPanel.add(l);
+        } else {
+            outputPanel.setState(state);
+            List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getProductResults().getAnnotationGroups();
+            annotationPanel.clear();
+            for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
+                AnnotationGroup ag = gIt.next();
+                for (Iterator<Annotation> aIt = ag.getAnnotations().iterator(); aIt.hasNext(); ) {
+                    MaterialLabel l = new MaterialLabel();
+                    Annotation a = aIt.next();
+                    l.setText(a.getValue());
+                    annotationPanel.add(l);
+                }
             }
         }
         annotationsCollapse.open(1);

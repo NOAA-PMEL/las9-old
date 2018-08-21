@@ -61,7 +61,7 @@
                     <m:MaterialIcon display="INLINE" ui:field="back" paddingTop="2" iconColor="BLUE" iconPosition="RIGHT" iconType="ARROW_BACK"/>
                 </m:MaterialCollapsibleHeader>
                 <m:MaterialCollapsibleBody padding="0">
-                    <m:MaterialCollection lineHeight="32" ui:field="datasets"/>
+                    <m:MaterialCollection marginTop="4" marginBottom="4" marginLeft="4" marginRight="4" lineHeight="32" ui:field="datasets"/>
                 </m:MaterialCollapsibleBody>
             </m:MaterialCollapsibleItem>
             <m:MaterialCollapsibleItem>
@@ -76,8 +76,8 @@
                     </m:MaterialPanel>
                     <m:MaterialPanel marginBottom="16" textAlign="LEFT" overflow="AUTO">
 
-                        <m:MaterialLabel paddingBottom="16" paddingLeft="8" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Do Analysis"></m:MaterialLabel>
-                        <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="analysisSwitch" display="INLINE" paddingLeft="8" paddingRight="8" title="Activate a data reduction calculation." onLabel="Analysis On" offLabel="Analysis Off" enabled="true" value="false" />
+                        <m:MaterialLabel lineHeight="32" paddingBottom="8" paddingLeft="8" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Do Analysis"></m:MaterialLabel>
+                        <m:MaterialSwitch lineHeight="32" verticalAlign="MIDDLE" ui:field="analysisSwitch" display="INLINE" paddingLeft="8" paddingRight="8" title="Activate a data reduction calculation." onLabel="Analysis On" offLabel="Analysis Off" enabled="true" value="false" />
 
                         <m:MaterialButton paddingBottom="8" ui:field="analysisButton" text="Compute" activates="analysis" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="BLUE" textColor="WHITE"></m:MaterialButton>
                         <m:MaterialDropDown ui:field="analysis" activator="analysis" backgroundColor="WHITE">

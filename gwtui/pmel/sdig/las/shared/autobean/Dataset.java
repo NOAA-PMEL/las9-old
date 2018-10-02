@@ -1,5 +1,6 @@
 package pmel.sdig.las.shared.autobean;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -85,6 +86,18 @@ public class Dataset implements Comparable {
 		this.status = status;
 	}
 
+	public String getProperty(String type, String name) {
+		if ( datasetProperties != null ) {
+			for(Iterator vit = datasetProperties.iterator(); vit.hasNext(); ) {
+				DatasetProperty dp = (DatasetProperty) vit.next();
+				if ( dp.getType().equals(type) && dp.getName().equals(name) ) {
+					return dp.getValue();
+				}
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public int compareTo(Object o) {
 		if ( o instanceof Dataset ) {
@@ -94,4 +107,15 @@ public class Dataset implements Comparable {
 			return 0;
 		}
 	}
+
+    public Variable findVariableByNameAndTitle(String name, String title
+    ) {
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i);
+            if ( v.getName().equals(name) && v.getTitle().equals(title) ) {
+                return v;
+            }
+        }
+        return null;
+    }
 }

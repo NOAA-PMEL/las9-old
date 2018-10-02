@@ -17,6 +17,12 @@ public class State {
 
     PanelState panelState01 = new PanelState();
     PanelState panelState02 = new PanelState();
+    PanelState panelState05 = new PanelState(); // Animation window
+    PanelState panelState06 = new PanelState(); // Show values window
+    PanelState panelState07 = new PanelState(); // Save as... opens a tab with result url
+    PanelState panelState08 = new PanelState(); // The correlation viewer
+
+    boolean animating;
 
     public int getPanelCount() {
         return panelCount;
@@ -31,6 +37,14 @@ public class State {
             return panelState01;
         } else if ( title.equals(Constants.PANEL02) ) {
             return panelState02;
+        } else if ( title.equals(Constants.PANEL05) ) {
+            return panelState05;
+        } else if ( title.equals(Constants.PANEL06) ) {
+            return panelState06;
+        } else if ( title.equals(Constants.PANEL07) ) {
+            return panelState07;
+        } else if ( title.equals(Constants.PANEL08) ) {
+            return panelState08;
         }
         return null;
     }
@@ -39,5 +53,12 @@ public class State {
         return getPanelState(title);
     }
 
+    public boolean isAnimating() {
+        return animating;
+    }
+
+    public void setAnimating(boolean animating) {
+        this.animating = animating;
+    }
 }
 

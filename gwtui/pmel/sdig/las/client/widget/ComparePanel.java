@@ -311,7 +311,7 @@ public class ComparePanel extends Composite {
     }
     public void setState(State state) {
         outputPanel.setState(state);
-        List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getProductResults().getAnnotationGroups();
+        List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
         annotationPanel.clear();
         for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
             AnnotationGroup ag = gIt.next();
@@ -386,11 +386,9 @@ public class ComparePanel extends Composite {
     public void scale() {
         outputPanel.scale();
     }
-
-    public void scale(int navSize) {
-        outputPanel.scale(navSize);
+    public void scale(int navWidth) {
+        outputPanel.scale(navWidth);
     }
-
     public void open(int left, int top) {
 
     }

@@ -10,6 +10,7 @@ public class Operation {
 
     String output_template;
     String service_action;
+    String type;
     ResultSet resultSet;
     List<Operation> operations;
     List<MenuOption> menuOptions;
@@ -68,5 +69,11 @@ public class Operation {
     }
     public void setYesNoOptions(List<YesNoOption> yesNoOptions) {
         this.yesNoOptions = yesNoOptions;
+    }
+    public void setType(String type) {
+        this.type = type;
+    }
+    public String getType() {
+        return type;
     }
 }

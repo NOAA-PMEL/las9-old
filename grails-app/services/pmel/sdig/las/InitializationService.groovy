@@ -1,10 +1,10 @@
 package pmel.sdig.las
 
+import grails.util.Environment
 import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
-import pmel.sdig.las.*
 import pmel.sdig.las.type.GeometryType
 
 import javax.servlet.ServletContext
@@ -13,6 +13,7 @@ class InitializationService {
 
     IngestService ingestService
     OptionsService optionsService
+    ResultsService resultsService
     ServletContext servletContext
 
     /**
@@ -71,6 +72,9 @@ class InitializationService {
         ferret.setPath(python)
         ferret.setTempDir("/tmp/las")
         ferret.setFerretEnvironment(ferretEnvironment)
+        ferret.addToArguments(new Argument([value: "-cimport sys; import pyferret; (errval, errmsg) = pyferret.init(sys.argv[1:], True)"]))
+        ferret.addToArguments(new Argument([value: "-nodisplay"]))
+        ferret.addToArguments(new Argument([value: "-script"]))
         if ( !ferret.validate() ) {
             ferret.errors.each {
                 log.debug(it)
@@ -81,9 +85,7 @@ class InitializationService {
         if ( !tempFile.exists() ) {
             tempFile.mkdirs()
         }
-        ferret.addToArguments(new Argument([value: "-cimport sys; import pyferret; (errval, errmsg) = pyferret.init(sys.argv[1:], True)"]))
-        ferret.addToArguments(new Argument([value: "-nodisplay"]))
-        ferret.addToArguments(new Argument([value: "-script"]))
+
         ferret.save(failOnError: true)
 
         // This is an attempt to automate the configuration for Ferret as used by F-TDS by writing the config based on the environment/
@@ -154,9 +156,13 @@ class InitializationService {
 
 </catalog>
 """
-        //TODO this is debug I think this is going to be right --->
-        //FileWriter configFileWriter = new FileWriter(new File("../content/ftds/catalog.xml"))
-        FileWriter configFileWriter = new FileWriter(new File("/home/rhs/tomcat/content/ftds/catalog.xml"))  //TODO... DEBUG
+
+        FileWriter configFileWriter
+        if (Environment.current == Environment.DEVELOPMENT) {
+            configFileWriter = new FileWriter(new File("/home/rhs/tomcat/content/ftds/catalog.xml"))
+        } else {
+            configFileWriter = new FileWriter(new File("../content/ftds/catalog.xml"))
+        }
         catalog.writeTo(configFileWriter).close()
     }
     def writeFerretXml(Ferret ferret, FerretEnvironment ferretEnvironment) {
@@ -203,9 +209,12 @@ class InitializationService {
           environment.addContent(makeEnvVariable("PLOTFONTS", ferretEnvironment.getPlotfonts()))
         // Write
         XMLOutputter out = new XMLOutputter(Format.getPrettyFormat())
-        //FileWriter configFileWriter = new FileWriter(new File("../webapps/las#thredds/WEB-INF/classes/resources/iosp/FerretConfig.xml"))
-        // TODO this is debug loction --->
-        FileWriter configFileWriter = new FileWriter(new File("/home/rhs/tomcat/webapps/las#thredds/WEB-INF/classes/FerretConfig.xml"))
+        FileWriter configFileWriter
+        if (Environment.current == Environment.DEVELOPMENT) {
+            configFileWriter = new FileWriter(new File("/home/rhs/tomcat/webapps/las#thredds/WEB-INF/classes/FerretConfig.xml"))
+        } else {
+            configFileWriter = new FileWriter(new File("../webapps/las#thredds/WEB-INF/classes/resources/iosp/FerretConfig.xml"))
+        }
         out.output(doc, configFileWriter)
     }
     def Element makeEnvVariable(String name, String value) {
@@ -228,29 +237,74 @@ class InitializationService {
      * Create the options and save them...
      */
 
-    def createResults() {
-
-        ResultSet results_debug_image_mapscale_annotations = new ResultSet([name: "results_debug_image_mapscale_annotations"])
-
-        Result debug = new Result([name: "debug", mime_type: "text/plain", type: "text", suffix: ".txt"])
-        Result plot_image = new Result([name: "plot_image", mime_type: "image/png", type: "image", suffix: ".png"])
-        Result map_scale = new Result([name: "map_scale", mime_type: "text/xml", type: "xml", suffix: ".xml"])
-        Result annotations = new Result([name: "annotations", mime_type: "text/xml", type: "xml", suffix: ".xml"])
-
-        results_debug_image_mapscale_annotations.addToResults(debug)
-        results_debug_image_mapscale_annotations.addToResults(plot_image)
-        results_debug_image_mapscale_annotations.addToResults(map_scale)
-        results_debug_image_mapscale_annotations.addToResults(annotations)
-
-
-        results_debug_image_mapscale_annotations.save(failOnError: true)
-
-    }
-
     def createProducts() {
+/*
+    <response ID="PlotResp" type="HTML" index="1">
+      <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+      <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+      <result type="debug" ID="debug" file_suffix=".txt"/>
+      <result type="xml" ID="webrowset" file_suffix=".xml"/>
+      <result type="cancel" ID="cancel"/>
+    </response>
 
-        createResults()
+ */
 
+        Product prop_prop = Product.findByName("prop_prop_plot")
+        if (!prop_prop) {
+            prop_prop = new Product([name: "prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.GRID, product_order: "99999", hidden: "true"])
+            Operation prop_prop_operation = new Operation([output_template: "zoom", service_action: "prop_prop_plot", type: "ferret"])
+            prop_prop_operation.setResultSet(resultsService.getPlotResults())
+            prop_prop.addToOperations(prop_prop_operation)
+            prop_prop.save(failOnError: true)
+        }
+
+
+        /* data for display as a block in a window (not for download) but I think we only need save as and not show values
+
+    <operation ID="Data_Extract" default="true" name="Table of values (text)" output_template="table" service_action="Data_Extract" order="0300" category="table" minvars="1" maxvars="9999">
+    <service>ferret</service>
+    <response ID="Data_Extract_Response">
+      <result type="text" ID="ferret_listing" streamable="true" mime_type="text/plain"/>
+      <result type="debug" ID="debug" file_suffix=".txt"/>
+    </response>
+         */
+        // Hidden for now.  All the button products need a ui_group
+        Product data_extract = Product.findByName("Data_Extract")
+        if (!data_extract) {
+            data_extract = new Product([name: "Data_Extract", title: "Show Values", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.GRID, product_order: "99999", hidden: "true"])
+            Operation data_extract_operation = new Operation([output_template: "table", service_action: "Data_Extract", type: "ferret"])
+            data_extract_operation.setResultSet(resultsService.getDataExtractResults())
+            data_extract.addToOperations(data_extract_operation)
+            data_extract.save(failOnError: true)
+        }
+
+        // Hidden for now.  All the button products need a ui_group
+        Product data_extract_netcdf = Product.findByName("Data_Extract_netCDF")
+        if (!data_extract_netcdf) {
+            data_extract_netcdf = new Product([name: "Data_Extract_netCDF", title: "Save as...", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.GRID, product_order: "99999", hidden: "true"])
+            Operation data_extract_netcdf_operation = new Operation([output_template: "table", service_action: "Data_Extract_netCDF", type: "ferret"])
+            data_extract_netcdf_operation.setResultSet(resultsService.getDataExtractResultsCDF())
+            data_extract_netcdf.addToOperations(data_extract_netcdf_operation)
+            data_extract_netcdf.save(failOnError: true)
+        }
+
+        Product data_extract_file = Product.findByName("Data_Extract_File")
+        if (!data_extract_file) {
+            data_extract_file = new Product([name: "Data_Extract_File", title: "Save as...", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.GRID, product_order: "99999", hidden: "true"])
+            Operation data_extract_file_operation = new Operation([output_template: "table", service_action: "Data_Extract_File", type: "ferret"])
+            data_extract_file_operation.setResultSet(resultsService.getDataExtractResultsFile())
+            data_extract_file.addToOperations(data_extract_file_operation)
+            data_extract_file.save(failOnError: true)
+        }
+
+        Product data_extract_csv = Product.findByName("Data_Extract_CSV")
+        if (!data_extract_csv) {
+            data_extract_csv = new Product([name: "Data_Extract_CSV", title: "Save as...", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.GRID, product_order: "99999", hidden: "true"])
+            Operation data_extract_csv_operation = new Operation([output_template: "table", service_action: "Data_Extract_File", type: "ferret"])
+            data_extract_csv_operation.setResultSet(resultsService.getDataExtractResultsCSV())
+            data_extract_csv.addToOperations(data_extract_csv_operation)
+            data_extract_csv.save(failOnError: true)
+        }
         /*
 
         This are all the line plots, xyzt
@@ -262,19 +316,12 @@ class InitializationService {
         if (!t_line_plot) {
 
             t_line_plot = new Product([name: "Time", title: "Time", view: "t", data_view: "t", ui_group: "Line Plots", geometry: GeometryType.GRID, product_order: "200001", minArgs: 1, maxArgs: 10])
-            Operation operation_t_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D"])
+            Operation operation_t_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D", type: "ferret"])
 
             // inherit="#expression,#interpolate_data,#image_format,#size,#use_graticules,#margins,#deg_min_sec"/
             // inherit="#Options_Default_7,#line_or_sym,#trend_line,#line_color,#line_thickness,#dep_axis_scale"
 
-
-            ResultSet results_t_line_plot = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_t_line_plot) {
-                ResultSet toned = new ResultSet(results_t_line_plot.properties)
-                operation_t_line_plot.setResultSet(toned)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_t_line_plot.setResultSet(resultsService.getPlotResults())
 
             operation_t_line_plot.addToTextOptions(optionsService.getExpression())
             operation_t_line_plot.addToTextOptions(optionsService.getDep_axis_scale())
@@ -294,15 +341,9 @@ class InitializationService {
         if (!z_line_plot) {
 
             z_line_plot = new Product([name: "Z", title: "Z", view: "z", data_view: "z", ui_group: "Line Plots", geometry: GeometryType.GRID, product_order: "200004"])
-            Operation operation_z_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D"])
+            Operation operation_z_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D", type: "ferret"])
 
-            ResultSet results_z_line_plot = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_z_line_plot) {
-                ResultSet zoned = new ResultSet(results_z_line_plot.properties)
-                operation_z_line_plot.setResultSet(zoned)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_z_line_plot.setResultSet(resultsService.getPlotResults())
 
             operation_z_line_plot.addToTextOptions(optionsService.getExpression())
             operation_z_line_plot.addToTextOptions(optionsService.getDep_axis_scale())
@@ -323,15 +364,9 @@ class InitializationService {
         if (!y_line_plot) {
 
             y_line_plot = new Product([name: "Latitude", title: "Latitude", view: "y", data_view: "y", ui_group: "Line Plots", geometry: GeometryType.GRID, product_order: "200003", minArgs: 1, maxArgs: 10])
-            Operation operation_y_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D"])
+            Operation operation_y_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D", type: "ferret"])
 
-            ResultSet results_y_line_plot = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_y_line_plot) {
-                ResultSet yoned = new ResultSet(results_y_line_plot.properties)
-                operation_y_line_plot.setResultSet(yoned)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_y_line_plot.setResultSet(resultsService.getPlotResults())
 
             operation_y_line_plot.addToTextOptions(optionsService.getExpression())
             operation_y_line_plot.addToTextOptions(optionsService.getDep_axis_scale())
@@ -350,15 +385,9 @@ class InitializationService {
         if (!x_line_plot) {
 
             x_line_plot = new Product([name: "Longitude", title: "Longitude", view: "x", data_view: "x", ui_group: "Line Plots", geometry: GeometryType.GRID, product_order: "200002", minArgs: 1, maxArgs: 10])
-            Operation operation_x_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D"])
+            Operation operation_x_line_plot = new Operation([output_template: "zoom", service_action: "Plot_1D", type: "ferret"])
 
-            ResultSet results_x_line_plot = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_x_line_plot) {
-                ResultSet xoned = new ResultSet(results_x_line_plot.properties)
-                operation_x_line_plot.setResultSet(xoned)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_x_line_plot.setResultSet(resultsService.getPlotResults())
 
             operation_x_line_plot.addToTextOptions(optionsService.getExpression())
             operation_x_line_plot.addToTextOptions(optionsService.getDep_axis_scale())
@@ -388,15 +417,9 @@ class InitializationService {
             // #set_aspect,#land_type
 
             compare_plot = new Product([name: "Compare_Plot", title: "Latitude-Longitude", view: "xy", data_view: "xy", ui_group: "Maps", geometry: GeometryType.GRID, hidden: true, product_order: "999999"]) // Not in ui, order unnecessary
-            Operation operation_comparePlot = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot"])
+            Operation operation_comparePlot = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot", type: "ferret"])
 
-            ResultSet results_compare_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_compare_plot_2d) {
-                ResultSet twod = new ResultSet(results_compare_plot_2d.properties)
-                operation_comparePlot.setResultSet(twod)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_comparePlot.setResultSet(resultsService.getPlotResults())
 
             operation_comparePlot.addToMenuOptions(optionsService.getPalettes())
             operation_comparePlot.addToYesNoOptions(optionsService.getInterpolate_data())
@@ -421,15 +444,9 @@ class InitializationService {
         // #set_aspect,#land_type
 
         compare_plot_t = new Product([name: "Compare_Plot_T", title: "Time", view: "t", data_view: "t", ui_group: "Line Plots", geometry: GeometryType.GRID, hidden: true, product_order: "999999"]) // Not in ui, order unnecessary
-        Operation operation_comparePlot_t = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot"])
+        Operation operation_comparePlot_t = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot", type: "ferret"])
 
-        ResultSet results_compare_plot_t = ResultSet.findByName("results_debug_image_mapscale_annotations")
-        if (results_compare_plot_t) {
-            ResultSet twod = new ResultSet(results_compare_plot_t.properties)
-            operation_comparePlot_t.setResultSet(twod)
-        } else {
-            log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-        }
+        operation_comparePlot_t.setResultSet(resultsService.getPlotResults())
 
         operation_comparePlot_t.addToMenuOptions(optionsService.getPalettes())
         operation_comparePlot_t.addToYesNoOptions(optionsService.getInterpolate_data())
@@ -453,15 +470,9 @@ class InitializationService {
             // #set_aspect,#land_type
 
             compare_plot_x = new Product([name: "Compare_Plot_X", title: "Time", view: "t", data_view: "t", ui_group: "Line Plots", geometry: GeometryType.GRID, hidden: true, product_order: "999999"]) // Not in ui, order unnecessary
-            Operation operation_comparePlot_x = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot"])
+            Operation operation_comparePlot_x = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot", type: "ferret"])
 
-            ResultSet results_compare_plot_x = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_compare_plot_x) {
-                ResultSet twod = new ResultSet(results_compare_plot_x.properties)
-                operation_comparePlot_x.setResultSet(twod)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_comparePlot_x.setResultSet(resultsService.getPlotResults())
 
             operation_comparePlot_x.addToMenuOptions(optionsService.getPalettes())
             operation_comparePlot_x.addToYesNoOptions(optionsService.getInterpolate_data())
@@ -486,15 +497,9 @@ class InitializationService {
             // #set_aspect,#land_type
 
             compare_plot_y = new Product([name: "Compare_Plot_Y", title: "Time", view: "t", data_view: "t", ui_group: "Line Plots", geometry: GeometryType.GRID, hidden: true, product_order: "999999"]) // Not in ui, order unnecessary
-            Operation operation_comparePlot_y = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot"])
+            Operation operation_comparePlot_y = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot", type: "ferret"])
 
-            ResultSet results_compare_plot_y = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_compare_plot_y) {
-                ResultSet twod = new ResultSet(results_compare_plot_y.properties)
-                operation_comparePlot_y.setResultSet(twod)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_comparePlot_y.setResultSet(resultsService.getPlotResults())
 
             operation_comparePlot_y.addToMenuOptions(optionsService.getPalettes())
             operation_comparePlot_y.addToYesNoOptions(optionsService.getInterpolate_data())
@@ -523,15 +528,9 @@ class InitializationService {
 
             plot_2d_xy = new Product([name: "Plot_2D_XY", title: "Latitude-Longitude", view: "xy", data_view: "xy", ui_group: "Maps", geometry: GeometryType.GRID, product_order: "100001"])
 
-            Operation operation_plot_2d_xy = new Operation([output_template: "xy_zoom", service_action: "Plot_2D_XY"])
+            Operation operation_plot_2d_xy = new Operation([output_template: "xy_zoom", service_action: "Plot_2D_XY", type: "ferret"])
 
-            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if (results_plot_2d) {
-                ResultSet twod = new ResultSet(results_plot_2d.properties)
-                operation_plot_2d_xy.setResultSet(twod)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            operation_plot_2d_xy.setResultSet(resultsService.getPlotResults())
 
             operation_plot_2d_xy.addToTextOptions(optionsService.getExpression())
             operation_plot_2d_xy.addToYesNoOptions(optionsService.getInterpolate_data())
@@ -560,14 +559,9 @@ class InitializationService {
 
         if ( !plot_2d_xz) {
             plot_2d_xz = new Product([name: "Plot_2D_xz", title: "Longitude-z", ui_group: "Vertical Cross Sections", view: "xz", data_view: "xz", geometry: GeometryType.GRID, product_order: "300001"])
-            Operation operation_plot_2d_xz = new Operation([output_template:"plot_zoom", service_action: "Plot_2D"])
-            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if ( results_plot_2d ) {
-                ResultSet rs = new ResultSet(results_plot_2d.properties)
-                operation_plot_2d_xz.setResultSet(rs)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            Operation operation_plot_2d_xz = new Operation([output_template:"plot_zoom", service_action: "Plot_2D", type: "ferret"])
+
+            operation_plot_2d_xz.setResultSet(resultsService.getPlotResults())
 
             operation_plot_2d_xz.addToMenuOptions(optionsService.getPalettes())
 
@@ -580,14 +574,10 @@ class InitializationService {
 
         if ( !plot_2d_yz) {
             plot_2d_yz = new Product([name: "Plot_2D_yz", title: "Latitude-z", ui_group: "Vertical Cross Sections", view: "yz", data_view: "yz", geometry: GeometryType.GRID, product_order: "300002"])
-            Operation operation_plot_2d_yz = new Operation([output_template:"plot_zoom", service_action: "Plot_2D"])
-            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if ( results_plot_2d ) {
-                ResultSet rs = new ResultSet(results_plot_2d.properties)
-                operation_plot_2d_yz.setResultSet(rs)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            Operation operation_plot_2d_yz = new Operation([output_template:"plot_zoom", service_action: "Plot_2D", type: "ferret"])
+
+            operation_plot_2d_yz.setResultSet(resultsService.getPlotResults())
+
 
             operation_plot_2d_yz.addToMenuOptions(optionsService.getPalettes())
 
@@ -605,14 +595,9 @@ class InitializationService {
 
         if ( !plot_2d_xt) {
             plot_2d_xt = new Product([name: "Plot_2D_xt", title: "Longitude-time", ui_group: "Hovmöller Diagram", view: "xt", data_view: "xt", geometry: GeometryType.GRID, product_order: "400001"])
-            Operation operation_plot_2d_xt = new Operation([output_template:"plot_zoom", service_action: "Plot_2D"])
-            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if ( results_plot_2d ) {
-                ResultSet rs = new ResultSet(results_plot_2d.properties)
-                operation_plot_2d_xt.setResultSet(rs)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            Operation operation_plot_2d_xt = new Operation([output_template:"plot_zoom", service_action: "Plot_2D", type: "ferret"])
+
+            operation_plot_2d_xt.setResultSet(resultsService.getPlotResults())
 
             operation_plot_2d_xt.addToMenuOptions(optionsService.getPalettes())
 
@@ -625,14 +610,9 @@ class InitializationService {
 
         if ( !plot_2d_yt) {
             plot_2d_yt = new Product([name: "Plot_2D_yt", title: "Latitude-time", ui_group: "Hovmöller Diagram", view: "yt", data_view: "yt", geometry: GeometryType.GRID, product_order: "400002"])
-            Operation operation_plot_2d_yt = new Operation([output_template:"plot_zoom", service_action: "Plot_2D"])
-            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-            if ( results_plot_2d ) {
-                ResultSet rs = new ResultSet(results_plot_2d.properties)
-                operation_plot_2d_yt.setResultSet(rs)
-            } else {
-                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-            }
+            Operation operation_plot_2d_yt = new Operation([output_template:"plot_zoom", service_action: "Plot_2D", type: "ferret"])
+
+            operation_plot_2d_yt.setResultSet(resultsService.getPlotResults())
 
             operation_plot_2d_yt.addToMenuOptions(optionsService.getPalettes())
 
@@ -678,10 +658,42 @@ class InitializationService {
         Product charts_timeseries_plot = Product.findByNameAndTitle("Charts Timeseries Plot", "Timeseries Plot");
         if ( !charts_timeseries_plot ) {
             charts_timeseries_plot = new Product([name: "Timeseries Plot", title: "Timeseries Plot", ui_group: "Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "dontknowyet"])
-            Operation operation_timeseries_plot = new Operation([service_action: "client_plot"])
+            Operation operation_timeseries_plot = new Operation([service_action: "client_plot", type: "client"])
             charts_timeseries_plot.addToOperations(operation_timeseries_plot)
             charts_timeseries_plot.save(failOnError: true)
         }
+/*
+<!-- animate XY plots -->
+<operation ID="Animation_2D_XY" default="true" name="Animation" output_template="output_animation" service_action="Data_Extract_Frames" order="9999" category="animation">
+  <service>ferret</service>
+  <response ID="Data_Extract_Frames_Response">
+    <result type="xml" ID="ferret_listing" streamable="true" mime_type="text/xml" file_suffix=".xml"/>
+    <result type="debug" ID="debug" file_suffix=".txt"/>
+  </response>
+  <region>
+    <intervals name="xy"/>
+  </region>
+  <grid_types>
+    <grid_type name="regular"/>
+  </grid_types>
+  <optiondef IDREF="Options_2D_image_contour_animation_xy"/>
+</operation>
+*/
+        Product animateSetup = Product.findByName("Animation_2D_XY")
+        if ( !animateSetup ) {
+            animateSetup = new Product([name: "Animation_2D_XY", title: "Setup Animate", ui_group: "NONE", view: "xyt", data_view: "xyt", geometry: GeometryType.GRID, hidden: true, product_order: "999999"])
+            Operation animateSetup_op = new Operation([output_template:"none", service_action: "Data_Extract_Frames", type: "ferret"])
+
+            animateSetup_op.setResultSet(resultsService.getAnimateSetupResults())
+
+            animateSetup_op.addToMenuOptions(optionsService.getPalettes())
+
+            animateSetup.addToOperations(animateSetup_op)
+            animateSetup.save(failOnError: true)
+        }
+
+
+
     }
     def loadDefaultLasDatasets() {
 
@@ -741,6 +753,9 @@ class InitializationService {
                         coadsDS = ingestService.ingest(coads)
                         coadsDS.setTitle("COADS")
                         coadsDS.setStatus(Dataset.INGEST_FINISHED)
+                        Variable v = coadsDS.getVariables().get(0);
+                        v.addToVariableProperties(new VariableProperty([type: "ferret", name: "time_step", value: "3"]))
+                        coadsDS.addToDatasetProperties(new DatasetProperty([type: "ferret", name: "time_step", value: "4"]))
                         coadsDS.save(flush: true)
                     }
                     if (coadsDS) {

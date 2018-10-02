@@ -18,7 +18,7 @@ buildscript {
 
 
 
-version "9.1"
+version "9.0.3"
 group "las"
 
 apply plugin:"eclipse"
@@ -38,7 +38,6 @@ repositories {
     mavenLocal()
     maven { url "https://repo.grails.org/grails/core" }
     maven { url "https://artifacts.unidata.ucar.edu/repository/unidata-all/" }
-
 }
 
 dependencies {
@@ -114,7 +113,6 @@ dependencies {
 
     // Get a gwt sdk for plugin to use
     compile group: 'com.google.gwt', name: 'gwt-dev', version: '2.8.2'
-
 }
 
 // My stuff -- RHS

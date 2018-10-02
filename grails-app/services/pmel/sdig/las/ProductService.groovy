@@ -1,9 +1,12 @@
 package pmel.sdig.las
 
 import grails.transaction.Transactional
+import org.jdom.Document
+import org.jdom.Element
 import pmel.sdig.las.MapScale
 
 class ProductService {
+
 
     List<Product> findProductsByInterval(String grid, String intervals) {
         List<String> combos = ConfigController.combo(intervals);
@@ -43,6 +46,64 @@ class ProductService {
             annotationGroups.add(aGroup)
         }
         annotationGroups;
+    }
+    private def Animation makeAnimationList(String filename) {
+        Document doc = new Document();
+        Animation animation = new Animation();
+        JDOMUtils.XML2JDOM(new File(filename), doc)
+        Element root = doc.getRootElement();
+        if ( root == null ) {
+            return animation;
+        }
+        Element das = root.getChild("dep_axes_scale")
+        if ( das ) {
+            String dasText = das.getText();
+            if ( dasText ) {
+                animation.setDep_axis_scale(dasText.trim())
+            }
+        }
+        Element cl = root.getChild("contour_levels")
+        if ( cl ) {
+            String clText = cl.getText();
+            if ( clText ) {
+                animation.setContour_levels(clText.trim())
+            }
+
+        }
+        Element fl = root.getChild("fill_levels")
+        if ( fl ) {
+            String fillLevels = fl.getText()
+            if ( fillLevels ) {
+                animation.setFill_levels(fillLevels.trim())
+            }
+        }
+        Element u = root.getChild("units")
+        if ( u ) {
+            String uText = u.getText()
+            if ( uText ) {
+                animation.setUnits(uText.trim())
+            }
+        }
+        Element ht = root.getChild("hasT")
+        if ( ht ) {
+            String hasT = ht.getText()
+            if ( hasT != null && hasT.trim().equals("1") ) {
+                animation.setHasT(true)
+            } else {
+                animation.setHasT(false)
+            }
+        }
+
+        Element framesE = doc.getRootElement().getChild("frames")
+        if ( framesE ) {
+            List<Element> framesListE = framesE.getChildren("frame")
+            List<String> frames = new ArrayList<>()
+            for (int i = 0; i < framesListE.size(); i++) {
+                frames.add(framesListE.get(i).getText().trim())
+            }
+            animation.setFrames(frames)
+        }
+        animation
     }
     def makeMapScale(String filename) {
         HashMap<String, String> scale = new HashMap<String, String>();

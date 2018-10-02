@@ -27,10 +27,6 @@ class BootStrap {
             initializationService.initEnvironment()
         }
 
-//        JSON.use("deep") {
-//            def ferretJ = Ferret.first() as JSON
-//            new File("ferret.json").write(ferretJ.toString(true))
-//        }
 
 
         initializationService.createProducts()

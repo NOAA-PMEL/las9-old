@@ -2,6 +2,7 @@ package pmel.sdig.las.client.state;
 
 import pmel.sdig.las.shared.autobean.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -10,11 +11,14 @@ import java.util.List;
 public class PanelState {
 
     LASRequest lasRequest;
-    ProductResults productResults;
+    ResultSet resultSet;
+
+    int frameIndex = 0;
+    List<ResultSet> completedFrames = new ArrayList();
+
 
     public String getImageUrl() {
 
-        ResultSet resultSet = productResults.getResultSet();
         List<Result> results = resultSet.getResults();
 
         for (int i = 0; i < results.size(); i++) {
@@ -26,8 +30,33 @@ public class PanelState {
         return null;
     }
 
+    public List<ResultSet> getCompletedFrames() {
+        return completedFrames;
+    }
+    public void setImageUrl(String url) {
+        List<Result> results = resultSet.getResults();
+
+        for (int i = 0; i < results.size(); i++) {
+            Result result = results.get(i);
+            if ( result.getType().equals("image") ) {
+                result.setUrl(url);
+            }
+        }
+    }
+    public void addFrame(ResultSet resultSet) {
+        completedFrames.add(resultSet);
+    }
+    public ResultSet getCurrentFrame() {
+        if ( frameIndex < completedFrames.size() ) {
+            return completedFrames.get(frameIndex);
+        }
+        return null;
+    }
+    public void clearFrames() {
+        completedFrames.clear();
+    }
     public MapScale getMapScale() {
-        return productResults.getMapScale();
+        return resultSet.getMapScale();
     }
 
     public LASRequest getLasRequest() {
@@ -38,11 +67,18 @@ public class PanelState {
         this.lasRequest = lasRequest;
     }
 
-    public ProductResults getProductResults() {
-        return productResults;
+    public void setResultSet(ResultSet resultSet) {
+        this.resultSet = resultSet;
+    }
+    public ResultSet getResultSet() {
+        return resultSet;
     }
 
-    public void setProductResults(ProductResults productResults) {
-        this.productResults = productResults;
+    public int getFrameIndex() {
+        return frameIndex;
+    }
+
+    public void setFrameIndex(int frameIndex) {
+        this.frameIndex = frameIndex;
     }
 }

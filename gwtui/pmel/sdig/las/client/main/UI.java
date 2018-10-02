@@ -3,30 +3,40 @@ package pmel.sdig.las.client.main;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.logical.shared.CloseEvent;
+import com.google.gwt.event.logical.shared.CloseHandler;
+import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
-import com.google.gwt.http.client.URL;
+import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.Frame;
 import com.google.gwt.user.client.ui.PushButton;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.Widget;
 import google.visualization.AnnotationChart;
 import google.visualization.AnnotationChartOptions;
 import google.visualization.DataTable;
 import gwt.material.design.client.constants.Color;
+import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.ui.MaterialButton;
 import gwt.material.design.client.ui.MaterialLabel;
+import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialToast;
+import gwt.material.design.client.ui.html.ListItem;
+import gwt.material.design.client.ui.html.Option;
 import org.fusesource.restygwt.client.Method;
 import org.fusesource.restygwt.client.MethodCallback;
 import org.fusesource.restygwt.client.Resource;
@@ -45,6 +55,8 @@ import pmel.sdig.las.client.event.AddVariable;
 import pmel.sdig.las.client.event.AddVariableHandler;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.event.DateChange;
+import pmel.sdig.las.client.event.Download;
+import pmel.sdig.las.client.event.DownloadHandler;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
 import pmel.sdig.las.client.event.MapChangeEvent;
 import pmel.sdig.las.client.event.NavSelect;
@@ -54,6 +66,10 @@ import pmel.sdig.las.client.event.PlotOptionChange;
 import pmel.sdig.las.client.event.PlotOptionChangeHandler;
 import pmel.sdig.las.client.event.ProductSelected;
 import pmel.sdig.las.client.event.ProductSelectedHandler;
+import pmel.sdig.las.client.event.AnimateAction;
+import pmel.sdig.las.client.event.AnimateActionHandler;
+import pmel.sdig.las.client.event.ShowValues;
+import pmel.sdig.las.client.event.ShowValuesHandler;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
 import pmel.sdig.las.client.util.Constants;
@@ -65,17 +81,22 @@ import pmel.sdig.las.client.widget.MenuOptionsWidget;
 import pmel.sdig.las.client.widget.ProductButton;
 import pmel.sdig.las.client.widget.ProductButtonList;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
+import pmel.sdig.las.client.widget.VariableConstraintWidget;
 import pmel.sdig.las.client.widget.YesNoOptionsWidget;
+import pmel.sdig.las.shared.autobean.Constraint;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
+import pmel.sdig.las.shared.autobean.Animation;
 import pmel.sdig.las.shared.autobean.ConfigSet;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.LASRequest;
+import pmel.sdig.las.shared.autobean.MapScale;
 import pmel.sdig.las.shared.autobean.Operation;
 import pmel.sdig.las.shared.autobean.Product;
-import pmel.sdig.las.shared.autobean.ProductResults;
 import pmel.sdig.las.shared.autobean.Region;
 import pmel.sdig.las.shared.autobean.RequestProperty;
+import pmel.sdig.las.shared.autobean.Result;
+import pmel.sdig.las.shared.autobean.ResultSet;
 import pmel.sdig.las.shared.autobean.Site;
 import pmel.sdig.las.shared.autobean.TimeAxis;
 import pmel.sdig.las.shared.autobean.Variable;
@@ -97,6 +118,10 @@ import static pmel.sdig.las.client.util.Constants.navWidth;
  * Created by rhs on 9/8/15.
  */
 public class UI implements EntryPoint {
+
+    int loop = 0;
+
+    NumberFormat dFormat = NumberFormat.getFormat("########.##");
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
@@ -128,8 +153,17 @@ public class UI implements EntryPoint {
 
     OLMapWidget refMap;
     DateTimeWidget dateTimeWidget = new DateTimeWidget();
-
     AxisWidget zAxisWidget = new AxisWidget();
+
+    DateTimeWidget animateDateTimeWidget = new DateTimeWidget();
+
+    OLMapWidget downloadMap;
+    DateTimeWidget downloadDateTime = new DateTimeWidget();
+    AxisWidget downloadZaxisWidget = new AxisWidget();
+
+    OLMapWidget correlationMap;
+    DateTimeWidget correlationDateTime = new DateTimeWidget();
+    AxisWidget correlationZaxisWidget = new AxisWidget();
 
     // These are the variables that contain the current state
     double xlo;
@@ -154,9 +188,15 @@ public class UI implements EntryPoint {
 
     Queue<LASRequest> requestQueue = new LinkedList<LASRequest>();
 
+    Animation animation;
+    boolean animateCancel = false;
+
     public void onModuleLoad() {
 
         iso = ISODateTimeFormat.dateTimeNoMillis();
+
+        animateDateTimeWidget.setTitle("Time Range for Animation");
+        downloadDateTime.setTitle("Time Range for Data Download.");
 
         Element wmsserver = DOM.getElementById("wms-server");
         if ( wmsserver != null )
@@ -165,9 +205,20 @@ public class UI implements EntryPoint {
         if ( wmslayer != null )
             tile_layer = wmslayer.getPropertyString("content");
 
-
         refMap = new OLMapWidget("128px", "256px", tile_server, tile_layer);
+        downloadMap = new OLMapWidget("128px", "256px", tile_server, tile_layer);
+        correlationMap = new OLMapWidget("128px", "256px", tile_server, tile_layer);
         layout.setMap(refMap);
+
+        layout.setAnimateTimeWidget(animateDateTimeWidget);
+
+        layout.downloadDateTimePanel.add(downloadDateTime);
+        layout.downloadMapPanel.add(downloadMap);
+        layout.downloadZaxisPanel.add(downloadZaxisWidget);
+
+        layout.correlationDateTimePanel.add(correlationDateTime);
+        layout.correlationMapPanel.add(correlationMap);
+        layout.correlationZaxisPanel.add(correlationZaxisWidget);
 
         ((RestServiceProxy)siteService).setResource(siteResource);
         // Call for the site now
@@ -198,12 +249,14 @@ public class UI implements EntryPoint {
         eventBus.addHandler(AddVariable.TYPE, new AddVariableHandler() {
             @Override
             public void onAddVariable(AddVariable event) {
+
                 layout.setUpdate(Color.RED);
                 if ( event.isAdd() ) {
                     Variable v = event.getVariable();
                     variables.add(v);
                     if ( variables.size() > 1 ) {
                         if ( !layout.plotsButton.getTitle().contains("1") ) {
+                            // TODO What is this??
                             layout.plotsButton.setText("Plot 1 Only with Mul");
                             layout.setPanels("Plot 1");
                             eventBus.fireEventFromSource(new PanelCount(1), layout.plotsDropdown);
@@ -256,7 +309,47 @@ public class UI implements EntryPoint {
                         pbis.getProductsByInterval(variables.get(0).getGeometry(), intervals, pbisCallback);
                     }
                 } else {
-                    // set operations and axes back to full set.
+                    //TODO set operations and axes back to full set.
+                }
+            }
+        });
+        eventBus.addHandler(AnimateAction.TYPE, new AnimateActionHandler() {
+            @Override
+            public void onSetupAnimate(AnimateAction event) {
+                if ( event.isCancel() ) {
+                    animateCancel = true;
+                    state.setAnimating(false);
+                } else if (event.isSubmit() ) {
+                    LASRequest lasRequest = makeRequest(5, "Animation_2D_XY");
+                    state.getPanelState(5).setLasRequest(lasRequest);
+                    state.getPanelState(5).setFrameIndex(0);
+                    state.getPanelState(5).clearFrames();
+                    state.setAnimating(true);
+                    requestQueue.add(lasRequest);
+                    layout.panel5.setImage("images/44frgm.gif");
+                    processQueue();
+                } else if ( event.isOpen() ) {
+                    animateCancel = false;
+                    state.getPanelState(5).setFrameIndex(0);
+                    state.getPanelState(5).clearFrames();
+                    animation = null;
+                    layout.panel5.clearAnnotations();
+                    layout.frameCount.setText("0 frames downloaded.");
+                    layout.time_step.setText("1");
+
+                    String dts = dataset.getProperty("ferret", "time_step");
+                    if ( dts != null ) {
+                        layout.time_step.setText(dts);
+                    }
+
+                    Variable v = layout.getSelectedVariable();
+                    String ts = v.getProperty("ferret", "time_step");
+                    if ( ts != null ) {
+                        layout.time_step.setText(ts);
+                    }
+
+                    layout.animateSubmit.setText("Submit");
+                    layout.panel5.setImage("images/animation_arrow.png");
                 }
             }
         });
@@ -325,7 +418,9 @@ public class UI implements EntryPoint {
                         layout.panel2.enableDifference(true);
                     }
 
-                    queueRequest(2);
+                    LASRequest lasRequest = makeRequest(2, products.getSelected());
+                    state.getPanelState(2).setLasRequest(lasRequest);
+                    requestQueue.add(lasRequest);
                     processQueue();
                 }
             }
@@ -429,7 +524,21 @@ public class UI implements EntryPoint {
         eventBus.addHandler(DateChange.TYPE, new DateChange.Handler() {
             @Override
             public void onDateChange(DateChange event) {
-                layout.setUpdate(Color.RED);
+                if (layout.animateWindow.isOpen()) {
+                    if (animation != null) {
+                        // Starting over...
+                        animation = null;
+                        eventBus.fireEventFromSource(new AnimationSpeed(0), animateDateTimeWidget);
+                        state.getPanelState(5).clearFrames();
+                        layout.animationControls.setDisplay(Display.NONE);
+                        layout.frameCount.setText("0 frames downloaded.");
+                        layout.animateSubmit.setText("Submit");
+                        layout.animateHelp.setText(Constants.ANIMATE_SUBMIT);
+                        layout.submitPanel.setDisplay(Display.BLOCK);
+                    }
+                } else {
+                    layout.setUpdate(Color.RED);
+                }
             }
         });
 
@@ -477,10 +586,152 @@ public class UI implements EntryPoint {
 
             }
         });
+        eventBus.addHandler(AnimationSpeed.TYPE, new AnimationSpeedHandler() {
+            @Override
+            public void onAnimationSpeed(AnimationSpeed event) {
+                int speed = event.getSpeed();
+                timer.cancel();
+                if ( speed > 0 ) {
+                    timer.scheduleRepeating(speed);
+                } else {
+                    // Stopping, take the loop counter back to be ready to move next or prev
+                    loop--;
+                }
+            }
+        });
 
+        eventBus.addHandler(MoveAnimation.TYPE, new MoveAnimationHandler() {
+            @Override
+            public void onMoveAnimation(MoveAnimation event) {
+                if ( event.getDirection() > 0 ) {
+                    // The loop counter has already been advanced by 1
+                    loop = loop + event.getDirection();
+                    loop = loop%animation.getFrames().size();
+                    nextStep();
+                } else {
+                    loop = loop + event.getDirection();
+                    if ( loop < 0 ) {
+                        loop = animation.getFrames().size() - 1;
+                    } else {
+                        loop = loop % animation.getFrames().size();
+                    }
+                    nextStep();
+                }
+
+            }
+        });
+
+        eventBus.addHandler(ShowValues.TYPE, new ShowValuesHandler() {
+            @Override
+            public void onShowValues(ShowValues event) {
+                LASRequest lasRequest = makeRequest(6, "Data_Extract");
+                requestQueue.add(lasRequest);
+                processQueue();
+            }
+        });
+        eventBus.addHandler(Download.TYPE, new DownloadHandler() {
+            @Override
+            public void onDownload(Download event) {
+                Widget s = (Widget) event.getSource();
+                if ( s instanceof MaterialButton) {
+                    if ( layout.formatsButton.getText().toLowerCase().equals("netcdf") ) {
+                        LASRequest lasRequest = makeRequest(7, "Data_Extract_netCDF");
+                        requestQueue.add(lasRequest);
+                    } else if ( layout.formatsButton.getText().toLowerCase().equals("csv") ) {
+                        LASRequest lasRequest = makeRequest(7, "Data_Extract_CSV");
+                        RequestProperty ff = new RequestProperty("ferret", "data_format", "csv");
+                        lasRequest.addProperty(ff);
+                        requestQueue.add(lasRequest);
+                    } else if ( layout.formatsButton.getText().toLowerCase().equals("ascii") ) {
+                        LASRequest lasRequest = makeRequest(7, "Data_Extract_File");
+                        RequestProperty ff = new RequestProperty("ferret", "data_format", "tsv");
+                        lasRequest.addProperty(ff);
+                        requestQueue.add(lasRequest);
+                    }
+                    processQueue();
+                } else {
+
+                    String view = products.getSelectedProduct().getView();
+                    if (event.isOpen()) {
+                        if (view.equals("xy")) {
+                            layout.downloadMapPanel.setDisplay(Display.NONE);
+                        } else {
+                            layout.downloadMapPanel.setDisplay(Display.BLOCK);
+                        }
+                        if (view.contains("z") || variables.get(0).getVerticalAxis() == null) {
+                            layout.downloadZaxisPanel.setDisplay(Display.NONE);
+                        } else {
+                            layout.downloadZaxisPanel.setDisplay(Display.BLOCK);
+                        }
+                        if (view.contains("t")) {
+                            layout.downloadDateTimePanel.setDisplay(Display.NONE);
+                        } else {
+                            layout.downloadDateTimePanel.setDisplay(Display.BLOCK);
+                        }
+                        if ( !products.getSelectedProduct().getView().contains("t") ) {
+                            downloadDateTime.setLo(dateTimeWidget.getFerretDateLo());
+                            downloadDateTime.setHi(dateTimeWidget.getFerretDateLo());
+                        }
+                        if ( !products.getSelectedProduct().getView().contains("z") ) {
+                            downloadZaxisWidget.setLo(zAxisWidget.getLo());
+                            downloadZaxisWidget.setHi(zAxisWidget.getLo());
+                        }
+                    }
+                }
+            }
+        });
+
+        eventBus.addHandler(Correlation.TYPE, new CorrelationHandler() {
+            @Override
+            public void onCorrelation(Correlation event) {
+                // isOpen means this is the event that is opening the window, so set it up.
+                if ( event.isOpen() ) {
+                    correlationMap.setCurrentSelection(refMap.getYlo(), refMap.getYhi(), refMap.getXlo(), refMap.getXhi());
+                    correlationDateTime.setLo(dateTimeWidget.getFerretDateLo());
+                    correlationDateTime.setHi(dateTimeWidget.getFerretDateHi());
+                    if (variables.get(0).getVerticalAxis() != null) {
+                        correlationZaxisWidget.setDisplay(Display.BLOCK);
+                        correlationZaxisWidget.setLo(zAxisWidget.getLo());
+                        correlationZaxisWidget.setHi(zAxisWidget.getHi());
+                    } else {
+                        correlationZaxisWidget.setDisplay(Display.NONE);
+                    }
+                } else if ( event.isSetX() ) {
+                    OptionElement o = (OptionElement) event.getSource();
+                    layout.xSelectedVariable = dataset.findVariableByNameAndTitle(o.getValue(), o.getText());
+                } else if ( event.isSetY() ) {
+                    OptionElement o = (OptionElement) event.getSource();
+                    layout.ySelectedVariable = dataset.findVariableByNameAndTitle(o.getValue(), o.getText());
+                } else if ( event.isSetC() ) {
+                    OptionElement o = (OptionElement) event.getSource();
+                    layout.cSelectedVariable = dataset.findVariableByNameAndTitle(o.getValue(), o.getText());
+                } else if ( event.isRemoveConstraint() ) {
+                    VariableConstraintWidget vcw = (VariableConstraintWidget) event.getSource();
+                    if ( vcw.isActive() ) {
+                        layout.setUpdate(Color.RED);
+                    }
+                    OptionElement o = layout.variableConstraintListBox.getOptionElement(layout.variableConstraintListBox.getIndex(vcw.getName()));
+                    o.setDisabled(false);
+                    layout.variableConstraintListBox.reload();
+                    layout.variableConstraints.remove(vcw);
+                }
+
+                // Fires on any event except setting the variable
+                if ( !event.isSetX() && !event.isSetY() && !event.isSetC() && !event.isRemoveConstraint()) {
+                    layout.correlationProgress.setDisplay(Display.BLOCK);
+                    // If not opening or changing variables, then just submit the product request to update the plot
+                    LASRequest lasRequest = makeRequest(8, "prop_prop_plot");
+                    requestQueue.add(lasRequest);
+                    processQueue();
+                }
+
+            }
+        });
 
         Mouse mouse = new Mouse();
         layout.addMouse(1, mouse);
+        Mouse correlationMouse = new Mouse();
+        layout.addMouse(8, correlationMouse);
 //
         layout.setDateTime(dateTimeWidget);
         layout.addVerticalAxis(zAxisWidget);
@@ -491,17 +742,33 @@ public class UI implements EntryPoint {
         layout.panel1.setIndex(1);
         layout.panel2.getOutputPanel().setTitle(Constants.PANEL02);
         layout.panel2.setIndex(2);
+        layout.panel5.setTitle(Constants.PANEL05);
+        layout.panel5.setIndex(5);
+        layout.panel8.getOutputPanel().setTitle(Constants.PANEL08);
+        layout.panel8.setIndex(8);
 
+        layout.animateWindow.addCloseHandler(new CloseHandler<Boolean>() {
+            @Override
+            public void onClose(CloseEvent<Boolean> closeEvent) {
+                timer.cancel();
+            }
+        });
 
     }
     public class Mouse {
         public void applyNeeded() {
-            layout.setUpdate(Color.RED);
+            if ( layout.animateWindow.isOpen() ) {
+
+            } else if ( layout.correlationWindow.isOpen() ) {
+                layout.correlationUpdate.setBackgroundColor(Color.RED);
+            } else {
+                layout.setUpdate(Color.RED);
+            }
         }
 
         public void setZ(double zlo, double zhi) {
-             zAxisWidget.setNearestLo(zlo);
-             zAxisWidget.setNearestHi(zhi);
+            zAxisWidget.setNearestLo(zlo);
+            zAxisWidget.setNearestHi(zhi);
         }
 
         public void updateLat(double ylo, double yhi) {
@@ -519,6 +786,33 @@ public class UI implements EntryPoint {
         public void updateTime(double tlo, double thi, String time_origin, String unitsString, String calendar) {
             dateTimeWidget.setLoByDouble(tlo, time_origin, unitsString, calendar);
             dateTimeWidget.setHiByDouble(thi, time_origin, unitsString, calendar);
+        }
+        public void updateConstraints(double world_startx, double world_endx, double world_starty, double world_endy) {
+            layout.xVariableConstraint.setActive(true);
+            layout.yVariableConstraint.setActive(true);
+            if (world_startx <= world_endx) {
+
+                layout.xVariableConstraint.setLo(dFormat.format(world_startx));
+                layout.xVariableConstraint.setHi(dFormat.format(world_endx));
+
+            } else {
+
+                layout.xVariableConstraint.setLo(dFormat.format(world_endx));
+                layout.xVariableConstraint.setHi(dFormat.format(world_startx));
+
+            }
+
+            if (world_starty <= world_endy) {
+
+                layout.yVariableConstraint.setLo(dFormat.format(world_starty));
+                layout.yVariableConstraint.setHi(dFormat.format(world_endy));
+
+            } else {
+
+                layout.yVariableConstraint.setLo(dFormat.format(world_endy));
+                layout.yVariableConstraint.setHi(dFormat.format(world_starty));
+
+            }
         }
     }
 
@@ -544,7 +838,7 @@ public class UI implements EntryPoint {
     }
     public interface ProductService extends RestService {
         @POST
-        public void getProduct(LASRequest lasRequest, MethodCallback<ProductResults> productRequestCallback);
+        public void getProduct(LASRequest lasRequest, MethodCallback<ResultSet> productRequestCallback);
     }
     public interface DatatableService extends RestService {
         @POST
@@ -599,6 +893,7 @@ public class UI implements EntryPoint {
 //            layout.resultsPanel01.getChart().add(chart);
         }
     };
+
     RequestCallback makeGoogleChartFromDataTable = new RequestCallback() {
 
         @Override
@@ -650,28 +945,184 @@ public class UI implements EntryPoint {
 
         }
     };
-    MethodCallback<ProductResults> productRequestCallback = new MethodCallback<ProductResults>() {
+    MethodCallback<ResultSet> productRequestCallback = new MethodCallback<ResultSet>() {
         @Override
         public void onFailure(Method method, Throwable exception) {
             layout.setUpdate(Color.WHITE);
             layout.hideProgress();
+            layout.downloadLoader.setDisplay(Display.NONE);
             Window.alert("Request failed: "+exception.getMessage());
             processQueue();
         }
 
         @Override
-        public void onSuccess(Method method, ProductResults results) {
+        public void onSuccess(Method method, ResultSet results) {
+            if ( products.getSelectedProduct().getView().equals("xy") ) {
+                layout.animate.setEnabled(true);
+            } else {
+                layout.animate.setEnabled(false);
+            }
+            layout.correlationLink.setEnabled(true);
+            layout.showValuesButton.setEnabled(true);
+            layout.saveAsButton.setEnabled(true);
             layout.setUpdate(Color.WHITE);
             layout.hideProgress();
             int tp = results.getTargetPanel();
-            state.getPanelState(tp).setProductResults(results);
-            layout.setState(tp, state);
-            if ( tp == 2 ) {
-                layout.panel2.scale();
+
+            if ( tp < 5 ) {
+                state.getPanelState(tp).setResultSet(results);
+                layout.setState(tp, state);
+                if (tp == 2) {
+                    layout.panel2.scale();
+                    // TODO other panels... 5 is the animation window
+                }
+
+
+            } else if ( tp == 5 ) {
+                // Only do things in panel 5 if the animate window is open... Otherwise just ignore them
+                if ( layout.animateWindow.isOpen() ) {
+                    if (results.getProduct().equals("Animation_2D_XY")) {
+                        animation = results.getAnimation();
+                        layout.frameCount.setText("0/" + animation.getFrames().size() + " frames downloaded.");
+                        layout.animateSubmit.setText("Cancel");
+                        layout.animateHelp.setText(Constants.ANIMATE_CANCEL);
+                    } else {
+                        state.getPanelState(5).setResultSet(results);
+                        layout.setState(tp, state);
+                        layout.panel5.setImage(state.getPanelState(5).getImageUrl());
+                        state.getPanelState(5).addFrame(state.getPanelState(5).getResultSet());
+                        layout.frameCount.setText(state.getPanelState(5).getCompletedFrames().size() + "/" + animation.getFrames().size() + " frames downloaded.");
+                    }
+                    if (state.getPanelState(5).getCompletedFrames().size() <= animation.getFrames().size()) {
+                        int frame = state.getPanelState(5).getFrameIndex();
+                        frame = frame % animation.getFrames().size();
+                        state.getPanelState(5).setFrameIndex(frame);
+                        String t = animation.getFrames().get(frame);
+                        // The animation properties to make a consistent plot between time steps
+                        String contour_levels = animation.getContour_levels();
+                        String fill_levels = animation.getFill_levels();
+                        String dep_axis_scale = animation.getDep_axis_scale();
+
+                        LASRequest lasRequest = makeRequest(5, products.getSelected());
+                        lasRequest.getAxesSet1().setTlo(t);
+                        lasRequest.getAxesSet1().setThi(t);
+
+                        if ( contour_levels != null ) {
+                            RequestProperty cl = new RequestProperty("ferret", "contour_levels", contour_levels);
+                            lasRequest.addProperty(cl);
+                        }
+                        if ( fill_levels != null ) {
+                            RequestProperty fl = new RequestProperty("ferret", "fill_levels", fill_levels);
+                            lasRequest.addProperty(fl);
+                        }
+                        if ( dep_axis_scale != null ) {
+                            RequestProperty das = new RequestProperty("ferret","dep_axis_scale", dep_axis_scale);
+                            lasRequest.addProperty(das);
+                        }
+                        state.getPanelState(5).setLasRequest(lasRequest);
+
+                        if (state.getPanelState(5).getCompletedFrames().size() == animation.getFrames().size() || animateCancel) {
+                            // Stop progress bar
+                            layout.animateProgress.setDisplay(Display.NONE);
+                            // Done gathering frames.
+
+                            // Open controls
+
+                            layout.submitPanel.setDisplay(Display.NONE);
+                            layout.animationControls.setDisplay(Display.BLOCK);
+
+                            // Animate
+
+                            timer.scheduleRepeating(layout.getSpeed());
+
+                        } else {
+
+                            // Queue the request and advance the counters
+                            requestQueue.add(lasRequest);
+                            frame++;
+                            state.getPanelState(5).setFrameIndex(frame);
+
+                        }
+                    }
+                }
+            } else if ( tp == 6 ) {
+
+                String error = results.getError();
+                if ( error != null && !error.isEmpty() ) {
+
+                }
+                layout.showValuesWindow.clear();
+                String myfile  = "";
+                Result outfile = results.getResultByTypeAndFile_type("ferret_listing", "text");
+                if ( outfile != null ) {
+                    myfile = outfile.getUrl();
+                }
+
+                Frame frame = new Frame(myfile);
+                frame.setWidth("100%");
+                frame.setHeight("98%");
+                layout.showValuesWindow.add(frame);
+            } else if ( tp == 7 ) {
+                String error = results.getError();
+                if ( error != null && !error.isEmpty() ) {
+                    layout.downloadError.setDisplay(Display.BLOCK);
+                    layout.downloadError.setText(error);
+                } else {
+                    Result output = results.getResultByType("netcdf");
+                    if (output == null) {
+                        output = results.getResultByTypeAndFile_type("ferret_listing", "text");
+                    }
+                    if (output == null) {
+                        output = results.getResultByTypeAndFile_type("ferret_listing", "csv");
+                    }
+                    String myfile = "";
+                    if (output != null) {
+                        myfile = output.getUrl();
+                    }
+
+                    layout.downloadLink.setText("Request sucessful. Click to download...");
+                    layout.downloadLoader.setDisplay(Display.NONE);
+                    layout.downloadLink.setDisplay(Display.BLOCK);
+                    layout.downloadLink.setTarget("_blank");
+                    layout.downloadLink.setHref(myfile);
+                }
+            } else if ( tp == 8 ) {
+                layout.correlationProgress.setDisplay(Display.NONE);
+                // Show plot an annotations in panel 8
+                state.getPanelState(tp).setResultSet(results);
+                layout.setState(tp, state);
+                MapScale ms = results.getMapScale();
+                layout.xVariableConstraint.setActive(false);
+                layout.yVariableConstraint.setActive(false);
+                layout.xVariableConstraint.setName(ms.getAxis_horizontal());
+                layout.yVariableConstraint.setName(ms.getAxis_vertical());
+                layout.xVariableConstraint.setLo(dFormat.format(Double.valueOf(ms.getXxxAxisLowerLeft())));
+                layout.xVariableConstraint.setHi(dFormat.format(Double.valueOf(ms.getXxxAxisUpperRight())));
+                layout.yVariableConstraint.setLo(dFormat.format(Double.valueOf(ms.getYyyAxisLowerLeft())));
+                layout.yVariableConstraint.setHi(dFormat.format(Double.valueOf(ms.getYyyAxisUpperRight())));
+                layout.correlationAxisItem.collapse();
+                layout.correlationConstraintsItem.expand();
             }
             processQueue();
         }
     };
+    Timer timer = new Timer() {
+        @Override
+        public void run() {
+            nextStep();
+            loop++;
+            // Loop on completed frames in case we canceled
+            loop = loop%state.getPanelState(5).getCompletedFrames().size();
+        }
+    };
+    private void nextStep() {
+        state.getPanelState(5).setFrameIndex(loop);
+        ResultSet completedFrame = state.getPanelState(5).getCompletedFrames().get(loop);
+        layout.panel5.setImage(state.getPanelState(5).getImageUrl());
+        state.getPanelState(5).setResultSet(completedFrame);
+        layout.setState(5, state);
+
+    }
     /**
      * Used when setting an analysis option cause the view to change so the list of operations changes.
      */
@@ -762,16 +1213,29 @@ public class UI implements EntryPoint {
 
         TimeAxis tAxis = newVariable.getTimeAxis();
 
-        dateTimeWidget.init(tAxis, false);
+        if ( tAxis != null ) {
+            dateTimeWidget.init(tAxis, false);
+            animateDateTimeWidget.init(tAxis, true);
+            downloadDateTime.init(tAxis, true);
+            correlationDateTime.init(tAxis, true);
+        }
         if ( newVariable.getVerticalAxis() != null ) {
             zAxisWidget.init(newVariable.getVerticalAxis());
+            downloadZaxisWidget.init(newVariable.getVerticalAxis());
+            downloadZaxisWidget.setRange(true);
+            correlationZaxisWidget.init(newVariable.getVerticalAxis());
+            correlationZaxisWidget.setRange(true);
         }
 
         refMap.setDataExtent(newVariable.getGeoAxisY().getMin(), newVariable.getGeoAxisY().getMax(), newVariable.getGeoAxisX().getMin(), newVariable.getGeoAxisX().getMax(), newVariable.getGeoAxisX().getDelta());
+        downloadMap.setDataExtent(newVariable.getGeoAxisY().getMin(), newVariable.getGeoAxisY().getMax(), newVariable.getGeoAxisX().getMin(), newVariable.getGeoAxisX().getMax(), newVariable.getGeoAxisX().getDelta());
+        correlationMap.setDataExtent(newVariable.getGeoAxisY().getMin(), newVariable.getGeoAxisY().getMax(), newVariable.getGeoAxisX().getMin(), newVariable.getGeoAxisX().getMax(), newVariable.getGeoAxisX().getDelta());
         List<Product> productsList = configSet.getConfig().get(newVariable.getGeometry()+"_"+newVariable.getIntervals()).getProducts();
         List<Region> regions = configSet.getConfig().get(newVariable.getGeometry()+"_"+newVariable.getIntervals()).getRegions();
 
         refMap.setRegions(regions);
+        downloadMap.setRegions(regions);
+        correlationMap.setRegions(regions);
 //
         products.init(productsList);
         Product p = products.getSelectedProduct();
@@ -832,7 +1296,10 @@ public class UI implements EntryPoint {
 
         } else {
             for (int i = 1; i <= state.getPanelCount(); i++) {
-                queueRequest(i);
+
+                LASRequest lasRequest = makeRequest(i, products.getSelected());
+                state.getPanelState(i).setLasRequest(lasRequest);
+                requestQueue.add(lasRequest);
                 if ( i == 1 ) {
                     layout.panel1.getChart().setVisible(false);
                     layout.panel1.getOutputPanel().setVisible(true);
@@ -847,7 +1314,7 @@ public class UI implements EntryPoint {
         }
     }
     private void makeDataRequest(List<Variable> variables1, Product p) {
-        LASRequest timeseriesReqeust = makeRequest(1);
+        LASRequest timeseriesReqeust = makeRequest(1, p.getName());
         if ( p.getTitle().equals("Timeseries") ) {
 //            erddapDataService.erddapTimeseries(timeseriesReqeust, makeChartFromJSON);
 
@@ -869,12 +1336,12 @@ public class UI implements EntryPoint {
         }
 
     }
-    private LASRequest makeRequest(int panel) {
+    private LASRequest makeRequest(int panel, String productName) {
         LASRequest lasRequest = new LASRequest();
 
         lasRequest.setTargetPanel(panel);
 
-        lasRequest.setOperation(products.getSelected());
+        lasRequest.setOperation(productName);
         Analysis analysis = null;
         // Only apply analysis from the layou to panel 1
         if ( panel == 1 ) {
@@ -919,11 +1386,11 @@ public class UI implements EntryPoint {
         } else {
             // If it's a timeseries plot, fudge the xy to the bounding box LAS has for the location???
             if ( products.getSelectedProduct().getName().toLowerCase().contains("timeseries") ) {
-                    lasRequest.getAxesSet1().setXlo(String.valueOf(refMap.getDataExtent()[2]));
-                    lasRequest.getAxesSet1().setXhi(String.valueOf(refMap.getDataExtent()[3]));
+                lasRequest.getAxesSet1().setXlo(String.valueOf(refMap.getDataExtent()[2]));
+                lasRequest.getAxesSet1().setXhi(String.valueOf(refMap.getDataExtent()[3]));
 
-                    lasRequest.getAxesSet1().setYlo(String.valueOf(refMap.getDataExtent()[0]));
-                    lasRequest.getAxesSet1().setYhi(String.valueOf(refMap.getDataExtent()[1]));
+                lasRequest.getAxesSet1().setYlo(String.valueOf(refMap.getDataExtent()[0]));
+                lasRequest.getAxesSet1().setYhi(String.valueOf(refMap.getDataExtent()[1]));
 
             }
         }
@@ -967,65 +1434,136 @@ public class UI implements EntryPoint {
         if ( panel != 1 ) {
 
             ComparePanel comparePanel = null;
-            if (panel == 2) {
+            if (panel == 2) {  // or 3 or 4 then do this work. Otherwise it's the main or animation panel...
                 comparePanel = layout.panel2;
-            }
-            // The map is always has the right hi and lo no matter the view
 
-            // If it's a difference, the nav values stay in AxesSet1 and the
-            // ortho values go in AxesSet2
-            if (!view.contains("x") && !comparePanel.isDifference()) {
-                lasRequest.getAxesSet1().setXlo(String.valueOf(comparePanel.getXlo()));
-                lasRequest.getAxesSet1().setXhi(String.valueOf(comparePanel.getXhi()));
-            } else if (!view.contains("x") && comparePanel.isDifference()) {
-                lasRequest.getAxesSet2().setXlo(String.valueOf(comparePanel.getXlo()));
-                lasRequest.getAxesSet2().setXhi(String.valueOf(comparePanel.getXhi()));
-            }
-            if (!view.contains("y") && !comparePanel.isDifference()) {
-                lasRequest.getAxesSet1().setYlo(String.valueOf(comparePanel.getYlo()));
-                lasRequest.getAxesSet1().setYhi(String.valueOf(comparePanel.getYhi()));
-            } else if (!view.contains("y") && comparePanel.isDifference()) {
-                lasRequest.getAxesSet2().setYlo(String.valueOf(comparePanel.getYlo()));
-                lasRequest.getAxesSet2().setYhi(String.valueOf(comparePanel.getYhi()));
-            }
-            if (!view.contains("z") && !comparePanel.isDifference()) {
-                if (comparePanel.getVariable().getVerticalAxis() != null) {
-                    lasRequest.getAxesSet1().setZlo(comparePanel.getZlo());
-                    if (comparePanel.isZRange()) {
-                        lasRequest.getAxesSet1().setZhi(comparePanel.getZhi());
-                    } else {
-                        lasRequest.getAxesSet1().setZhi(comparePanel.getZlo());
+                // The map is always has the right hi and lo no matter the view
+
+                // If it's a difference, the nav values stay in AxesSet1 and the
+                // ortho values go in AxesSet2
+                if (!view.contains("x") && !comparePanel.isDifference()) {
+                    lasRequest.getAxesSet1().setXlo(String.valueOf(comparePanel.getXlo()));
+                    lasRequest.getAxesSet1().setXhi(String.valueOf(comparePanel.getXhi()));
+                } else if (!view.contains("x") && comparePanel.isDifference()) {
+                    lasRequest.getAxesSet2().setXlo(String.valueOf(comparePanel.getXlo()));
+                    lasRequest.getAxesSet2().setXhi(String.valueOf(comparePanel.getXhi()));
+                }
+                if (!view.contains("y") && !comparePanel.isDifference()) {
+                    lasRequest.getAxesSet1().setYlo(String.valueOf(comparePanel.getYlo()));
+                    lasRequest.getAxesSet1().setYhi(String.valueOf(comparePanel.getYhi()));
+                } else if (!view.contains("y") && comparePanel.isDifference()) {
+                    lasRequest.getAxesSet2().setYlo(String.valueOf(comparePanel.getYlo()));
+                    lasRequest.getAxesSet2().setYhi(String.valueOf(comparePanel.getYhi()));
+                }
+                if (!view.contains("z") && !comparePanel.isDifference()) {
+                    if (comparePanel.getVariable().getVerticalAxis() != null) {
+                        lasRequest.getAxesSet1().setZlo(comparePanel.getZlo());
+                        if (comparePanel.isZRange()) {
+                            lasRequest.getAxesSet1().setZhi(comparePanel.getZhi());
+                        } else {
+                            lasRequest.getAxesSet1().setZhi(comparePanel.getZlo());
+                        }
+                    }
+                } else if (!view.contains("z") && comparePanel.isDifference()) {
+                    if (comparePanel.getVariable().getVerticalAxis() != null) {
+                        lasRequest.getAxesSet2().setZlo(comparePanel.getZlo());
+                        if (comparePanel.isZRange()) {
+                            lasRequest.getAxesSet2().setZhi(comparePanel.getZhi());
+                        } else {
+                            lasRequest.getAxesSet2().setZhi(comparePanel.getZlo());
+                        }
                     }
                 }
-            } else if (!view.contains("z") && comparePanel.isDifference()) {
-                if (comparePanel.getVariable().getVerticalAxis() != null) {
-                    lasRequest.getAxesSet2().setZlo(comparePanel.getZlo());
-                    if (comparePanel.isZRange()) {
-                        lasRequest.getAxesSet2().setZhi(comparePanel.getZhi());
+                if (!view.contains("t") && !comparePanel.isDifference()) {
+                    lasRequest.getAxesSet1().setTlo(comparePanel.getFerretDateLo());
+                    if (comparePanel.dateTimeWidget.isRange()) {
+                        lasRequest.getAxesSet1().setThi(comparePanel.getFerretDateHi());
                     } else {
-                        lasRequest.getAxesSet2().setZhi(comparePanel.getZlo());
+                        lasRequest.getAxesSet1().setThi(comparePanel.getFerretDateLo());
+                    }
+                } else if (!view.contains("t") && comparePanel.isDifference()) {
+                    lasRequest.getAxesSet2().setTlo(comparePanel.getFerretDateLo());
+                    if (comparePanel.dateTimeWidget.isRange()) {
+                        lasRequest.getAxesSet2().setThi(comparePanel.getFerretDateHi());
+                    } else {
+                        lasRequest.getAxesSet2().setThi(comparePanel.getFerretDateLo());
                     }
                 }
-            }
-            if (!view.contains("t") && !comparePanel.isDifference()) {
-                lasRequest.getAxesSet1().setTlo(comparePanel.getFerretDateLo());
-                if (comparePanel.dateTimeWidget.isRange()) {
-                    lasRequest.getAxesSet1().setThi(comparePanel.getFerretDateHi());
-                } else {
-                    lasRequest.getAxesSet1().setThi(comparePanel.getFerretDateLo());
+            } else if ( panel == 5 ) {
+                if ( productName.equals("Animation_2D_XY") ) {
+                    lasRequest.getAxesSet1().setTlo(animateDateTimeWidget.getFerretDateLo());
+                    lasRequest.getAxesSet1().setThi(animateDateTimeWidget.getFerretDateHi());
+                    String time_step = layout.time_step.getText();
+                    RequestProperty rp = new RequestProperty("ferret", "fill_type", "fill");
+                    lasRequest.addProperty(rp);
+                    if ( time_step != null && Integer.valueOf(time_step).intValue() > 0 ) {
+                        RequestProperty p = new RequestProperty("ferret", "time_step", time_step);
+                        lasRequest.addProperty(p);
+                    }
                 }
-            } else if (!view.contains("t") && comparePanel.isDifference()) {
-                lasRequest.getAxesSet2().setTlo(comparePanel.getFerretDateLo());
-                if (comparePanel.dateTimeWidget.isRange()) {
-                    lasRequest.getAxesSet2().setThi(comparePanel.getFerretDateHi());
-                } else {
-                    lasRequest.getAxesSet2().setThi(comparePanel.getFerretDateLo());
+            } else if ( panel == 8 ) {
+
+                // Use correlation window values initially set when window was opened,
+                // could be reset by user.
+                lasRequest.getAxesSet1().setXlo(String.valueOf(correlationMap.getXlo()));
+                lasRequest.getAxesSet1().setXhi(String.valueOf(correlationMap.getXhi()));
+
+                lasRequest.getAxesSet1().setYlo(String.valueOf(correlationMap.getYlo()));
+                lasRequest.getAxesSet1().setYhi(String.valueOf(correlationMap.getYhi()));
+
+                if ( variables.get(0).getVerticalAxis() != null ) {
+                    lasRequest.getAxesSet1().setZlo(correlationZaxisWidget.getLo());
+                    lasRequest.getAxesSet1().setZhi(correlationZaxisWidget.getHi());
+                }
+
+                lasRequest.getAxesSet1().setTlo(correlationDateTime.getFerretDateLo());
+                lasRequest.getAxesSet1().setThi(correlationDateTime.getFerretDateHi());
+
+
+                // Appply the active variable constraints
+                if ( layout.xVariableConstraint.isActive() ) {
+                    if ( layout.xVariableConstraint.getLo() != null && !layout.xVariableConstraint.getLo().isEmpty() ) {
+                        Constraint xlo = new Constraint("variable", layout.xVariableConstraint.getName(), "gt", layout.xVariableConstraint.getLo());
+                        lasRequest.addConstraint(xlo);
+                    }
+                    if ( layout.xVariableConstraint.getHi() != null && !layout.xVariableConstraint.getHi().isEmpty() ) {
+                        Constraint xhi = new Constraint("variable", layout.xVariableConstraint.getName(), "lt", layout.xVariableConstraint.getHi());
+                        lasRequest.addConstraint(xhi);
+                    }
+
+                }
+                if ( layout.yVariableConstraint.isActive() ) {
+                    if ( layout.yVariableConstraint.getLo() != null && !layout.yVariableConstraint.getLo().isEmpty() ) {
+                        Constraint ylo = new Constraint("variable", layout.yVariableConstraint.getName(), "gt", layout.yVariableConstraint.getLo());
+                        lasRequest.addConstraint(ylo);
+                    }
+                    if ( layout.yVariableConstraint.getHi() != null && !layout.yVariableConstraint.getHi().isEmpty() ) {
+                        Constraint yhi = new Constraint("variable", layout.yVariableConstraint.getName(), "lt", layout.yVariableConstraint.getHi());
+                        lasRequest.addConstraint(yhi);
+                    }
+                }
+                for (int vcindx = 0; vcindx < layout.variableConstraints.getWidgetCount(); vcindx++) {
+                    VariableConstraintWidget vcw = (VariableConstraintWidget) layout.variableConstraints.getWidget(vcindx);
+                    if ( vcw.isActive() ) {
+                        if ( vcw.getLo() != null && !vcw.getLo().isEmpty() ) {
+                            Constraint clo = new Constraint("variable", vcw.getName(), "gt", vcw.getLo());
+                            lasRequest.addConstraint(clo);
+                        }
+                        if ( vcw.getHi() != null && !vcw.getHi().isEmpty() ) {
+                            Constraint chi = new Constraint("variable", vcw.getName(), "lt", vcw.getHi());
+                            lasRequest.addConstraint(chi);
+                        }
+                    }
                 }
             }
         }
 
 
         List<RequestProperty> properties = layout.getPlotOptions();
+        List<RequestProperty> existingProperites = lasRequest.getRequestProperties();
+        if ( existingProperites != null ) {
+            properties.addAll(existingProperites);
+        }
         lasRequest.setRequestProperties(properties);
 
         setHashes(panel, lasRequest);
@@ -1048,7 +1586,8 @@ public class UI implements EntryPoint {
     private void setHashes(int panel, LASRequest lasRequest) {
         List<String> dhashes = new ArrayList<String>();
         List<String> vhashes = new ArrayList<String>();
-        if (panel == 1) {
+        // TODO for now both 1 and 5 are the same...
+        if (panel == 1 || panel == 5 || panel == 6 || panel == 7) {
             String dhash1 = dataset.getHash();
             // For now it's all one data set, but we want to repeat the data set hash
             for (int i = 0; i < variables.size(); i++) {
@@ -1081,27 +1620,50 @@ public class UI implements EntryPoint {
                 vhashes.add(layout.panel2.getVariable().getHash());
                 // Extra mumbo jumbo to have list becuase later custom analysis for panels.
             }
-        }
-        if ( variables.size() > 1 ) {
-            List<RequestProperty> p = lasRequest.getRequestProperties();
-            RequestProperty rp = new RequestProperty();
-            rp.setType("ferret");
-            rp.setName("data_count");
-            rp.setValue(String.valueOf(variables.size()));
-            if ( p == null ) {
-                p = new ArrayList<>();
+        } else if ( panel == 8 ) {
+            // X-Variable
+            String dhash1 = dataset.getHash();
+            if (dhash1 != null) {
+                dhashes.add(dhash1);
             }
-            p.add(rp);
-            lasRequest.setRequestProperties(p);
+            String xhash = layout.xSelectedVariable.getHash();
+            if ( xhash != null ) {
+                vhashes.add(xhash);
+            }
+            // Y-Variable
+            if (dhash1 != null) {
+                dhashes.add(dhash1);
+            }
+            String yhash = layout.ySelectedVariable.getHash();
+            if ( yhash != null ) {
+                vhashes.add(yhash);
+            }
+
+            // ColorBy if active
+            if ( layout.colorByOn.getValue()) {
+                if (dhash1 != null) {
+                    dhashes.add(dhash1);
+                }
+                String chash = layout.cSelectedVariable.getHash();
+                if (chash != null) {
+                    vhashes.add(chash);
+                }
+            }
+
+        }
+        if ( vhashes.size() >= 1 ) {
+            List<RequestProperty> p = lasRequest.getRequestProperties();
+            RequestProperty rp = new RequestProperty("ferret", "data_count", String.valueOf(vhashes.size()));
+            lasRequest.addProperty(rp);
         }
         lasRequest.setDatasetHashes(dhashes);
         lasRequest.setVariableHashes(vhashes);
     }
-    private void queueRequest(int panel) {
-        LASRequest lasRequest = makeRequest(panel);
-        state.getPanelState(panel).setLasRequest(lasRequest);
-        requestQueue.add(lasRequest);
-    }
+//    private void queueRequest(int panel, String productID) {
+//        LASRequest lasRequest = makeRequest(panel, productID);
+//        state.getPanelState(panel).setLasRequest(lasRequest);
+//        requestQueue.add(lasRequest);
+//    }
 
     private void processQueue() {
         if ( !requestQueue.isEmpty() ) {
@@ -1109,7 +1671,7 @@ public class UI implements EntryPoint {
             LASRequest lasRequest = requestQueue.remove();
             state.getPanelState(lasRequest.getTargetPanel()).setLasRequest(lasRequest);
             productService.getProduct(lasRequest, productRequestCallback);
-            MaterialToast.fireToast("Requesting product...");
+            MaterialToast.fireToast("Requesting "+ lasRequest.getOperation() + " ...");
         }
     }
     // Use the incoming variable to select the product
@@ -1125,6 +1687,8 @@ public class UI implements EntryPoint {
         }
 
         refMap.setTool(view);
+        downloadMap.setTool(view);
+        correlationMap.setTool(view);
 
         if ( newVariable.getTimeAxis() != null ) {
             layout.showDateTime();

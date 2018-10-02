@@ -105,9 +105,7 @@ public class OutputPanel extends AbsolutePanel {
     }
     public void scale() {
         // Decide the image scale based on the available width
-
         scale(Constants.navWidth);
-
     }
     public void scale(int navWidth) {
         // Decide the image scale based on the available width
@@ -176,7 +174,6 @@ public class OutputPanel extends AbsolutePanel {
         });
         scale();
     }
-
     LoadHandler imageLoadHandler = new LoadHandler() {
 
         @Override
@@ -204,6 +201,8 @@ public class OutputPanel extends AbsolutePanel {
 
             starty = starty - yscroll;
 
+            // TODO DEBUG promise to only click in the image
+            draw = true;
 
             if (startx > x_offset_from_left && starty > y_offset_from_top && startx < x_offset_from_left + x_plot_size && starty < y_offset_from_top + y_plot_size) {
 
@@ -303,8 +302,10 @@ public class OutputPanel extends AbsolutePanel {
                 drawingCanvasContext.clearRect(0, 0, drawingCanvas.getCoordinateSpaceWidth(), drawingCanvas.getCoordinateSpaceHeight());
                 drawingCanvasContext.fillRect(startx, starty, currentx - startx, currenty - starty);
                 drawingCanvasContext.strokeRect(startx, starty, currentx - startx, currenty - starty);
-                for (Iterator<UI.Mouse> mouseIt = mouseMoves.iterator(); mouseIt.hasNext();) {
-                    UI.Mouse mouse = mouseIt.next();
+                //for (Iterator<UI.Mouse> mouseIt = mouseMoves.iterator(); mouseIt.hasNext();) {
+                for (int m = 0; m < mouseMoves.size(); m++ ) {
+                    //UI.Mouse mouse = mouseIt.next();
+                    UI.Mouse mouse = mouseMoves.get(m);
                     double minx = Math.min(world_startx, world_endx);
                     double maxx = Math.max(world_startx, world_endx);
                     double miny = Math.min(world_starty, world_endy);
@@ -321,6 +322,8 @@ public class OutputPanel extends AbsolutePanel {
                         mouse.updateLon(minx, maxx);
                     } else if (!axisVertical.equals("x") && axisHorizontal.equals("y")) {
                         mouse.updateLat(minx, maxx);
+                    } else {
+                        mouse.updateConstraints(world_startx, world_endx, world_starty, world_endy);
                     }
                 }
             }
@@ -438,7 +441,7 @@ public class OutputPanel extends AbsolutePanel {
             try {
                 imageData = context.getImageData(0, 0, w, h);
             } catch (Exception e) {
-                // no image data. we'll try againg...
+                // no image data. we'll try again...
                 String b = e.getLocalizedMessage();
             }
 

@@ -1,5 +1,6 @@
 package pmel.sdig.las.shared.autobean;
 
+import java.util.Iterator;
 import java.util.Set;
 
 public class Variable implements Comparable {
@@ -144,7 +145,17 @@ public class Variable implements Comparable {
 	public String getUnits() {
 		return this.units;
 	}
-
+	public String getProperty(String type, String name) {
+	    if ( variableProperties != null ) {
+            for(Iterator vit = variableProperties.iterator(); vit.hasNext(); ) {
+                VariableProperty vp = (VariableProperty) vit.next();
+                if ( vp.getType().equals(type) && vp.getName().equals(name) ) {
+                    return vp.getValue();
+                }
+            }
+        }
+        return null;
+    }
 	@Override
 	public int compareTo(Object o) {
 		if ( o instanceof Variable ) {

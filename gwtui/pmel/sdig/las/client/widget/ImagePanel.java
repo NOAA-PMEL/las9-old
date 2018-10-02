@@ -2,38 +2,23 @@ package pmel.sdig.las.client.widget;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
-import com.google.gwt.event.dom.client.BlurEvent;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
-import gwt.material.design.client.constants.IconType;
-import gwt.material.design.client.ui.MaterialButton;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
 import gwt.material.design.client.ui.MaterialCollapsibleHeader;
-import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialContainer;
-import gwt.material.design.client.ui.MaterialIcon;
+import gwt.material.design.client.ui.MaterialImage;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialPanel;
-import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.MaterialTab;
 import gwt.material.design.client.ui.html.Div;
-import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.main.ClientFactory;
-import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
-import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Annotation;
 import pmel.sdig.las.shared.autobean.AnnotationGroup;
-import pmel.sdig.las.shared.autobean.Dataset;
-import pmel.sdig.las.shared.autobean.LASRequest;
 import pmel.sdig.las.shared.autobean.Variable;
 
 import java.util.ArrayList;
@@ -43,7 +28,7 @@ import java.util.List;
 /**
  * Created by rhs on 1/6/17.
  */
-public class ResultsPanel extends Composite {
+public class ImagePanel extends Composite {
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
@@ -52,10 +37,7 @@ public class ResultsPanel extends Composite {
     MaterialColumn panel;
 
     @UiField
-    OutputPanel outputPanel;
-
-    @UiField
-    Div chart;
+    MaterialImage image;
 
     @UiField
     MaterialCollapsibleHeader breadcrumbs;
@@ -72,12 +54,12 @@ public class ResultsPanel extends Composite {
 
     int index;
 
-    interface ResultsPanelUiBinder extends UiBinder<MaterialColumn, ResultsPanel> {
+    interface ResultsPanelUiBinder extends UiBinder<MaterialColumn, ImagePanel> {
     }
 
     private static ResultsPanelUiBinder ourUiBinder = GWT.create(ResultsPanelUiBinder.class);
 
-    public ResultsPanel() {
+    public ImagePanel() {
         initWidget(ourUiBinder.createAndBindUi(this));
     }
 
@@ -98,7 +80,6 @@ public class ResultsPanel extends Composite {
             l.setText(error);
             annotationPanel.add(l);
         } else {
-            outputPanel.setState(state);
             List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
             annotationPanel.clear();
             for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
@@ -116,11 +97,6 @@ public class ResultsPanel extends Composite {
     public void openAnnotations() {
         annotationsCollapse.open(1);
     }
-    public OutputPanel getOutputPanel() {
-        return outputPanel;
-    }
-    public Div getChart() { return chart; }
-
     public void addBreadcrumb(Breadcrumb b) {
 
         int index = getBreadcrumbs().size();
@@ -163,12 +139,10 @@ public class ResultsPanel extends Composite {
         return breadcrumbs;
     }
 
-    public void scale() {
-        outputPanel.scale();
+    public void setImage(String url) {
+        image.setUrl(url);
     }
-    public void scale(int navWidth) {
-        outputPanel.scale(navWidth);
-    }
+
     public void setLayoutPosition(Style.Position postion) {
         panel.setLayoutPosition(postion);
     }
@@ -181,4 +155,8 @@ public class ResultsPanel extends Composite {
     public void setIndex(int index) {
         this.index = index;
     }
+    public MaterialImage getImage() {
+        return image;
+    }
+
 }

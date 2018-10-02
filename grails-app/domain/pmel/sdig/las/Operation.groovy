@@ -2,6 +2,8 @@ package pmel.sdig.las
 
 class Operation {
 
+    String type // "ferret", "erddap", "client" ... there will be others
+
     String output_template
     String service_action
 

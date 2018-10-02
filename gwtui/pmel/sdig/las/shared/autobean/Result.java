@@ -6,6 +6,7 @@ package pmel.sdig.las.shared.autobean;
 public class Result {
     String name;
     String type;
+    String file_type;
     String mime_type;
     String suffix;
     String url;
@@ -66,5 +67,11 @@ public class Result {
 
     public void setLinked(boolean linked) {
         this.linked = linked;
+    }
+    public String getFile_type() {
+        return this.file_type;
+    }
+    public void setFile_type() {
+        this.file_type = file_type;
     }
 }

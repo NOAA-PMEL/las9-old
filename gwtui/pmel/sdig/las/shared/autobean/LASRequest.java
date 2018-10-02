@@ -1,5 +1,6 @@
 package pmel.sdig.las.shared.autobean;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,6 +20,8 @@ public class LASRequest {
     List<String> variableHashes;
     List<String> datasetHashes;
     List<Analysis> analysis;
+
+    List<Constraint> constraints;
 
     public List<Analysis> getAnalysis() {
         return analysis;
@@ -92,6 +95,25 @@ public class LASRequest {
 
     public void setAxesSet2(AxesSet axesSet2) {
         this.axesSet2 = axesSet2;
+    }
+    public void addProperty(RequestProperty requestProperty) {
+        if ( requestProperties == null ) {
+            requestProperties = new ArrayList<>();
+        }
+        requestProperties.add(requestProperty);
+    }
+    public List<Constraint> getConstraints() {
+        return constraints;
+    }
+    public void setConstraints(List<Constraint> constraints) {
+        this.constraints = constraints;
+    }
+
+    public void addConstraint(Constraint constraint) {
+        if ( constraints == null ) {
+            constraints = new ArrayList<>();
+        }
+        constraints.add(constraint);
     }
 }
 

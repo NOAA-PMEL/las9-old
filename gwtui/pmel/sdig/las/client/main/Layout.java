@@ -1,48 +1,55 @@
 package pmel.sdig.las.client.main;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.dom.client.Style;
+import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.logical.shared.CloseEvent;
+import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
 import gwt.material.design.addins.client.window.MaterialWindow;
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.Display;
-import gwt.material.design.client.constants.HeadingSize;
 import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.SideNavClosedEvent;
 import gwt.material.design.client.events.SideNavOpenedEvent;
 import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCardContent;
-import gwt.material.design.client.ui.MaterialCollapsibleBody;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
-import gwt.material.design.client.ui.MaterialCollectionItem;
 import gwt.material.design.client.ui.MaterialColumn;
 import gwt.material.design.client.ui.MaterialDropDown;
 import gwt.material.design.client.ui.MaterialIcon;
+import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
-import gwt.material.design.client.ui.MaterialLoader;
+import gwt.material.design.client.ui.MaterialListBox;
 import gwt.material.design.client.ui.MaterialNavBar;
 import gwt.material.design.client.ui.MaterialNavBrand;
 import gwt.material.design.client.ui.MaterialPanel;
+import gwt.material.design.client.ui.MaterialPreLoader;
 import gwt.material.design.client.ui.MaterialProgress;
+import gwt.material.design.client.ui.MaterialRange;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.MaterialSideNavPush;
 import gwt.material.design.client.ui.MaterialSwitch;
-import gwt.material.design.client.ui.html.Div;
-import gwt.material.design.client.ui.html.Heading;
+import gwt.material.design.client.ui.MaterialTextBox;
+import gwt.material.design.client.ui.html.Option;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
+import pmel.sdig.las.client.event.Download;
+import pmel.sdig.las.client.event.FeatureModifiedEvent;
 import pmel.sdig.las.client.event.PanelCount;
+import pmel.sdig.las.client.event.AnimateAction;
+import pmel.sdig.las.client.event.ShowValues;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
 import pmel.sdig.las.client.util.Constants;
@@ -51,11 +58,12 @@ import pmel.sdig.las.client.widget.Breadcrumb;
 import pmel.sdig.las.client.widget.ComparePanel;
 import pmel.sdig.las.client.widget.DataItem;
 import pmel.sdig.las.client.widget.DateTimeWidget;
+import pmel.sdig.las.client.widget.ImagePanel;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
-import pmel.sdig.las.client.widget.ProductButton;
 import pmel.sdig.las.client.widget.ProductButtonList;
 import pmel.sdig.las.client.widget.ResultsPanel;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
+import pmel.sdig.las.client.widget.VariableConstraintWidget;
 import pmel.sdig.las.client.widget.YesNoOptionsWidget;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
@@ -85,6 +93,11 @@ public class Layout extends Composite {
     MaterialDropDown plotsDropdown;
 
     @UiField
+    MaterialLink animate;
+    @UiField
+    MaterialWindow animateWindow;
+
+    @UiField
     MaterialButton overButton;
     @UiField
     MaterialButton analysisButton;
@@ -98,11 +111,114 @@ public class Layout extends Composite {
     @UiField
     MaterialColumn panel4;
     @UiField
+    ImagePanel panel5;
+    @UiField
+    ResultsPanel panel8; // The correlation viewer...
+
+    @UiField
     MaterialNavBar navbar;
     @UiField
     MaterialPanel mapPanel;
     @UiField
     MaterialCollapsibleItem dataItem;
+
+    @UiField
+    MaterialPanel animationDateTimePanel;
+    @UiField
+    MaterialPanel animationControls;
+    @UiField
+    MaterialLabel speedLabel;
+    @UiField
+    MaterialRange flipSpeed;
+    @UiField
+    MaterialButton stop;
+    @UiField
+    MaterialRow prevnext;
+    @UiField
+    MaterialButton next;
+    @UiField
+    MaterialButton prev;
+    @UiField
+    MaterialButton animateSubmit;
+    @UiField
+    MaterialPanel submitPanel;
+    @UiField
+    MaterialLabel frameCount;
+    @UiField
+    MaterialLabel animateHelp;
+    @UiField
+    MaterialTextBox time_step;
+    @UiField
+    MaterialProgress animateProgress;
+
+    @UiField
+    MaterialLink showValuesButton;
+    @UiField
+    MaterialWindow showValuesWindow;
+
+    @UiField
+    MaterialWindow downloadWindow;
+    @UiField
+    MaterialLink saveAsButton;
+    @UiField
+    MaterialCollection downloadDatasets;
+    @UiField
+    MaterialDropDown formatsDropDown;
+    @UiField
+    MaterialButton formatsButton;
+    @UiField
+    MaterialPanel downloadMapPanel;
+    @UiField
+    MaterialPanel downloadDateTimePanel;
+    @UiField
+    MaterialPanel downloadZaxisPanel;
+    @UiField
+    MaterialButton downloadButton;
+    @UiField
+    MaterialLink downloadLink;
+    @UiField
+    MaterialPreLoader downloadLoader;
+    @UiField
+    MaterialLabel downloadError;
+
+    @UiField
+    MaterialLink correlationLink;
+    @UiField
+    MaterialWindow correlationWindow;
+    @UiField
+    MaterialButton correlationUpdate;
+    @UiField
+    MaterialListBox xVariableListBox;
+    @UiField
+    MaterialListBox yVariableListBox;
+    @UiField
+    MaterialListBox cVariableListBox;
+    @UiField
+    MaterialPanel correlationDateTimePanel;
+    @UiField
+    MaterialPanel correlationMapPanel;
+    @UiField
+    MaterialPanel correlationZaxisPanel;
+    Variable ySelectedVariable;
+    Variable xSelectedVariable;
+    Variable cSelectedVariable;
+    @UiField
+    VariableConstraintWidget xVariableConstraint;
+    @UiField
+    VariableConstraintWidget yVariableConstraint;
+    @UiField
+    MaterialCollapsibleItem correlationAxisItem;
+    @UiField
+    MaterialCollapsibleItem correlationConstraintsItem;
+    @UiField
+    MaterialListBox variableConstraintListBox;
+    @UiField
+    MaterialSwitch colorByOn;
+    @UiField
+    MaterialPanel variableConstraints;
+    @UiField
+    MaterialProgress correlationProgress;
+
 
     @UiField
     MaterialPanel dateTimePanel;
@@ -141,6 +257,7 @@ public class Layout extends Composite {
 
     int kern = 15;
 
+    NumberFormat seconds = NumberFormat.getFormat("#.#");
 
 
     interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
@@ -150,6 +267,8 @@ public class Layout extends Composite {
         root = ourUiBinder.createAndBindUi(this);
         initWidget(root);
         panel2.setIndex(2);
+
+        colorByOn.addValueChangeHandler(colorByOnChange);
         analysisSwitch.addValueChangeHandler(analysisSwitchChange);
         outputRow01.setPaddingLeft(Constants.navWidth);
         outputRow02.setPaddingLeft(Constants.navWidth);
@@ -167,6 +286,28 @@ public class Layout extends Composite {
                 outputRow01.setPaddingLeft(4);
                 outputRow02.setPaddingLeft(4);
                 scale(8);
+            }
+        });
+        animateWindow.addCloseHandler(new CloseHandler<Boolean>() {
+            @Override
+            public void onClose(CloseEvent<Boolean> closeEvent) {
+                eventBus.fireEventFromSource(new AnimateAction(true, false, false), animateWindow);
+                // Reset animation controls to the "Going" state...
+                prevnext.setDisplay(Display.NONE);
+                stop.setText("Stop");
+                animateProgress.setDisplay(Display.NONE);
+                hideProgress();
+            }
+        });
+        correlationWindow.addCloseHandler(new CloseHandler<Boolean>() {
+            @Override
+            public void onClose(CloseEvent<Boolean> closeEvent) {
+                correlationProgress.setDisplay(Display.NONE);
+                xVariableListBox.clear();
+                yVariableListBox.clear();
+                cVariableListBox.clear();
+                variableConstraintListBox.clear();
+                variableConstraints.clear();
             }
         });
     }
@@ -376,13 +517,23 @@ public class Layout extends Composite {
         products.add(pb);
     }
     public void setUpdate(Color color) {
-        update.setBackgroundColor(color);
+        if ( !animateWindow.isOpen() && !correlationWindow.isOpen() ) {
+            update.setBackgroundColor(color);
+        }
+        if ( correlationWindow.isOpen() ) {
+            correlationUpdate.setBackgroundColor(color);
+        }
     }
     public void setState(int panel, State state) {
         if ( panel == 1 ) {
             panel1.setState(state);
         } else if ( panel == 2 ) {
             panel2.setState(state);
+            // TODO the others, 5 is the animation window
+        } else if ( panel == 5 ) {
+            panel5.setState(state);
+        } else if ( panel == 8 ) {
+            panel8.setState(state);
         }
     }
     public Dataset getDataset(int panel) {
@@ -410,7 +561,11 @@ public class Layout extends Composite {
         return null;
     }
     public void addMouse(int panel, UI.Mouse mouse) {
-        panel1.getOutputPanel().addMouse(mouse);
+        if ( panel == 1 ) {
+            panel1.getOutputPanel().addMouse(mouse);
+        } else if ( panel == 8 ) {
+            panel8.getOutputPanel().addMouse(mouse);
+        }
     }
     public List<RequestProperty> getPlotOptions() {
         List<RequestProperty> properties = new ArrayList<>();
@@ -429,18 +584,6 @@ public class Layout extends Composite {
             }
         }
         return properties;
-    }
-    @UiHandler("update")
-    public void update(ClickEvent clickEvent) {
-        eventBus.fireEventFromSource(clickEvent, update);
-    }
-
-
-    @UiHandler("plotsDropdown")
-    void onDropDown(SelectionEvent<Widget> selection) {
-        String title = ((MaterialLink)selection.getSelectedItem()).getText();
-        int count = setPanels(title);
-        eventBus.fireEventFromSource(new PanelCount(count), selection);
     }
 
     public int setPanels(String title) {
@@ -473,28 +616,6 @@ public class Layout extends Composite {
         }
         return count;
     }
-    @UiHandler("analysis")
-    void onAnalysisDropDown(SelectionEvent<Widget> selection) {
-        String title = ((MaterialLink)selection.getSelectedItem()).getText();
-        analysisButton.setText(title);
-        setUpdate(Color.RED);
-        analysisSwitch.setValue(true);
-        String over = overButton.getText();
-        boolean active = analysisSwitch.getValue();
-        eventBus.fireEventFromSource(new AnalysisActive(title, over, active), overButton);
-    }
-
-    @UiHandler("over")
-    void onOverDropDown(SelectionEvent<Widget> selection) {
-        String title = ((MaterialLink)selection.getSelectedItem()).getText();
-        overButton.setText(title);
-        setUpdate(Color.RED);
-        analysisSwitch.setValue(true);
-        String type = analysisButton.getText();
-        boolean active = analysisSwitch.getValue();
-        eventBus.fireEventFromSource(new AnalysisActive(type, title, active), overButton);
-    }
-
     public void setMap(OLMapWidget map) {
         mapPanel.add(map);
     }
@@ -520,6 +641,64 @@ public class Layout extends Composite {
     public void addOptions(Widget widget) {
         options.add(widget);
     }
+    public int getSpeed() {
+        return flipSpeed.getValue();
+    }
+    public boolean isDifference(int panel) {
+        if ( panel == 1 ) {
+            // Should need to ask
+            return false;
+        } else if ( panel == 2 ) {
+            // TODO othter panels
+            return panel2.isDifference();
+        }
+        return false;
+    }
+    public void setAnimateTimeWidget(DateTimeWidget dtw) {
+        animationDateTimePanel.add(dtw);
+    }
+
+    ValueChangeHandler addAndDisable = new ValueChangeHandler() {
+        @Override
+        public void onValueChange(ValueChangeEvent valueChangeEvent) {
+            String value = (String) valueChangeEvent.getValue();
+            variableConstraintListBox.setSelectedIndex(0);
+            OptionElement oe = variableConstraintListBox.getOptionElement(variableConstraintListBox.getIndex(value));
+            oe.setDisabled(true);
+            variableConstraintListBox.reload();
+            VariableConstraintWidget vcw = new VariableConstraintWidget();
+            vcw.setName(value);
+            vcw.showRemove();
+            variableConstraints.add(vcw);
+        }
+    };
+    ValueChangeHandler correlationChangeX = new ValueChangeHandler() {
+        @Override
+        public void onValueChange(ValueChangeEvent valueChangeEvent) {
+            String value = (String) valueChangeEvent.getValue();
+            OptionElement optionElement = xVariableListBox.getOptionElement(xVariableListBox.getIndex(value));
+            setUpdate(Color.RED);
+            eventBus.fireEventFromSource(new Correlation(false, true, false, false, false), optionElement);
+        }
+    };
+    ValueChangeHandler correlationChangeY = new ValueChangeHandler() {
+        @Override
+        public void onValueChange(ValueChangeEvent valueChangeEvent) {
+            String value = (String) valueChangeEvent.getValue();
+            OptionElement optionElement = yVariableListBox.getOptionElement(yVariableListBox.getIndex(value));
+            setUpdate(Color.RED);
+            eventBus.fireEventFromSource(new Correlation(false, false, true, false, false), optionElement);
+        }
+    };
+    ValueChangeHandler correlationChangeC = new ValueChangeHandler() {
+        @Override
+        public void onValueChange(ValueChangeEvent valueChangeEvent) {
+            String value = (String) valueChangeEvent.getValue();
+            OptionElement optionElement = cVariableListBox.getOptionElement(cVariableListBox.getIndex(value));
+            setUpdate(Color.RED);
+            eventBus.fireEventFromSource(new Correlation(false, false, false, true, false), optionElement);
+        }
+    };
     ValueChangeHandler<Boolean> analysisSwitchChange = new ValueChangeHandler<Boolean>() {
         @Override
         public void onValueChange(ValueChangeEvent<Boolean> event) {
@@ -528,6 +707,180 @@ public class Layout extends Composite {
             eventBus.fireEventFromSource(new AnalysisActive(type, over, event.getValue()), overButton);
         }
     };
+    ValueChangeHandler<Boolean> colorByOnChange = new ValueChangeHandler<Boolean>() {
+        @Override
+        public void onValueChange(ValueChangeEvent<Boolean> valueChangeEvent) {
+            eventBus.fireEventFromSource(new FeatureModifiedEvent(0,0,0,0), colorByOn);
+        }
+    };
+    @UiHandler("update")
+    public void update(ClickEvent clickEvent) {
+        eventBus.fireEventFromSource(clickEvent, update);
+    }
+
+    @UiHandler("plotsDropdown")
+    void onDropDown(SelectionEvent<Widget> selection) {
+        String title = ((MaterialLink)selection.getSelectedItem()).getText();
+        int count = setPanels(title);
+        eventBus.fireEventFromSource(new PanelCount(count), selection);
+    }
+
+    @UiHandler("formatsDropDown")
+    void onFormatChange(SelectionEvent<Widget> event) {
+        downloadLink.setDisplay(Display.NONE);
+        String title = ((MaterialLink) event.getSelectedItem()).getText();
+        formatsButton.setText(title);
+    }
+    @UiHandler("analysis")
+    void onAnalysisDropDown(SelectionEvent<Widget> selection) {
+        String title = ((MaterialLink)selection.getSelectedItem()).getText();
+        analysisButton.setText(title);
+        setUpdate(Color.RED);
+        analysisSwitch.setValue(true);
+        String over = overButton.getText();
+        boolean active = analysisSwitch.getValue();
+        eventBus.fireEventFromSource(new AnalysisActive(title, over, active), overButton);
+    }
+
+    @UiHandler("over")
+    void onOverDropDown(SelectionEvent<Widget> selection) {
+        String title = ((MaterialLink)selection.getSelectedItem()).getText();
+        overButton.setText(title);
+        setUpdate(Color.RED);
+        analysisSwitch.setValue(true);
+        String type = analysisButton.getText();
+        boolean active = analysisSwitch.getValue();
+        eventBus.fireEventFromSource(new AnalysisActive(type, title, active), overButton);
+    }
+
+    @UiHandler("correlationLink")
+    public void onCorrelation(ClickEvent event) {
+        correlationWindow.setLeft(30);
+        correlationWindow.setTop(30);
+        int w = Window.getClientWidth() - 60;
+        int h = Window.getClientHeight() - 60;
+        correlationWindow.setWidth(w+"px");
+        correlationWindow.setHeight(h+"px");
+        xVariableListBox.clear();
+        yVariableListBox.clear();
+        cVariableListBox.clear();
+        variableConstraintListBox.clear();
+        xVariableListBox.addValueChangeHandler(correlationChangeX);
+        yVariableListBox.addValueChangeHandler(correlationChangeY);
+        cVariableListBox.addValueChangeHandler(correlationChangeC);
+        variableConstraintListBox.addValueChangeHandler(addAndDisable);
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            DataItem di = (DataItem) datasets.getWidget(i);
+            Object s = di.getSelection();
+            if ( s instanceof Variable ) {
+
+                Variable v = (Variable)s;
+                xVariableListBox.addItem(v.getName(), v.getTitle());;
+                yVariableListBox.addItem(v.getName(), v.getTitle());
+                cVariableListBox.addItem(v.getName(), v.getTitle());
+
+                // Add all variables to the menu to add a varible constraint, but disable
+                // variables in the plot
+
+                variableConstraintListBox.addItem(v.getName(), v.getTitle());
+
+                // TODO, need an event to set the defaults from config
+                if ( i == 0 ) {
+                    ySelectedVariable = v;
+                    xSelectedVariable = v;
+                    cSelectedVariable = v;
+                    xVariableListBox.setSelectedIndex(i);
+                    yVariableListBox.setSelectedIndex(i);
+                    cVariableListBox.setSelectedIndex(i);
+                    OptionElement o = variableConstraintListBox.getOptionElement(i);
+                    o.setDisabled(true);
+                } else if ( i == 1 ) {
+                    xSelectedVariable = v;
+                    cSelectedVariable = v;
+                    xVariableListBox.setSelectedIndex(i);
+                    cVariableListBox.setSelectedIndex(i);
+                    OptionElement o = variableConstraintListBox.getOptionElement(i);
+                    o.setDisabled(true);
+                } else if ( i == 2 ) {
+                    cSelectedVariable = v;
+                    cVariableListBox.setSelectedIndex(i);
+                }
+            }
+        }
+        eventBus.fireEventFromSource(new Correlation(true, false, false, false, false), correlationLink);
+        correlationWindow.open();
+    }
+    @UiHandler("correlationUpdate")
+    public void onCorrelationUpdate(ClickEvent event) {
+        eventBus.fireEventFromSource(new Correlation(false, false, false, false, false), correlationLink);
+    }
+    @UiHandler("saveAsButton")
+    public void onSaveAs(ClickEvent event) {
+        downloadDatasets.clear();
+        downloadLoader.setDisplay(Display.NONE);
+        downloadLink.setDisplay(Display.NONE);
+        downloadError.setDisplay(Display.NONE);
+        downloadLink.setHref("");
+        downloadWindow.open();
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            DataItem d = (DataItem) datasets.getWidget(i);
+            DataItem dd = new DataItem(d.getSelection());
+            if ( d.getRadioSelected() ) {
+                dd.setRadioSelected();
+            }
+            dd.toCheck();
+            downloadDatasets.add(dd);
+        }
+        eventBus.fireEventFromSource(new Download(true), saveAsButton);
+    }
+
+    @UiHandler("animateSubmit")
+    public void onAnimateSubmit(ClickEvent event) {
+        MaterialButton button = (MaterialButton) event.getSource();
+        if ( button.getText().equals("Submit") ) {
+            animateProgress.setDisplay(Display.BLOCK);
+            eventBus.fireEvent(new AnimateAction(false, false, true));
+        } else {
+            animateProgress.setDisplay(Display.NONE);
+            eventBus.fireEvent(new AnimateAction(true, false, false));
+        }
+    }
+
+    @UiHandler("downloadButton")
+    public void onDownload(ClickEvent event) {
+        downloadLoader.setDisplay(Display.BLOCK);
+        eventBus.fireEventFromSource(new Download(true), downloadButton);
+    }
+    @UiHandler("animate")
+    public void onAnimate(ClickEvent event) {
+
+        animateWindow.setLayoutPosition(Style.Position.ABSOLUTE);
+        animateWindow.setLeft(60);
+        animateWindow.setTop(60);
+        int w = Window.getClientWidth() - 120;
+        int h = Window.getClientHeight() - 120;
+        animateWindow.setWidth(w+"px");
+        animateWindow.setHeight(h+"px");
+        animationControls.setDisplay(Display.NONE);
+        submitPanel.setDisplay(Display.BLOCK);
+        panel5.setImage("images/animation_arrow.png");
+        eventBus.fireEventFromSource(new AnimateAction(false, true, false), animate);
+        animateWindow.open();
+    }
+
+    @UiHandler("showValuesButton")
+    public void onShowValues(ClickEvent event) {
+        showValuesWindow.setLayoutPosition(Style.Position.ABSOLUTE);
+        showValuesWindow.setLeft(60);
+        showValuesWindow.setTop(60);
+        int w = Window.getClientWidth() - 120;
+        int h = Window.getClientHeight() - 120;
+        showValuesWindow.setWidth(w+"px");
+        showValuesWindow.setHeight(h+"px");
+        showValuesWindow.open();
+        eventBus.fireEventFromSource(new ShowValues(), showValuesButton);
+    }
+
     @UiHandler("home")
     public void onHome(ClickEvent event) {
         eventBus.fireEventFromSource(new BreadcrumbSelect(), home);
@@ -547,14 +900,31 @@ public class Layout extends Composite {
             event.stopPropagation();
         }
     }
-    public boolean isDifference(int panel) {
-        if ( panel == 1 ) {
-            // Should need to ask
-            return false;
-        } else if ( panel == 2 ) {
-            // TODO othter panels
-            return panel2.isDifference();
-        }
-        return false;
+    @UiHandler("next")
+    public void onNext(ClickEvent event) {
+        eventBus.fireEventFromSource(new MoveAnimation(1), next);
     }
+    @UiHandler("prev")
+    public void onPrev(ClickEvent event) {
+        eventBus.fireEventFromSource(new MoveAnimation(-1), prev);
+    }
+    @UiHandler("stop")
+    public void onStop(ClickEvent event) {
+        if ( stop.getText().equals("Stop") ) {
+            eventBus.fireEventFromSource(new AnimationSpeed(0), stop);
+            prevnext.setDisplay(Display.BLOCK);
+            stop.setText("Go");
+        } else { // The button said go
+            eventBus.fireEventFromSource(new AnimationSpeed(flipSpeed.getValue()), stop);
+            prevnext.setDisplay(Display.NONE);
+            stop.setText("Stop");
+        }
+    }
+    @UiHandler("flipSpeed")
+    public void onFaster(ChangeEvent event) {
+        String secs = seconds.format(Double.valueOf(flipSpeed.getValue()).doubleValue()/1000.d);
+        speedLabel.setText(secs+" seconds between images.");
+        eventBus.fireEventFromSource(new AnimationSpeed(flipSpeed.getValue()), flipSpeed);
+    }
+
 }

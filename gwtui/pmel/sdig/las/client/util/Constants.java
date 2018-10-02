@@ -28,14 +28,23 @@ public class Constants {
 
     public final static CssColor randomColor = CssColor.make("rgba(" + rndRedColor + ", " + rndGreenColor + "," + rndBlueColor + ", " + rndAlpha + ")");
 
-    public static final String PANEL01 = "panel01";
-    public static final String PANEL02 = "panel02";
-    public static final String PANEL03 = "panel03";
-    public static final String PANEL04 = "panel04";
+    public static final String PANEL01 = "panel01"; // Main panel, upper left
+    public static final String PANEL02 = "panel02"; // Second panel; upper right
+    public static final String PANEL03 = "panel03"; // lower left
+    public static final String PANEL04 = "panel04"; // lower right
+    public static final String PANEL05 = "panel05"; // animation
+    public static final String PANEL06 = "panel06"; // Show values... kinda pointless
+    public static final String PANEL07 = "panel07"; // Save as... but it has no actual panel
+
+    public static final String PANEL08 = "panel08"; // correlation viewer
+
 
     public static String GRID = "grid";
     public static String TRAJECTORY = "trajectory";
     public static String PROFILE = "profile";
     public static String TIMESERIES = "timeseries";
+
+    public static String ANIMATE_CANCEL = "Push the cancel button to stop making new frames and animate the ones already downloaded.";
+    public static String ANIMATE_SUBMIT = "Select a time range, the number of time steps to skip between frames, and submit";
 
 }

@@ -4,6 +4,7 @@ class Result {
 
     String name
 	String type
+    String file_type
     String mime_type
 	String suffix
     String url

@@ -7,6 +7,16 @@ public class RequestProperty {
     String name;
     String value;
 
+    public RequestProperty() {
+        super();
+    }
+
+    public RequestProperty(String type, String name, String value) {
+        this.type = type;
+        this.name = name;
+        this.value = value;
+    }
+
     public long getId() {
         return id;
     }

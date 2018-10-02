@@ -266,6 +266,12 @@ public class Layout extends Composite {
     public Layout() {
         root = ourUiBinder.createAndBindUi(this);
         initWidget(root);
+
+        xVariableListBox.addValueChangeHandler(correlationChangeX);
+        yVariableListBox.addValueChangeHandler(correlationChangeY);
+        cVariableListBox.addValueChangeHandler(correlationChangeC);
+        variableConstraintListBox.addValueChangeHandler(addAndDisable);
+
         panel2.setIndex(2);
 
         colorByOn.addValueChangeHandler(colorByOnChange);
@@ -765,10 +771,7 @@ public class Layout extends Composite {
         yVariableListBox.clear();
         cVariableListBox.clear();
         variableConstraintListBox.clear();
-        xVariableListBox.addValueChangeHandler(correlationChangeX);
-        yVariableListBox.addValueChangeHandler(correlationChangeY);
-        cVariableListBox.addValueChangeHandler(correlationChangeC);
-        variableConstraintListBox.addValueChangeHandler(addAndDisable);
+        variableConstraints.clear();
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem di = (DataItem) datasets.getWidget(i);
             Object s = di.getSelection();

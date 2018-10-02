@@ -713,7 +713,7 @@ public class UI implements EntryPoint {
                     OptionElement o = layout.variableConstraintListBox.getOptionElement(layout.variableConstraintListBox.getIndex(vcw.getName()));
                     o.setDisabled(false);
                     layout.variableConstraintListBox.reload();
-                    layout.variableConstraints.remove(vcw);
+                    boolean gone = layout.variableConstraints.remove(vcw);
                 }
 
                 // Fires on any event except setting the variable

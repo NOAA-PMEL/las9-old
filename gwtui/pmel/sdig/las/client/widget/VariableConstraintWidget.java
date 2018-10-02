@@ -8,13 +8,12 @@ import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
@@ -37,13 +36,13 @@ public class VariableConstraintWidget extends Composite {
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
 
-    interface VariableConstraintUiBinder extends UiBinder<MaterialContainer, VariableConstraintWidget> {
+    interface VariableConstraintUiBinder extends UiBinder<MaterialPanel, VariableConstraintWidget> {
     }
 
     private static VariableConstraintUiBinder ourUiBinder = GWT.create(VariableConstraintUiBinder.class);
 
     public VariableConstraintWidget() {
-        MaterialContainer rootElement = ourUiBinder.createAndBindUi(this);
+        MaterialPanel rootElement = ourUiBinder.createAndBindUi(this);
         initWidget(rootElement);
         remove.addClickHandler(new ClickHandler() {
             @Override

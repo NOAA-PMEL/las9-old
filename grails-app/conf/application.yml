@@ -1,7 +1,7 @@
 ---
 server:
-    port: 8920
-#    port: 8282
+#    port: 8920
+    port: 8282
     contextPath: /las
 ---
 grails:

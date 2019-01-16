@@ -4,7 +4,8 @@ import grails.converters.JSON
 
 class ConfigController {
 
-    ProductService productService;
+    ProductService productService
+    IngestService ingestService
     /**
      * A config is the set of Products and Regions that apply to a geometry type and set of "intervals" or axes.
      *
@@ -23,6 +24,7 @@ class ConfigController {
 
         Dataset parent = Dataset.get(id)
         DatasetProperty p = parent.getDatasetProperties().find{it.name=="default"}
+
 
         //TODO use the default data set property to find operations if defined.
 

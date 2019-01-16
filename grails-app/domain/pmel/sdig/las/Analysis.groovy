@@ -3,6 +3,7 @@ package pmel.sdig.las
 class Analysis {
     String transformation
     String axes
+    String over
     List analysisAxes
     static hasMany = [analysisAxes: AnalysisAxis]
     String hash() {

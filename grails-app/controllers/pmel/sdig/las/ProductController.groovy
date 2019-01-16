@@ -299,6 +299,8 @@ class ProductController {
                     List<String> datasetHashes = lasRequest.getDatasetHashes()
                     List<String> variableHashes = lasRequest.getVariableHashes()
                     List<Constraint> constraints = lasRequest.getConstraints();
+                    // There is one data set has entry and one variable hash entry for each variable in the request
+                    // even if the variables are from the same data set.
                     for (int h = 0; h < datasetHashes.size(); h++) {
 
                         // Apply the analysis to the variable URL
@@ -316,7 +318,7 @@ class ProductController {
                         // TODO for now only analysis on first variable, but don't really know what this should look like
                         if (h == 0 && analysis != null && analysis.get(h) != null) {
 
-                            Analysis a = analysis.get(i)
+                            Analysis a = analysis.get(h)
 
                             String type = a.getTransformation();
 
@@ -392,38 +394,45 @@ class ProductController {
                         jnl.append("DEFINE SYMBOL data_${h}_url = ${variable_url}\n")
                         jnl.append("DEFINE SYMBOL data_${h}_var = ${variable_name}\n")
 
-                        if (!analysis_axes.contains("t")) {
-                            jnl.append("DEFINE SYMBOL region_${h}_t_hi = ${lasRequest.getAxesSet1().getThi()}\n")
-                            jnl.append("DEFINE SYMBOL region_${h}_t_lo = ${lasRequest.getAxesSet1().getTlo()}\n")
+                        // TODO stop sending nulls maybe
+                        // Is there an axesset?
+                        if ( lasRequest.getAxesSets().size() > h ) {
+                                                                // Does it have non-null values?
+                            if (!analysis_axes.contains("t") && lasRequest.getAxesSets().get(h).getThi() && lasRequest.getAxesSets().get(h).getTlo()) {
+                                jnl.append("DEFINE SYMBOL region_${h}_t_hi = ${lasRequest.getAxesSets().get(h).getThi()}\n")
+                                jnl.append("DEFINE SYMBOL region_${h}_t_lo = ${lasRequest.getAxesSets().get(h).getTlo()}\n")
+                            }
+                            if (!analysis_axes.contains("x")) {
+                                jnl.append("DEFINE SYMBOL region_${h}_x_hi = ${lasRequest.getAxesSets().get(h).getXhi()}\n")
+                                jnl.append("DEFINE SYMBOL region_${h}_x_lo = ${lasRequest.getAxesSets().get(h).getXlo()}\n")
+                            }
+                            if (!analysis_axes.contains("y")) {
+                                jnl.append("DEFINE SYMBOL region_${h}_y_hi = ${lasRequest.getAxesSets().get(h).getYhi()}\n")
+                                jnl.append("DEFINE SYMBOL region_${h}_y_lo = ${lasRequest.getAxesSets().get(h).getYlo()}\n")
+                            }
+                            if (!analysis_axes.contains("z")) {
+                                if (lasRequest.getAxesSets().get(h).getZlo()) jnl.append("DEFINE SYMBOL region_${h}_z_lo = ${lasRequest.getAxesSets().get(h).getZlo()}\n")
+                                if (lasRequest.getAxesSets().get(h).getZhi()) jnl.append("DEFINE SYMBOL region_${h}_z_hi = ${lasRequest.getAxesSets().get(h).getZhi()}\n")
+                            }
                         }
-                        if (!analysis_axes.contains("x")) {
-                            jnl.append("DEFINE SYMBOL region_${h}_x_hi = ${lasRequest.getAxesSet1().getXhi()}\n")
-                            jnl.append("DEFINE SYMBOL region_${h}_x_lo = ${lasRequest.getAxesSet1().getXlo()}\n")
-                        }
-                        if (!analysis_axes.contains("y")) {
-                            jnl.append("DEFINE SYMBOL region_${h}_y_hi = ${lasRequest.getAxesSet1().getYhi()}\n")
-                            jnl.append("DEFINE SYMBOL region_${h}_y_lo = ${lasRequest.getAxesSet1().getYlo()}\n")
-                        }
-                        if (!analysis_axes.contains("z")) {
-                            if (lasRequest.getAxesSet1().getZlo()) jnl.append("DEFINE SYMBOL region_${h}_z_lo = ${lasRequest.getAxesSet1().getZlo()}\n")
-                            if (lasRequest.getAxesSet1().getZhi()) jnl.append("DEFINE SYMBOL region_${h}_z_hi = ${lasRequest.getAxesSet1().getZhi()}\n")
-                        }
 
-                        if (lasRequest.getAxesSet2() != null) {
-
-                            if (lasRequest.getAxesSet2().getThi()) jnl.append("DEFINE SYMBOL region_1_t_hi = ${lasRequest.getAxesSet2().getThi()}\n")
-                            if (lasRequest.getAxesSet2().getTlo()) jnl.append("DEFINE SYMBOL region_1_t_lo = ${lasRequest.getAxesSet2().getTlo()}\n")
-
-                            if (lasRequest.getAxesSet2().getXhi()) jnl.append("DEFINE SYMBOL region_1_x_hi = ${lasRequest.getAxesSet2().getXhi()}\n")
-                            if (lasRequest.getAxesSet2().getXlo()) jnl.append("DEFINE SYMBOL region_1_x_lo = ${lasRequest.getAxesSet2().getXlo()}\n")
-
-                            if (lasRequest.getAxesSet2().getYhi()) jnl.append("DEFINE SYMBOL region_1_y_hi = ${lasRequest.getAxesSet2().getYhi()}\n")
-                            if (lasRequest.getAxesSet2().getYlo()) jnl.append("DEFINE SYMBOL region_1_y_lo = ${lasRequest.getAxesSet2().getYlo()}\n")
-
-                            if (lasRequest.getAxesSet2().getZlo()) jnl.append("DEFINE SYMBOL region_1_z_lo = ${lasRequest.getAxesSet2().getZlo()}\n")
-                            if (lasRequest.getAxesSet2().getZhi()) jnl.append("DEFINE SYMBOL region_1_z_hi = ${lasRequest.getAxesSet2().getZhi()}\n")
-
-                        }
+//                        if (lasRequest.getAxesSets().get(1) != null) {
+//
+//
+//                            if (!lasRequest.getAxesSets().get(1).getThi().equals("null")) jnl.append("DEFINE SYMBOL region_1_t_hi = ${lasRequest.getAxesSets().get(1).getThi()}\n")
+//                            if (!lasRequest.getAxesSets().get(1).getTlo().equals("null")) jnl.append("DEFINE SYMBOL region_1_t_lo = ${lasRequest.getAxesSets().get(1).getTlo()}\n")
+//                            // TODO value null
+//                            // FIXME maybe don't send null from client
+//                            if (lasRequest.getAxesSets().get(1).getXhi()) jnl.append("DEFINE SYMBOL region_1_x_hi = ${lasRequest.getAxesSets().get(1).getXhi()}\n")
+//                            if (lasRequest.getAxesSets().get(1).getXlo()) jnl.append("DEFINE SYMBOL region_1_x_lo = ${lasRequest.getAxesSets().get(1).getXlo()}\n")
+//
+//                            if (lasRequest.getAxesSets().get(1).getYhi()) jnl.append("DEFINE SYMBOL region_1_y_hi = ${lasRequest.getAxesSets().get(1).getYhi()}\n")
+//                            if (lasRequest.getAxesSets().get(1).getYlo()) jnl.append("DEFINE SYMBOL region_1_y_lo = ${lasRequest.getAxesSets().get(1).getYlo()}\n")
+//
+//                            if (lasRequest.getAxesSets().get(1).getZlo()) jnl.append("DEFINE SYMBOL region_1_z_lo = ${lasRequest.getAxesSets().get(1).getZlo()}\n")
+//                            if (lasRequest.getAxesSets().get(1).getZhi()) jnl.append("DEFINE SYMBOL region_1_z_hi = ${lasRequest.getAxesSets().get(1).getZhi()}\n")
+//
+//                        }
 
                     }
                     jnl.append("DEFINE SYMBOL data_count = ${datasetHashes.size()}\n")
@@ -567,8 +576,8 @@ class ProductController {
             }
 
             String constraint = ""
-            String tlo = lasRequest.getAxesSet1().getTlo();
-            String thi = lasRequest.getAxesSet1().getThi();
+            String tlo = lasRequest.getAxesSets().get(0).getTlo();
+            String thi = lasRequest.getAxesSets().get(0).getThi();
 
             if ( tlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
@@ -579,8 +588,8 @@ class ProductController {
                 constraint = constraint + "time<=" + thi
             }
 
-            String xlo = lasRequest.getAxesSet1().getXlo()
-            String xhi = lasRequest.getAxesSet1().getXhi()
+            String xlo = lasRequest.getAxesSets().get(0).getXlo()
+            String xhi = lasRequest.getAxesSets().get(0).getXhi()
 
             if ( xlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
@@ -591,8 +600,8 @@ class ProductController {
                 constraint = constraint + "longitude<=" + xhi
             }
 
-            String ylo = lasRequest.getAxesSet1().getYlo()
-            String yhi = lasRequest.getAxesSet1().getYhi()
+            String ylo = lasRequest.getAxesSets().get(0).getYlo()
+            String yhi = lasRequest.getAxesSets().get(0).getYhi()
 
             if ( ylo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
@@ -603,8 +612,8 @@ class ProductController {
                 constraint = constraint + "latitude<=" + yhi
             }
 
-            String zlo = lasRequest.getAxesSet1().getZlo()
-            String zhi = lasRequest.getAxesSet1().getZhi()
+            String zlo = lasRequest.getAxesSets().get(0).getZlo()
+            String zhi = lasRequest.getAxesSets().get(0).getZhi()
 
             if ( zlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"

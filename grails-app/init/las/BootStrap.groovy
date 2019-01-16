@@ -2,6 +2,7 @@ package las
 
 import grails.converters.JSON
 import org.grails.core.exceptions.DefaultErrorsPrinter
+import org.joda.time.DateTime
 import pmel.sdig.las.AddProperty
 import pmel.sdig.las.AddRequest
 import pmel.sdig.las.Dataset
@@ -33,25 +34,22 @@ class BootStrap {
 
         initializationService.loadDefaultLasDatasets()
 
-        // TODO remove for production. :-)
+        // Dataset uaf = ingestService.ingestFromThredds("https://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalogs/data.nodc.noaa.gov/thredds/catalog/ncml/catalog.xml", null, false)
+        // Dataset uaf = ingestService.ingestFromThredds("https://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalogs/data.nodc.noaa.gov/thredds/catalog/ncml/woa_13/catalog.xml", null, false)
+        // Dataset uaf = ingestService.ingestFromThredds("https://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalogs/ferret.pmel.noaa.gov/pmel/thredds/uaf.xml", null, false)
+//         Dataset uaf = ingestService.ingestFromThredds("https://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml", null, false)
 
-//        AddProperty a = new AddProperty()
-//        a.setName("mapandplot")
-//        a.setValue("plotonly")
-//        AddProperty h = new AddProperty()
-//        h.setName("hours")
-//        h.setValue(".25")
-//        AddRequest request = new AddRequest()
-//        request.setUrl("http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_f51_fdd7_a060")
-//        request.setType("dsg")
-//        request.addToAddProperties(a)
-//        request.addToAddProperties(h)
-//
-//        Dataset d = ingestService.processRequset(request)
-//        d.save()
-//        Site s = Site.first()
-//        s.addToDatasets(d)
-//        s.save(flush: true)
+
+
+//        Site site = Site.first();
+//        if (!site) {
+//            site = new Site([title: "Default LAS Site"])
+//        }
+//        site.addToDatasets(uaf);
+//        site.save(failOnError: true)
+//        ingestService.cleanup()
+//        site.save(failOnError: true)
+
 
 
 

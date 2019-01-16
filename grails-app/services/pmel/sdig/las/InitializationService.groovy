@@ -621,28 +621,28 @@ class InitializationService {
 
         }
 
-//        Product plot_2d_zt = Product.findByGeometryAndViewAndData_view(GeometryType.GRID, "zt", "zt")
-//
-//        if ( !plot_2d_zt) {
-//            plot_2d_zt = new Product([name: "Plot_2D_zt", title: "Z-time", ui_group: "Hovmöller Diagram", view: "zt", data_view: "zt", geometry: GeometryType.GRID, product_order: "400003"])
-//            Operation operation_plot_2d_zt = new Operation([output_template:"plot_zoom", service_action: "Plot_2D"])
-//            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
-//            if ( results_plot_2d ) {
-//                ResultSet rs = new ResultSet(results_plot_2d.properties)
-//                operation_plot_2d_zt.setResultSet(rs)
-//            } else {
-//                log.error("Results sets not available. Did you use the results service menthod createReults before calling createOperations?")
-//            }
-//            MenuOption palettes = MenuOption.findByName("palette")
-//            if (palettes) {
-//                operation_plot_2d_zt.addToMenuOptions(palettes.properties)
-//            } else {
-//                log.error("Results sets not available. Did you use the results service menthod createOptions before calling createOperations?")
-//            }
-//            plot_2d_zt.addToOperations(operation_plot_2d_zt)
-//            plot_2d_zt.save(failOnError: true)
-//
-//        }
+        Product plot_2d_zt = Product.findByGeometryAndViewAndData_view(GeometryType.GRID, "zt", "zt")
+
+        if ( !plot_2d_zt) {
+            plot_2d_zt = new Product([name: "Plot_2D_zt", title: "Z-time", ui_group: "Hovmöller Diagram", view: "zt", data_view: "zt", geometry: GeometryType.GRID, product_order: "400003"])
+            Operation operation_plot_2d_zt = new Operation([output_template:"plot_zoom", service_action: "Plot_2D", type: "ferret"])
+            ResultSet results_plot_2d = ResultSet.findByName("results_debug_image_mapscale_annotations")
+            if ( results_plot_2d ) {
+                ResultSet rs = new ResultSet(results_plot_2d.properties)
+                operation_plot_2d_zt.setResultSet(rs)
+            } else {
+                log.error("Results sets not available. Did you use the results service method createReults before calling createOperations?")
+            }
+            MenuOption palettes = MenuOption.findByName("palette")
+            if (palettes) {
+                operation_plot_2d_zt.addToMenuOptions(palettes.properties)
+            } else {
+                log.error("Results sets not available. Did you use the results service method createOptions before calling createOperations?")
+            }
+            plot_2d_zt.addToOperations(operation_plot_2d_zt)
+            plot_2d_zt.save(failOnError: true)
+
+        }
 
 
         // See if the product already exists by name and title.  This implies name and title combinations should be unique.
@@ -723,6 +723,7 @@ class InitializationService {
                 def dsets = ferretEnvironment.fer_dsets
 
                 def coads
+                def levitus
                 def ocean_atlas
                 def leetmaaSurface
                 def leetmaaDepth
@@ -735,12 +736,13 @@ class InitializationService {
                             if (new File("$datadir" + File.separator + "data" + File.separator + "coads_climatology.cdf").exists()) {
                                 coads = "$datadir" + File.separator + "data" + File.separator + "coads_climatology.cdf"
                                 ocean_atlas = "$datadir" + File.separator + "data" + File.separator + "ocean_atlas_subset.nc"
+                                levitus = "$datadir" + File.separator + "data" + File.separator + "levitus_climatology.cdf"
                             }
                         }
                     } else {
                         coads = "$dsets" + File.separator + "data" + File.separator + "coads_climatology.cdf"
                         ocean_atlas = "$dsets" + File.separator + "data" + File.separator + "ocean_atlas_subset.nc"
-
+                        levitus = "$dsets" + File.separator + "data" + File.separator + "levitus_climatology.cdf"
                     }
                 } else {
 
@@ -776,6 +778,20 @@ class InitializationService {
                         site.addToDatasets(ocean_atlasDS)
                     }
                 }
+                if ( levitus ) {
+                    log.debug("Ingesting Levitus climatology")
+                    def levhash = IngestService.getDigest(levitus)
+                    Dataset levitusDS = Dataset.findByHash(levhash)
+                    if ( !levitusDS ) {
+                        levitusDS = ingestService.ingest(levitus)
+                        levitusDS.setTitle("Levitus Ocean Climatology")
+                        levitusDS.setStatus(Dataset.INGEST_FINISHED)
+                        levitusDS.save(flush: true)
+                    }
+                    if ( levitusDS ) {
+                        site.addToDatasets(levitusDS)
+                    }
+                }
 
 //                log.debug("Ingesting carbon tracker THREDDS catalog.")
 //                def carbonThredds = "http://ferret.pmel.noaa.gov/pmel/thredds/carbontracker.xml"
@@ -787,22 +803,22 @@ class InitializationService {
 //                    site.addToDatasets(carbon)
 //                }
 
-                log.debug("Ingesting example Timeseries DSG from ERDDAP")
-                def ts = "http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060"
-                List<AddProperty> properties = new ArrayList<>()
-                AddProperty hours = new AddProperty([name: "hours", value: ".25"])
-                properties.add(hours)
-                AddProperty display_hi = new AddProperty([name: "display_hi", value: "2018-02-20T00:00:00.000Z"])
-                properties.add(display_hi)
-                AddProperty display_lo = new AddProperty(([name: "display_lo", value: "2018-02-05T00:00:00.000Z"]))
-                properties.add(display_lo)
-                def dsgDataset = Dataset.findByHash(IngestService.getDigest(ts))
-                if ( !dsgDataset ) {
-                    dsgDataset = ingestService.ingestFromErddap(ts, properties)
-                    dsgDataset.setStatus(Dataset.INGEST_FINISHED)
-                    dsgDataset.save(flush: true)
-                    site.addToDatasets(dsgDataset)
-                }
+//                TODO removed for gov't shutdown... log.debug("Ingesting example Timeseries DSG from ERDDAP")
+//                def ts = "http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060"
+//                List<AddProperty> properties = new ArrayList<>()
+//                AddProperty hours = new AddProperty([name: "hours", value: ".25"])
+//                properties.add(hours)
+//                AddProperty display_hi = new AddProperty([name: "display_hi", value: "2018-02-20T00:00:00.000Z"])
+//                properties.add(display_hi)
+//                AddProperty display_lo = new AddProperty(([name: "display_lo", value: "2018-02-05T00:00:00.000Z"]))
+//                properties.add(display_lo)
+//                def dsgDataset = Dataset.findByHash(IngestService.getDigest(ts))
+//                if ( !dsgDataset ) {
+//                    dsgDataset = ingestService.ingestFromErddap(ts, properties)
+//                    dsgDataset.setStatus(Dataset.INGEST_FINISHED)
+//                    dsgDataset.save(flush: true)
+//                    site.addToDatasets(dsgDataset)
+//                }
 
 //                log.debug("Ingesting UAF THREDDS server")
 //                //def uaf = "http://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml"
@@ -817,7 +833,7 @@ class InitializationService {
 //                    site.addToDatasets(uafDataset)
 //                }
 
-                ingestService.cleanup(site)
+//                ingestService.cleanup(site)
                 site.save(failOnError: true)
             }
         }

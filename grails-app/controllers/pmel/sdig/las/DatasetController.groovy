@@ -1,17 +1,12 @@
 package pmel.sdig.las
 
-import pmel.sdig.las.DateTimeService
-import pmel.sdig.las.IngestService
-
-import static org.springframework.http.HttpStatus.*
-import grails.transaction.Transactional
 import grails.converters.JSON
 
-@Transactional
 class DatasetController {
 
     static scaffold = Dataset
     IngestService ingestService
+    AsyncIngestService asyncIngestService
     //MakeStatsService makeStatsService
 
     def add() {
@@ -38,7 +33,22 @@ class DatasetController {
         def did = params.id
         def dataset
         if ( did ) {
-            dataset = Dataset.get(did)
+            try {
+                // If it passes valueOf, use it as a GORM ID
+                long id = Long.valueOf(did)
+                dataset = Dataset.get(did)
+            } catch (Exception e ) {
+                // If not, it's a hash
+                dataset = Dataset.findByHash(did)
+            }
+
+            if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ||  dataset.getStatus().equals(Dataset.INGEST_FAILED)) ) {
+                dataset.setStatus(Dataset.INGEST_STARTED)
+                dataset.save(flush: true)
+
+                    asyncIngestService.addVariablesAndSaveFromThredds(dataset.getUrl(), null, true)
+
+            }
         }
         withFormat {
             html { respond dataset }

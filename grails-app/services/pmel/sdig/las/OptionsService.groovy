@@ -398,14 +398,14 @@ with the mini-map we don't really need this anymore...
                                                  help : "Set the color levels of the plot. Levels are described using Ferret syntax. The" +
                                                          "number of levels is approximate, and may be changed as the algorithm rounds off the values. " +
                                                          "Examples:" +
-                                                         "<ul>" +
-                                                         "<li><b>60V</b> Draw 60 levels based on the variance of the data with open-ended extrema\n" +
-                                                         "<li><b>30H</b> Draw 30 levels based on a histogram\n" +
-                                                         "<li><b>25</b> Draw 25 levels spanning the range of the data\n" +
-                                                         "<li><b>30C</b> Draw 30 levels centered at 0\n" +
-                                                         "<li><b>(0,100,10)</b>  Bands of color starting at 0, ending at 100, with an interval of 10\n" +
-                                                         "<li><b>(-inf)(-10,10,0.25)(inf)</b> Bands of color between -10 and 10 with an additional color at each end of the spectrum representing all values below (-inf) or above (inf)\n" +
-                                                         "<li><b>(-100)(-10,10,0.25)(100)</b> Bands of color between -10 and 10 with a additional bands for all outlying values up to +/- 100.\n" +
+                                                         "<ul class=\"LAS-helplist LAS-helplist-hover\">" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>60V</b> Draw 60 levels based on the variance of the data with open-ended extrema\n" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>30H</b> Draw 30 levels based on a histogram\n" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>25</b> Draw 25 levels spanning the range of the data\n" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>30C</b> Draw 30 levels centered at 0\n" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>(0,100,10)</b>  Bands of color starting at 0, ending at 100, with an interval of 10\n" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>(-inf)(-10,10,0.25)(inf)</b> Bands of color between -10 and 10 with an additional color at each end of the spectrum representing all values below (-inf) or above (inf)\n" +
+                                                         "<li class=\"LAS-helplist LAS-helplist-hover\"><b>(-100)(-10,10,0.25)(100)</b> Bands of color between -10 and 10 with a additional bands for all outlying values up to +/- 100.\n" +
                                                          "</ul>\n" +
                                                          "Detailed info is available in the Ferret User\\'s Guide., see Levels at\n" +
                                                          "http://ferret.pmel.noaa.gov/Ferret/documentation/users-guide/customizing-plots/CONTOURING#_VPINDEXENTRY_853"])
@@ -661,7 +661,7 @@ at the edges of the plot (WMS-style plots). By default margins are shown.
         MenuOption line_thickness = new MenuOption([name        : "line_thickness",
                                                     title       : "Line thickness",
                                                     help        : "Set the thickness of the plot symbols and/or line.",
-                                                    defaultValue: "this"])
+                                                    defaultValue: "1"])
 
 
 
@@ -753,16 +753,16 @@ Choices are:
          */
 
         MenuOption contour_style = new MenuOption([name        : "contour_style",
-                                                   title       : "Line thickness",
+                                                   title       : "Contour Style",
                                                    help        : "What style of contours to draw\n" +
                                                            "Choices are:\n" +
-                                                           "<ul&gt;\n" +
-                                                           "<li><b>Raster</b> -- Fill each grid cell with the appropriate color\n" +
-                                                           "<li><b>Color filled (default)</b> -- Fill in between contour lines with color\n" +
-                                                           "<li><b>Lines</b> -- Just draw lines\n" +
-                                                           "<li><b>Raster and lines</b> -- Fill in each grid cell and draw lines on top\n" +
-                                                           "<li><b>Color filled and lines</b> -- Fill in between contour lines with color and draw lines on top\n" +
-                                                           "</ul&gt;.",
+                                                           "<ul class=\"LAS-helplist LAS-helplist-hover\">\n" +
+                                                           "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Raster</b> -- Fill each grid cell with the appropriate color\n" +
+                                                           "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Color filled (default)</b> -- Fill in between contour lines with color\n" +
+                                                           "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Lines</b> -- Just draw lines\n" +
+                                                           "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Raster and lines</b> -- Fill in each grid cell and draw lines on top\n" +
+                                                           "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Color filled and lines</b> -- Fill in between contour lines with color and draw lines on top\n" +
+                                                           "</ul>.",
                                                    defaultValue: "color_filled_contours"])
 
 
@@ -779,7 +779,6 @@ Choices are:
 
         contour_style
     }
-
     def TextOption getContour_levels() {
 
         /*
@@ -803,9 +802,10 @@ http://ferret.pmel.noaa.gov/Ferret/documentation/users-guide/customizing-plots/C
          */
 
         TextOption contour_levels = new TextOption(help: "<p>Set the contour levels of the plot. Contour levels are described using Ferret syntax. Examples:</p>\n" +
-                "<ul><li><b>(0,100,10)</b>  Draw lines starting at 0, ending at 100, with an interval of 10\n" +
-                "<li><b>25</b> Draw 25 lines\n" +
-                "<li><b>10C</b> Draw 10 lines centered at 0\n" +
+                "<ul class=\"LAS-helplist LAS-helplist-hover\">" +
+                "<li class=\"LAS-helplist LAS-helplist-hover\"><b>(0,100,10)</b>  Draw lines starting at 0, ending at 100, with an interval of 10\n" +
+                "<li class=\"LAS-helplist LAS-helplist-hover\"><b>25</b> Draw 25 lines\n" +
+                "<li class=\"LAS-helplist LAS-helplist-hover\"><b>10C</b> Draw 10 lines centered at 0\n" +
                 "</ul>\n" +
                 "Detailed info is available in the Ferret User\\'s Guide., see Levels at\n" +
                 "http://ferret.pmel.noaa.gov/Ferret/documentation/users-guide/customizing-plots/CONTOURING#_VPINDEXENTRY_853",
@@ -873,9 +873,10 @@ Choices are:
                                                   title       : "Keep aspect ratio of region",
                                                   help        : "Have LAS calculate a suitable aspect ratio\n" +
                                                           "Choices are:\n" +
-                                                          "<ul><li><b>Default</b> -- let LAS decide the aspect ratio\n" +
-                                                          "<li><b>Yes</b> -- Force LAS to calculate the aspect ratio of the plot based on the aspect ratio of the geographic region\n" +
-                                                          "<li><b>No</b> -- Do not change the aspect ratio based on the region.\n" +
+                                                          "<ul class=\"LAS-helplist LAS-helplist-hover\">" +
+                                                          "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Default</b> -- let LAS decide the aspect ratio\n" +
+                                                          "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Yes</b> -- Force LAS to calculate the aspect ratio of the plot based on the aspect ratio of the geographic region\n" +
+                                                          "<li class=\"LAS-helplist LAS-helplist-hover\"><b>No</b> -- Do not change the aspect ratio based on the region.\n" +
                                                           "</ul>",
                                                   defaultValue: "yes"])
 
@@ -908,12 +909,13 @@ Choices are:
                                                title       : "Land fill style",
                                                help        : "Style for drawing continents. Only applies to XY plots.\n" +
                                                        "Choices are:\n" +
-                                                       "<ul><li><b>Default</b> -- let LAS decide\n" +
-                                                       "<li><b>None</b> -- don\\'t draw continents\n" +
-                                                       "<li><b>Outline</b> -- draw continent outlines\n" +
-                                                       "<li><b>Filled</b> -- draw filled continents\n" +
+                                                       "<ul class=\"LAS-helplist LAS-helplist-hover\">" +
+                                                       "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Default</b> -- let LAS decide\n" +
+                                                       "<li class=\"LAS-helplist LAS-helplist-hover\"><b>None</b> -- don\\'t draw continents\n" +
+                                                       "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Outline</b> -- draw continent outlines\n" +
+                                                       "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Filled</b> -- draw filled continents\n" +
                                                        "</ul>",
-                                               defaultValue: "contour"])
+                                               defaultValue: "filled"])
 
 
 

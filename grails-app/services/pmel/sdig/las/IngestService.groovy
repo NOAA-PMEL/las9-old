@@ -9,6 +9,7 @@ import grails.transaction.Transactional
 import opendap.dap.AttributeTable
 import opendap.dap.DAS
 import org.apache.http.HttpException
+import org.apache.http.client.utils.URIBuilder
 import org.joda.time.Chronology
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
@@ -29,6 +30,7 @@ import pmel.sdig.las.Variable
 import pmel.sdig.las.VerticalAxis
 import pmel.sdig.las.Zvalue
 import pmel.sdig.las.type.GeometryType
+import thredds.catalog.InvAccess
 import thredds.catalog.InvCatalog
 import thredds.catalog.InvCatalogFactory
 import thredds.catalog.InvDataset
@@ -104,12 +106,53 @@ class IngestService {
         return minmax
     }
 
+    def addVariablesAndSaveFromThredds(String url, String erddap, boolean full) {
 
-    Dataset ingestFromThredds(String url, String erddap) {
+        Dataset dataset = Dataset.findByUrl(url)
+            try {
+                log.debug("Looking to load variables for " + dataset.getUrl())
+                Dataset temp = ingestFromThredds(dataset.getUrl(), erddap, full)
+                log.debug("Finished loading variables for " + dataset.getUrl())
 
+                // There will be a layer that represents the catalog at the top with the variables in a data set one level down.
+
+                if (temp.getDatasets() && temp.getDatasets().size() == 1) {
+                    Dataset temp2 = temp.getDatasets().get(0)
+                    if (temp2 && temp2.getVariables()) {
+                        log.debug(temp2.getVariables().size() + " vairables found " + dataset.getUrl())
+                        dataset.setVariables(temp2.getVariables())
+                        dataset.setStatus(Dataset.INGEST_FINISHED)
+                        dataset.save(failOnError: true)
+                    }
+                } else {
+                    log.debug("No variables found for " + dataset.getUrl())
+                    dataset.setStatus(Dataset.INGEST_FAILED)
+                    dataset.save(failOnError: true)
+                }
+            } catch (Exception e) {
+                log.debug("Ingest failed " + e.getMessage())
+                dataset.setStatus(Dataset.INGEST_FAILED)
+                dataset.save(failOnError: true)
+            }
+
+    }
+    Dataset ingestFromThredds(String url, String erddap, boolean full) {
+
+        log.debug("Starting ingest of " + url)
         dateTimeService.init()
         InvCatalogFactory factory = new InvCatalogFactory("default", false);
-        InvCatalog catalog = (InvCatalog) factory.readXML(url);
+        String tdsid;
+        String urlwithid;
+        if ( url.contains("#") ) {
+            urlwithid = url.substring(0, url.indexOf("#"))
+            tdsid = url.substring(url.indexOf("#") + 1, url.length() )
+            if ( !tdsid.equals("null") ) {
+                urlwithid = urlwithid + "?dataset=" + tdsid;
+            }
+        } else {
+            urlwithid = url;
+        }
+        InvCatalog catalog = (InvCatalog) factory.readXML(urlwithid);
         StringBuilder buff = new StringBuilder();
         boolean show = false
         if ( log.debugEnabled ) {
@@ -120,10 +163,11 @@ class IngestService {
             return null
         }
         if ( erddap == null ) { // Just a thredds catalog, no supporting ERDDAP
-            return createDatasetFromCatalog(catalog);
+            return createDatasetFromCatalog(catalog, full);
         } else {
             return createDatasetFromUAF(catalog, erddap);
         }
+        log.debug("Finished ingest of " + url)
     }
     Dataset createDatasetFromUAF(InvCatalog catalog, String erddap) {
         Dataset dataset = new Dataset()
@@ -530,32 +574,129 @@ class IngestService {
         }
         rankDatasets
     }
-    Dataset createDatasetFromCatalog(InvCatalog catalog) {
+
+    private String fixName(String url) {
+        def main
+        try {
+            URIBuilder builder = new URIBuilder(catalog.getUriString())
+            String host = builder.getHost()
+            def parts = host.tokenize(".")
+            main = main + host
+            if (parts.size() >= 3) {
+                main = "TDS Data from " + parts.get(parts.size() - 3) + "." + parts.get(parts.size() - 2) + "." + parts.get(parts.size() - 1)
+            }
+        } catch (Exception e) {
+            main = "TDS Data"
+        }
+        main
+    }
+    Dataset createDatasetFromCatalog(InvCatalog catalog, boolean full) {
         Dataset dataset = new Dataset()
         if (catalog.getName()) {
-            dataset.setTitle(catalog.getName())
+            if ( catalog.getName().toLowerCase().contains("you must change") ) {
+                String name = fixName(catalog.getUriString())
+                dataset.setTitle(name)
+            } else {
+                dataset.setTitle(catalog.getName())
+            }
         } else {
-            dataset.setTitle(catalog.UriString())
+            dataset.setTitle(catalog.getUriString())
         }
         dataset.setUrl(catalog.getUriString())
         dataset.setHash(getDigest(catalog.getUriString()))
-        def children = catalog.getDatasets();
-        Iterator di = children.iterator();
-        while (di.hasNext()) {
-            Dataset child = processDataset((InvDataset) di.next())
-            dataset.addToDatasets(child)
+        /*
+
+        invDatasetList
+         List<InvDataset> datasets = dataset.getDatasets();
+        boolean access = false;
+        InvAccess da = dataset.getAccess(ServiceType.OPENDAP);
+        if ( da != null ) {
+            access = true;
+        }
+        List<InvDataset> remove = new ArrayList<>();
+        for (int i = 0; i < datasets.size(); i++) {
+            InvAccess a = datasets.get(i).getAccess(ServiceType.OPENDAP);
+            if (datasets.get(i).getName().contains("TDS Quality")) {
+                remove.add(datasets.get(i));
+            }
+            if ( a != null ) {
+                access = true;
+            }
+        }
+
+         */
+        List<InvDataset> children = catalog.getDatasets();
+
+        for (int i = 0; i < children.size(); i++) {
+
+            InvDataset nextChild = (InvDataset) children.get(i)
+            if (!nextChild.getName().toLowerCase().contains("tds quality") && !nextChild.getName().contains("automated cleaning process")) {
+                Dataset child = processDataset(nextChild, full, dataset)
+                dataset.addToDatasets(child)
+            }
         }
         dataset
     }
-    Dataset processDataset(InvDataset invDataset) {
-        Dataset d = new Dataset(title: invDataset.getName(), url: invDataset.getCatalogUrl(), hash: getDigest(invDataset.getCatalogUrl()))
-        if (invDataset.hasAccess() && invDataset.getAccess(ServiceType.OPENDAP) != null ) {
-            d = ingest(invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName() )
+    Dataset processDataset(InvDataset invDataset, boolean full, Dataset parent) {
+
+        List<InvDataset> invDatasetList = invDataset.getDatasets();
+        List<InvDataset> remove = new ArrayList<>()
+        boolean access = invDataset.getAccess(ServiceType.OPENDAP) != null;
+        for (int i = 0; i < invDatasetList.size(); i++) {
+            InvDataset child = invDatasetList.get(i)
+            InvAccess a = child.getAccess(ServiceType.OPENDAP)
+            if ( a != null) access = true;
+            if ( child.getName().contains("automated cleaning process") || child.getName().toLowerCase().contains("tds quality") ) {
+                remove.add(child)
+            }
+        }
+        invDatasetList.removeAll(remove)
+
+        // FIXME
+        String title = invDataset.getName()
+        if (title.toLowerCase().contains("you must change")) {
+            title = fixName(invDataset.getCatalogUrl())
+        }
+        Dataset saveToDataset = new Dataset(title: "Failed reading data set", url: "http://", hash: getDigest(Math.random().toString()), variableChildren: false)
+        Dataset d = saveToDataset
+        try {
+            d = new Dataset(title: title, url: invDataset.getCatalogUrl(), hash: getDigest(invDataset.getCatalogUrl()), variableChildren: false)
+            saveToDataset = d
+            if ((invDatasetList.size() == 1 && !access) ||
+                    (invDatasetList.size() > 0 && invDataset.getName().equals(invDatasetList.get(0).getName())) ||
+                    (invDatasetList.size() > 0 && invDataset.getName().toLowerCase().contains("top dataset"))) {
+                // If skipping, save next level to parent
+                saveToDataset = parent
+                // And refuse the current
+                d = null;
+            } else {
+                if (invDataset.hasAccess() && invDataset.getAccess(ServiceType.OPENDAP) != null) {
+                    if (full) {
+                        try {
+                            d = ingest(invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName())
+                        } catch (Exception e) {
+                            log.debug("We failed..." + e.getMessage())
+                        }
+                        d.variableChildren = true
+                        d.setStatus(Dataset.INGEST_FINISHED)
+                    } else {
+                        d.variableChildren = true
+                        d.setStatus(Dataset.INGEST_NOT_STARTED)
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Exception processing data set. Message = " + e.getMessage() + " Trying to go on with nested data ses.")
         }
         List<InvDataset> kids = invDataset.getDatasets();
         for (int i = 0; i < kids.size(); i++) {
-            Dataset dkid = processDataset(kids.get(i))
-            d.addToDatasets(dkid)
+            InvDataset kid = kids.get(i)
+            if (!kid.getName().toLowerCase().contains("quality rubric") && !kid.getName().contains("automated cleaning process")) {
+                Dataset dkid = processDataset(kid, full, saveToDataset)
+                if ( dkid != null ) {
+                    saveToDataset.addToDatasets(dkid)
+                }
+            }
         }
         d
     }
@@ -693,6 +834,9 @@ class IngestService {
                 Enumeration names = variableAttributes.getNames()
                 if (!names.hasMoreElements()) {
                     log.debug("No variables found in this data collection.")
+                } else {
+                    // We found some variables, so set the flag
+                    dataset.setVariableChildren(true);
                 }
                 while (names.hasMoreElements()) {
                     String name = (String) names.nextElement()
@@ -1598,6 +1742,7 @@ class IngestService {
 
         if ( gridDs != null) {
 
+            log.debug("Grid data set found ... ")
             List<Attribute> globals = gridDs.getGlobalAttributes()
             // Get the DRS information
 
@@ -1623,6 +1768,7 @@ class IngestService {
                 // The variable basics
                 String vname = gridDatatype.getShortName()
 
+                log.debug("Processing variable " + vname + " ...")
                 //TODO do I need to get the attributes and find the long_name myself?
 
                 String vtitle = gridDatatype.getDescription()
@@ -1661,6 +1807,7 @@ class IngestService {
                 if (gcs.hasTimeAxis()) {
 
                     if (gcs.hasTimeAxis1D()) {
+                        log.debug("1D time axis found ... ")
                         CoordinateAxis1DTime time = gcs.getTimeAxis1D()
                         CalendarDateRange range = time.getCalendarDateRange()
 
@@ -1690,15 +1837,16 @@ class IngestService {
                         boolean regular = true
                         boolean constant_position = true
                         regular = time.isRegular()
+                        tAxis = new TimeAxis()
 
-                        if (regular && times.length > 1) {
-                            try {
-                                TimeUnit tu = time.getTimeResolution()
-                                double du = tu.getValue()
-                                String u = tu.getUnitString()
-                                if (u.contains("sec")) {
+                        TimeUnit tu = time.getTimeResolution()
+                        double du = tu.getValue()
+                        String u = tu.getUnitString()
 
-                                } else if (u.contains("hour")) {
+                        if ( times.length > 1 ) {
+                            if (regular) {
+                                // TODO sec, week, year?
+                                if (u.contains("hour")) {
                                     for (int d = 0; d < 27; d++) {
                                         if (du < 23.5 * d && du < 23.5 * d + 1) {
                                             // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
@@ -1719,39 +1867,39 @@ class IngestService {
                                         p0 = new Period(0, 0, 0, du, 0, 0, 0, 0)
                                     }
 
-                                } else if (u.contains("week")) {
-
-                                } else if (u.contains("year")) {
-
                                 }
-
-                            } catch (Exception e) {
-                                // bummer
+                            } else {
+                                p0 = getPeriod(cdu, times[0], times[1])
+                                int hours = p0.getHours()
+                                int days = p0.getDays()
+                                int months = p0.getMonths()
+                                int years = p0.getYears()
+                                if (days >= 28) {
+                                    p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0)
+                                } else if (hours == 0 && days > 0) {
+                                    p0 = new Period(0, 0, 0, days, 0, 0, 0, 0)
+                                } else if (hours > 0) {
+                                    p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0)
+                                }
                             }
-                        } else {
-                            log.error("Unable to determine period.")
-                            p0 = new Period(0, 0, 0, 0, 0, 0, 0, 0)
+
+                            Period period = getPeriod(cdu, times[0], times[times.length - 1])
+
+                            log.debug("Setting delta " + pf.print(p0))
+                            if (p0 != null) {
+                                tAxis.setDelta(pf.print(p0))
+                            }
+                            log.debug("Setting data set period to " + pf.print(period))
+                            if (period != null) {
+                                tAxis.setPeriod(pf.print(period))
+                            }
+
+                        } else if ( times.length ) {
+                            tAxis.setDelta(pf.print(Period.ZERO));
+                            tAxis.setPeriod(pf.print(Period.ZERO))
                         }
-                        //						for (int tindx = 0 tindx < tb1.length tindx++ ) {
-                        //							String position = getPosition(times[tindx], tb1[tindx], tb2[tindx])
-                        //							Period p = getPeriod(cdu, tb1[tindx], tb2[tindx])
-                        //							if ( !position0.equals(position) ) {
-                        //								constant_position = false
-                        //							}
-                        //							if ( !p.equals(p0) ) {
-                        //								regular = false
-                        //							}
-                        //						}
 
 
-
-                        Period period = getPeriod(cdu, times[0], times[times.length - 1])
-
-                        tAxis = new TimeAxis()
-                        if (p0 != null) {
-                            tAxis.setDelta(pf.print(p0))
-                        }
-                        tAxis.setPeriod(pf.print(period))
                         tAxis.setStart(start)
                         tAxis.setEnd(end)
                         if (start.contains("0000") && end.contains("0000")) {
@@ -1765,9 +1913,6 @@ class IngestService {
                         tAxis.setTitle(title)
                         tAxis.setName(shortname)
 
-                        if (regular) {
-                            tAxis.setDelta(pf.print(p0))
-                        }
                         if (constant_position) {
                             tAxis.setPosition(position0)
                         }
@@ -2023,33 +2168,30 @@ class IngestService {
 //                    }
 //                }
 
+                log.debug("Adding " + variable.getTitle() + " to data set")
                 dataset.addToVariables(variable)
-
-
+                dataset.variableChildren = true;
 
             }
 
-            if ( dataset.validate() ) {
-                return dataset
-            } else {
+            if ( !dataset.validate() ) {
                 dataset.errors.each {
-                    log.debug(it)
+                    log.debug(it.toString())
                 }
             }
 
         } else {
             // Is it a THREDDS catalog?
         }
-
-
+        dataset
         // Is it an ESGF catalog or data set?
     }
     // Sometimes hierarchies from THREDDS servers end up with several levels
     // of children with only one child at each level. This makes for a bunch
     // of miserable clicking.
     // This method will remove any intermediate data sets with only one child
-    def cleanup(Site site) {
-        List<Dataset> datasets = Dataset.findAllByVariablesIsNotEmpty()
+    def cleanup() {
+        List<Dataset> datasets = Dataset.findAllVariableChildren()
         for (int i = 0; i < datasets.size(); i++) {
             Dataset dataset = datasets.get(i)
             collapse(dataset)
@@ -2067,22 +2209,22 @@ class IngestService {
                     grandparent.removeFromDatasets(parent)
                     dataset.setParent(grandparent)
                     grandparent.addToDatasets(dataset)
-                    parent.setDatasets(null)
+                    log.debug("Removing: " + parent.getTitle() + " with id " + parent.getId() )
                     parent.delete()
                     // Are we at the top yet?
                     if (grandparent.getParent()) {
                         if (grandparent.getParent().getParent()) {
-                            // No, the parent is dead, continue from the grandparent
+                            // The parent is dead, continue from the grandparent
                             collapse(grandparent)
                         }
                     }
-                }
-            }
-
-            // Nothing died, keep walking backwards
-            if (parent.getParent()) {
-                if (parent.getParent().getParent()) {
-                    collapse(parent)
+                } else {
+                    // If there is more hierarchy above continue
+                    if (parent.getParent()) {
+                        if (parent.getParent().getParent()) {
+                            collapse(parent)
+                        }
+                    }
                 }
             }
         }
@@ -2117,7 +2259,7 @@ class IngestService {
         }
         return position
     }
-    private static String getDigest(String url) {
+    public static String getDigest(String url) {
         MessageDigest md
         StringBuffer sb = new StringBuffer()
         try {

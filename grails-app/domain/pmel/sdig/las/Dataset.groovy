@@ -7,6 +7,7 @@ class Dataset {
     String hash
     String url
     String type = "dataset"
+    Boolean variableChildren
     List variables
 
     static String INGEST_NOT_STARTED = "Ingest not started"
@@ -30,6 +31,7 @@ class Dataset {
 
     static mapping = {
         url type: "text"
+        title type: "text"
         datasets cascade: 'all-delete-orphan'
     }
 
@@ -42,6 +44,7 @@ class Dataset {
         datasets(nullable: true)
         datasetProperties(nullable: true)
         status(nullable: true)
+        variableChildren (nullable: true)
     }
 
 

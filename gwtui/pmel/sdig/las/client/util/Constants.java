@@ -2,6 +2,7 @@ package pmel.sdig.las.client.util;
 
 import com.google.gwt.canvas.dom.client.CssColor;
 import com.google.gwt.core.client.GWT;
+import gwt.material.design.client.constants.Color;
 
 /**
  * Created by rhs on 5/31/16.
@@ -38,6 +39,8 @@ public class Constants {
 
     public static final String PANEL08 = "panel08"; // correlation viewer
 
+    public static Color UPDATE_NEEDED = Color.PINK_DARKEN_4;
+    public static Color UPDATE_NOT_NEEDED;
 
     public static String GRID = "grid";
     public static String TRAJECTORY = "trajectory";
@@ -46,5 +49,11 @@ public class Constants {
 
     public static String ANIMATE_CANCEL = "Push the cancel button to stop making new frames and animate the ones already downloaded.";
     public static String ANIMATE_SUBMIT = "Select a time range, the number of time steps to skip between frames, and submit";
+
+    public static String STARTING_INGEST = "LAS is downloading the metadata for the variable in this data set. It may take a moment. This panel will update soon.";
+    public static String CHECKING_INGEST_STATUS = "LAS is still downloading and processing the metadata for the variables in this data set. This panel will update soon";
+    public static String INGEST_FAILED = "So sorry. LAS was unable to load the metadata for this data set. Use the back arrow and home button above to try a different data set. Contact the site administrator for help.";
+
+    public static String NO_MIN_MAX = "Unable to compute a global min and max from the available information. Enther your own coutour levels.";
 
 }

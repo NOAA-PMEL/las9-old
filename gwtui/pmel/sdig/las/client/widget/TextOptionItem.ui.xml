@@ -7,12 +7,15 @@
             <m:MaterialColumn grid="s12" margin="0">
                 <m:MaterialCollapsible padding="0" margin="0" shadow="0" grid="s12">
                     <m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleHeader lineHeight="32" minHeight="0" padding="0">
-                        <m:MaterialLink lineHeight="32" textColor="BLUE" iconSize="TINY" iconType="HELP" iconPosition="LEFT" text="The Menu Option" ui:field="title"></m:MaterialLink>
+                    <m:MaterialCollapsibleHeader minHeight="0" padding="0">
+                        <m:MaterialPanel margin="0" addStyleNames="valign-wrapper">
+                            <m:MaterialLink display="FLEX" padding="0" marginLeft="8" text="The Text Option" ui:field="title"></m:MaterialLink>
+                            <m:MaterialIcon display="FLEX" marginRight="4" iconType="HELP" iconSize="SMALL" float="RIGHT"></m:MaterialIcon>
+                        </m:MaterialPanel>
                     </m:MaterialCollapsibleHeader>
                     <m:MaterialCollapsibleBody>
                         <m:MaterialRow>
-                            <m:MaterialColumn lineHeight="32" ui:field="help" grid="s12">
+                            <m:MaterialColumn ui:field="help" grid="s12" lineHeight="24" addStyleNames="LAS-help-cursor">
                             </m:MaterialColumn>
                         </m:MaterialRow>
                     </m:MaterialCollapsibleBody>
@@ -21,8 +24,8 @@
             </m:MaterialColumn>
         </m:MaterialRow>
         <m:MaterialRow>
-            <m:MaterialColumn lineHeight="32" grid="s12">
-                <m:MaterialTextBox placeholder="A HINT goes HERE" lineHeight="32" ui:field="textbox"></m:MaterialTextBox>
+            <m:MaterialColumn grid="s12">
+                <m:MaterialTextBox placeholder="A HINT goes HERE" ui:field="textbox"></m:MaterialTextBox>
             </m:MaterialColumn>
         </m:MaterialRow>
     </m:MaterialPanel>

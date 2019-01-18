@@ -57,6 +57,9 @@ public class YesNoOptionItem extends Composite {
             return "0";
         }
     }
+    public void setValue(boolean b) {
+        ynswitch.setValue(b);
+    }
     public YesNoOption getOption() {
         return yno;
     }

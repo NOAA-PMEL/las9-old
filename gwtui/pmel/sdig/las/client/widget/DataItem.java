@@ -24,6 +24,7 @@ import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRadioButton;
 import gwt.material.design.client.ui.MaterialRow;
 import pmel.sdig.las.client.event.AddVariable;
@@ -33,15 +34,20 @@ import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.Variable;
 
+import javax.swing.*;
+
 /**
  * Created by rhs on 12/30/16.
  */
 public class DataItem extends MaterialCollectionItem {
+
+    String currentSelectionType = "radio";
     Object selection;
 
     // Data sets are links.
     MaterialLink link = new MaterialLink();
-    MaterialIcon badge = new MaterialIcon(IconType.INFO, Color.BLUE, Color.WHITE);
+    MaterialIcon badge = new MaterialIcon(IconType.INFO);
+    MaterialPanel wrapper = new MaterialPanel();
 
     // Variables are radio buttons until the plot type allows multiple selections
     MaterialRadioButton radio = new MaterialRadioButton();
@@ -51,7 +57,7 @@ public class DataItem extends MaterialCollectionItem {
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
-    public DataItem(Object selection) {
+    public DataItem(Object selection, int targetPanel) {
         super();
         this.selection = selection;
         badge.addClickHandler(new ClickHandler() {
@@ -63,23 +69,30 @@ public class DataItem extends MaterialCollectionItem {
         });
         if ( selection instanceof Dataset ) {
             Dataset d = (Dataset) selection;
-            badge.setFloat(Style.Float.RIGHT);
-            link.setVerticalAlign(Style.VerticalAlign.MIDDLE);
-            link.add(badge);
-            link.setText(d.getTitle());
-            link.setTextColor(Color.BLUE);
-            add(link);
 
-            link.setPaddingTop(16);
+            wrapper.addStyleName("valign-wrapper");
+            link.setMarginLeft(8);
+            link.setDisplay(Display.FLEX);
+
+
+            badge.setIconPosition(IconPosition.RIGHT);
+            badge.setDisplay(Display.FLEX);
+            badge.setMarginRight(4);
+
+            wrapper.add(link);
+            wrapper.add(badge);
+
+            link.setText(d.getTitle());
+            link.addStyleName("LAS-text-color");
+            add(wrapper);
+
             link.setVerticalAlign(Style.VerticalAlign.MIDDLE);
-            link.setMargin(2);
             link.addClickHandler(new ClickHandler() {
                 @Override
                 public void onClick(ClickEvent clickEvent) {
-                    eventBus.fireEventFromSource(new NavSelect(selection, 1), selection);
+                    eventBus.fireEventFromSource(new NavSelect(selection, targetPanel), selection);
                 }
             });
-            setMarginRight(4);
 
         } else if ( selection instanceof Variable) {
             Variable v = (Variable) selection;
@@ -88,9 +101,9 @@ public class DataItem extends MaterialCollectionItem {
                 @Override
                 public void onValueChange(ValueChangeEvent<Boolean> valueChangeEvent) {
                     if ( valueChangeEvent.getValue() ) {
-                        eventBus.fireEventFromSource(new AddVariable((Variable) selection, 1, true), selection);
+                        eventBus.fireEventFromSource(new AddVariable((Variable) selection, targetPanel, true), selection);
                     } else {
-                        eventBus.fireEventFromSource(new AddVariable((Variable) selection, 1, false), selection);
+                        eventBus.fireEventFromSource(new AddVariable((Variable) selection, targetPanel, false), selection);
                     }
                 }
             });
@@ -98,12 +111,12 @@ public class DataItem extends MaterialCollectionItem {
                 @Override
                 public void onValueChange(ValueChangeEvent<Boolean> valueChangeEvent) {
                     if ( valueChangeEvent.getValue() ) {
-                        eventBus.fireEventFromSource(new NavSelect(selection, 1), selection);
+                        eventBus.fireEventFromSource(new NavSelect(selection, targetPanel), selection);
                     }
                 }
             });
 
-            radio.setName("variable");
+            radio.setName("variable_" + targetPanel);
             radio.setText(v.getTitle());
             add(radio);
         }
@@ -115,6 +128,7 @@ public class DataItem extends MaterialCollectionItem {
         }
         add(check);
         radio.setValue(false);
+        currentSelectionType = "check";
     }
     public void toRadio() {
         remove(check);
@@ -123,12 +137,18 @@ public class DataItem extends MaterialCollectionItem {
         }
         check.setValue(false);
         add(radio);
+        currentSelectionType = "radio";
     }
     public void setRadioSelected() {
         radio.setValue(true);
     }
-    public boolean isChecked() {
-        return check.getValue();
+    public boolean isSelected() {
+        if ( currentSelectionType.equalsIgnoreCase("radio") ) {
+            return radio.getValue();
+        } else if ( currentSelectionType.equalsIgnoreCase("check") ) {
+            return check.getValue();
+        }
+        return false;
     }
     public String getTitle() {
         if ( selection instanceof Dataset ) {
@@ -139,18 +159,18 @@ public class DataItem extends MaterialCollectionItem {
             return v.getTitle();
         }
     }
-    public void addNavSelectClickHandler() {
-//        addClickHandler(new ClickHandler() {
-//            @Override
-//            public void onClick(ClickEvent event) {
-//                eventBus.fireEventFromSource(new NavSelect(selection, 1), selection);
-//            }
-//        });
-    }
+
     public Object getSelection() {
         return selection;
     }
     public boolean getRadioSelected() {
         return radio.getValue();
+    }
+    public void setSelected() {
+        if ( radio.isAttached() ) {
+            radio.setValue(true);
+        } else if ( check.isAttached() ) {
+            check.setValue(true);
+        }
     }
 }

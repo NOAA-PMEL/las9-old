@@ -70,6 +70,10 @@ public class OutputPanel extends AbsolutePanel {
     double y_per_pixel;
     int y_plot_size;
 
+    double dataMin;
+    double dataMax;
+    String levels;
+
     double imageScaleRatio = 1.0;
 
     int endx;
@@ -248,6 +252,11 @@ public class OutputPanel extends AbsolutePanel {
 
         axisVertical = mapScale.getAxis_vertical();
         axisHorizontal = mapScale.getAxis_horizontal();
+
+        dataMin = Double.valueOf(mapScale.getData_max());
+        dataMax = Double.valueOf(mapScale.getData_max());
+
+        levels = mapScale.getLevels_string();
 
     }
 
@@ -475,4 +484,15 @@ public class OutputPanel extends AbsolutePanel {
         return state;
     }
 
+    public double getDataMin() {
+        return dataMin;
+    }
+
+    public double getDataMax() {
+        return dataMax;
+    }
+
+    public String getLevels() {
+        return levels;
+    }
 }

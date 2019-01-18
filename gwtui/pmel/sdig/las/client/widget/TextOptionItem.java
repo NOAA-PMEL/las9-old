@@ -64,4 +64,7 @@ public class TextOptionItem extends Composite {
     public String getValue() {
         return textbox.getValue();
     }
+    public void setValue(String value) {
+        textbox.setText(value);
+    }
 }

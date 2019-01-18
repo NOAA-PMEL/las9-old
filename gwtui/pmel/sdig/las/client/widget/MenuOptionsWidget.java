@@ -50,4 +50,27 @@ public class MenuOptionsWidget extends Composite {
         }
         return olist;
     }
+    public boolean contains(RequestProperty property) {
+        // Not a ferret property, not a plot option
+        if ( !property.getType().equals("ferret") ) {
+            return false;
+        }
+        for ( int i = 0; i < menuoptions.getChildrenList().size(); i++ ) {
+            MenuOptionItem moi = (MenuOptionItem) menuoptions.getChildrenList().get(i);
+            MenuOption option = moi.getOption();
+            if ( option.getName().equals(property.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public void setProperty(RequestProperty property) {
+        for ( int i = 0; i < menuoptions.getChildrenList().size(); i++ ) {
+            MenuOptionItem moi = (MenuOptionItem) menuoptions.getChildrenList().get(i);
+            MenuOption option = moi.getOption();
+            if (option.getName().equals(property.getName())) {
+                moi.setSelectedValue(property.getValue());
+            }
+        }
+    }
 }

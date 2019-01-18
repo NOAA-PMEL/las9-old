@@ -12,10 +12,18 @@
     <inherits name="gwt.material.design.GwtMaterialDesignBasic" />
     <inherits name="org.fusesource.restygwt.RestyGWT"/>
     <inherits name="com.github.nmorel.gwtjackson.GwtJackson" />
+    <inherits name="gwt.material.design.themes.ThemeBlueDebug"/>
     <inherits name="google.ggcharts"/>
+
+    <inherits name="com.google.gwt.user.Debug"/>
+
     <set-property name="restygwt.encodeDecode.useGwtJackson" value="false" />
 
+
+
     <inherits name="org.moxieapps.gwt.highcharts.Highcharts"/>
+
+
     <!--
     <inherits name='GViz'/>
     -->

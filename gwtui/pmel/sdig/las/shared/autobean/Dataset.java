@@ -5,111 +5,116 @@ import java.util.List;
 import java.util.Set;
 
 public class Dataset implements Comparable {
-	
-	long id;
-	String title;
-	String hash;
-	String type;
-	List<Variable> variables;
-	List <Dataset> datasets;
-	Dataset dataset;
+
+    long id;
+    String title;
+    String hash;
+    String type;
+    List<Variable> variables;
+    List <Dataset> datasets;
+    Dataset dataset;
     Set<DatasetProperty> datasetProperties;
     String status;
+    boolean variableChildren;
 
-	public long getId() {
-		return id;
-	}
+    public static String INGEST_NOT_STARTED = "Ingest not started";
+    public static String INGEST_STARTED = "Ingest started";
+    public static String INGEST_FAILED = "Ingest failed";
+    public static String INGEST_FINISHED = "Ingest finished";
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public String getTitle() {
-		return title;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+    public String getTitle() {
+        return title;
+    }
 
-	public String getHash() {
-		return hash;
-	}
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-	public void setHash(String hash) {
-		this.hash = hash;
-	}
+    public String getHash() {
+        return hash;
+    }
 
-	public String getType() {
-		return type;
-	}
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    public String getType() {
+        return type;
+    }
 
-	public List<Variable> getVariables() {
-		return variables;
-	}
+    public void setType(String type) {
+        this.type = type;
+    }
 
-	public void setVariables(List<Variable> variables) {
-		this.variables = variables;
-	}
+    public List<Variable> getVariables() {
+        return variables;
+    }
 
-	public List<Dataset> getDatasets() {
-		return datasets;
-	}
+    public void setVariables(List<Variable> variables) {
+        this.variables = variables;
+    }
 
-	public void setDatasets(List<Dataset> datasets) {
-		this.datasets = datasets;
-	}
+    public List<Dataset> getDatasets() {
+        return datasets;
+    }
 
-	public Dataset getDataset() {
-		return dataset;
-	}
+    public void setDatasets(List<Dataset> datasets) {
+        this.datasets = datasets;
+    }
 
-	public void setDataset(Dataset dataset) {
-		this.dataset = dataset;
-	}
+    public Dataset getDataset() {
+        return dataset;
+    }
 
-	public Set<DatasetProperty> getDatasetProperties() {
-		return datasetProperties;
-	}
+    public void setDataset(Dataset dataset) {
+        this.dataset = dataset;
+    }
 
-	public void setDatasetProperties(Set<DatasetProperty> datasetProperties) {
-		this.datasetProperties = datasetProperties;
-	}
-	public String getStatus() {
-		return status;
-	}
-	public void setStatus(String status) {
-		this.status = status;
-	}
+    public Set<DatasetProperty> getDatasetProperties() {
+        return datasetProperties;
+    }
 
-	public String getProperty(String type, String name) {
-		if ( datasetProperties != null ) {
-			for(Iterator vit = datasetProperties.iterator(); vit.hasNext(); ) {
-				DatasetProperty dp = (DatasetProperty) vit.next();
-				if ( dp.getType().equals(type) && dp.getName().equals(name) ) {
-					return dp.getValue();
-				}
-			}
-		}
-		return null;
-	}
+    public void setDatasetProperties(Set<DatasetProperty> datasetProperties) {
+        this.datasetProperties = datasetProperties;
+    }
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-	@Override
-	public int compareTo(Object o) {
-		if ( o instanceof Dataset ) {
-			Dataset d = (Dataset) o;
-			return this.title.compareTo(d.getTitle());
-		} else {
-			return 0;
-		}
-	}
+    public String getProperty(String type, String name) {
+        if ( datasetProperties != null ) {
+            for(Iterator vit = datasetProperties.iterator(); vit.hasNext(); ) {
+                DatasetProperty dp = (DatasetProperty) vit.next();
+                if ( dp.getType().equals(type) && dp.getName().equals(name) ) {
+                    return dp.getValue();
+                }
+            }
+        }
+        return null;
+    }
 
-    public Variable findVariableByNameAndTitle(String name, String title
-    ) {
+    @Override
+    public int compareTo(Object o) {
+        if ( o instanceof Dataset ) {
+            Dataset d = (Dataset) o;
+            return this.title.compareTo(d.getTitle());
+        } else {
+            return 0;
+        }
+    }
+
+    public Variable findVariableByNameAndTitle(String name, String title) {
         for (int i = 0; i < variables.size(); i++) {
             Variable v = variables.get(i);
             if ( v.getName().equals(name) && v.getTitle().equals(title) ) {
@@ -117,5 +122,32 @@ public class Dataset implements Comparable {
             }
         }
         return null;
+    }
+    public Variable findVariableByHash(String hash) {
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i);
+            if ( v.getHash().equals(hash) ) {
+                return v;
+            }
+        }
+        return null;
+    }
+    public int findVariableIndexByHash(String hash) {
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i);
+            if ( v.getHash().equals(hash) ) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    public boolean hasVariableChildren() {
+        return variableChildren;
+    }
+    public boolean isVariableChildren () {
+        return variableChildren;
+    }
+    public void setVariableChildren(boolean variableChildren) {
+        this.variableChildren = variableChildren;
     }
 }

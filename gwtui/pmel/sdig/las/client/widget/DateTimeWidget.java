@@ -83,7 +83,7 @@ public class DateTimeWidget extends MaterialPanel {
     MaterialListBox hi_minute = new MaterialListBox();
 
     MaterialRow labelRow = new MaterialRow();
-    Heading heading = new Heading(HeadingSize.H5);
+    MaterialLabel heading = new MaterialLabel();
 
     MaterialRow minRow = new MaterialRow();
     MaterialRow maxRow = new MaterialRow();
@@ -127,6 +127,7 @@ public class DateTimeWidget extends MaterialPanel {
 	 *
 	 */
 	public DateTimeWidget() {
+	    setLineHeight(32);
 	    setWidth("340px");
 	    setFloat(Style.Float.LEFT);
         labelRow.setGrid("s12");
@@ -136,14 +137,19 @@ public class DateTimeWidget extends MaterialPanel {
         maxRow.setPaddingLeft(0);
         minRow.setPaddingRight(0);
         maxRow.setPaddingRight(0);
+        minRow.setMarginBottom(0);
+        maxRow.setMarginBottom(0);
+//        minRow.setHeight("64px");
+//        maxRow.setHeight("64px");
 
 		ClientFactory factory = GWT.create(ClientFactory.class);
 		eventBus = factory.getEventBus();
 		setListeners();
 
-        heading.setFontSize("1.1em");
+//        heading.setFontSize("1.1em");
         heading.setFontWeight(Style.FontWeight.BOLD);
         heading.setTextColor(Color.BLUE);
+        heading.setMargin(0);
         labelRow.add(heading);
 
 		//TODO set the size and maybe button styles
@@ -679,10 +685,14 @@ public class DateTimeWidget extends MaterialPanel {
         DateTime startDate = lo.withYear(year).withMonthOfYear(start).withDayOfMonth(1).withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         DateTime endDate = hi.withYear(year).withMonthOfYear(end).withDayOfMonth(1).withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
 
+        int stride = delta.getMonths();
+        if ( stride <= 0 ) {
+            stride = 1;
+        }
 
         while (startDate.isBefore(endDate.getMillis()) || startDate.equals(endDate)) {
             month.addItem(monthFormat.print(startDate.getMillis()));
-            startDate = startDate.plusMonths(1);
+            startDate = startDate.plusMonths(stride);
         }
     }
 

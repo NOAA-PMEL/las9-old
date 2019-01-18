@@ -25,6 +25,8 @@ import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.SideNavClosedEvent;
 import gwt.material.design.client.events.SideNavOpenedEvent;
 import gwt.material.design.client.ui.MaterialButton;
+import gwt.material.design.client.ui.MaterialCheckBox;
+import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
 import gwt.material.design.client.ui.MaterialColumn;
@@ -43,7 +45,6 @@ import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.MaterialSideNavPush;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
-import gwt.material.design.client.ui.html.Option;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
@@ -88,19 +89,15 @@ public class Layout extends Composite {
     MaterialButton update;
 
     @UiField
-    MaterialButton plotsButton;
+    MaterialCollapsible navcollapsible;
+
     @UiField
-    MaterialDropDown plotsDropdown;
+    MaterialListBox plotsDropdown;
 
     @UiField
     MaterialLink animate;
     @UiField
     MaterialWindow animateWindow;
-
-    @UiField
-    MaterialButton overButton;
-    @UiField
-    MaterialButton analysisButton;
 
     @UiField
     ResultsPanel panel1;
@@ -121,6 +118,8 @@ public class Layout extends Composite {
     MaterialPanel mapPanel;
     @UiField
     MaterialCollapsibleItem dataItem;
+    @UiField
+    MaterialProgress dataProgress;
 
     @UiField
     MaterialPanel animationDateTimePanel;
@@ -238,10 +237,15 @@ public class Layout extends Composite {
 
     @UiField
     MaterialSwitch analysisSwitch;
+    @UiField
+    MaterialListBox analysisListBox;
+    @UiField
+    MaterialListBox overListBox;
 
     @UiField
     MaterialSideNavPush sideNav;
 
+    // These rows are contained in the mainPanel
     @UiField
     MaterialRow outputRow01;
 
@@ -267,6 +271,8 @@ public class Layout extends Composite {
         root = ourUiBinder.createAndBindUi(this);
         initWidget(root);
 
+        Constants.UPDATE_NOT_NEEDED = update.getBackgroundColor();
+
         xVariableListBox.addValueChangeHandler(correlationChangeX);
         yVariableListBox.addValueChangeHandler(correlationChangeY);
         cVariableListBox.addValueChangeHandler(correlationChangeC);
@@ -276,21 +282,21 @@ public class Layout extends Composite {
 
         colorByOn.addValueChangeHandler(colorByOnChange);
         analysisSwitch.addValueChangeHandler(analysisSwitchChange);
-        outputRow01.setPaddingLeft(Constants.navWidth);
-        outputRow02.setPaddingLeft(Constants.navWidth);
+//        outputRow01.setMarginLeft(2);
+//        outputRow02.setMarginLeft(2);
         sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
             @Override
             public void onSideNavOpened(SideNavOpenedEvent sideNavOpenedEvent) {
-                outputRow01.setPaddingLeft(Constants.navWidth);
-                outputRow02.setPaddingLeft(Constants.navWidth);
+//                outputRow01.setMarginLeft(Constants.navWidth);
+//                outputRow02.setMarginLeft(Constants.navWidth);
                 scale(Constants.navWidth);
             }
         });
         sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
             @Override
             public void onSideNavClosed(SideNavClosedEvent sideNavOpenedEvent) {
-                outputRow01.setPaddingLeft(4);
-                outputRow02.setPaddingLeft(4);
+//                outputRow01.setMarginLeft(2);
+//                outputRow02.setMarginLeft(2);
                 scale(8);
             }
         });
@@ -336,13 +342,44 @@ public class Layout extends Composite {
 //                    panel4.scale(navWidth);
         }
     }
+    public boolean isAnalysisActive() {
+        return analysisSwitch.getValue();
+    }
+    public void setAnalysisActive(boolean value) {
+        analysisSwitch.setValue(value);
+    }
+    public void setAnalysisOver(String over) {
+        int index = -1;
+        for (int i = 0; i < overListBox.getItemCount(); i++) {
+            OptionElement oe = overListBox.getOptionElement(i);
+            if ( oe.getValue().equalsIgnoreCase(over) ) {
+                index = i;
+            }
+        }
+        if ( index >= 0 ) {
+            overListBox.setSelectedIndex(index);
+        }
+    }
+    public void setAnalysisTransformation(String tranform) {
+        int index = -1;
+        for (int i = 0; i < analysisListBox.getItemCount(); i++) {
+            OptionElement oe = overListBox.getOptionElement(i);
+            if ( oe.getValue().equalsIgnoreCase(tranform) ) {
+                index = i;
+            }
+        }
+        if ( index >= 0 ) {
+            analysisListBox.setSelectedIndex(index);
+        }
+    }
     public Analysis getAnalysis() {
         if ( analysisSwitch.getValue() ) {
             Analysis analysis = new Analysis();
             String axes = "";
-            String type = analysisButton.getText();
-            String over = overButton.getText();
-            if ( !type.equals("Computer") && !over.equals("Over")) {
+            String type = analysisListBox.getValue();
+            String over = overListBox.getValue();
+            if ( !type.equals("Compute") && !over.equals("Over")) {
+                analysis.setOver(over);
                 analysis.setTransformation(type);
                 if ( over.equals("Area") ) {
                     AnalysisAxis x = new AnalysisAxis();
@@ -368,6 +405,13 @@ public class Layout extends Composite {
                     ax.add(y);
                     analysis.setAnalysisAxes(ax);
                     analysis.setAxes("y");
+                } else if ( over.equals("Z") ) {
+                    AnalysisAxis z = new AnalysisAxis();
+                    z.setType("z");
+                    List<AnalysisAxis> ax = new ArrayList<>();
+                    ax.add(z);
+                    analysis.setAnalysisAxes(ax);
+                    analysis.setAxes("z");
                 } else if ( over.equals("Time") ) {
                     AnalysisAxis t = new AnalysisAxis();
                     t.setType("t");
@@ -392,6 +436,13 @@ public class Layout extends Composite {
     public void clearDatasets() {
         datasets.clear();
     }
+    public void setDatasetsMessage(String message) {
+        MaterialLabel mess = new MaterialLabel(message);
+        mess.setMargin(16);
+        mess.setFontSize(1.2, Style.Unit.EM);
+        mess.setTextColor(Color.BLUE);
+        datasets.add(mess);
+    }
     public void addMap(OLMapWidget map) {
 //        mapPanelBody.add(map);
     }
@@ -413,8 +464,7 @@ public class Layout extends Composite {
 
     public void addSelection(Object selection) {
 
-        DataItem dataItem = new DataItem(selection);
-        dataItem.addNavSelectClickHandler();
+        DataItem dataItem = new DataItem(selection, 1);
         datasets.add(dataItem);
 
     }
@@ -436,7 +486,7 @@ public class Layout extends Composite {
             Widget w = datasets.getWidget(i);
             if ( w instanceof DataItem ) {
                 DataItem d = (DataItem) w;
-                if (d.isChecked()) {
+                if (d.isSelected()) {
                     if ( !checked ) {
                         index = i;
                         checked = true;
@@ -447,6 +497,10 @@ public class Layout extends Composite {
         }
         DataItem s = (DataItem) datasets.getWidget(index);
         s.setRadioSelected();
+    }
+    public void setSelectedVariable(int i) {
+        DataItem di = (DataItem) datasets.getWidget(i);
+        di.setSelected();
     }
     public Variable getSelectedVariable() {
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
@@ -522,6 +576,16 @@ public class Layout extends Composite {
     public void addProductButton(MaterialRow pb) {
         products.add(pb);
     }
+    public void setProductByName(String name) {
+        List<Widget> children = products.getChildrenList();
+        for (int i = 0; i < children.size(); i++) {
+            Widget child = children.get(i);
+            if ( child instanceof  ProductButtonList ) {
+                ProductButtonList pbl = (ProductButtonList) child;
+                pbl.setSelected(name);
+            }
+        }
+    }
     public void setUpdate(Color color) {
         if ( !animateWindow.isOpen() && !correlationWindow.isOpen() ) {
             update.setBackgroundColor(color);
@@ -592,17 +656,13 @@ public class Layout extends Composite {
         return properties;
     }
 
-    public int setPanels(String title) {
-        plotsButton.setText(title);
-        int count = 1;
-        if ( title.contains("1") ) {
-            count = 1;
+    public void setPanels(int count) {
+        if ( count == 1 ) {
             panel1.setGrid("s12 m12 l12");
             panel2.setVisibility(false);
             panel3.setVisibility(Style.Visibility.HIDDEN);
             panel4.setVisibility(Style.Visibility.HIDDEN);
-        } else if ( title.contains("2") ) {
-            count = 2;
+        } else if ( count == 2 ) {
             panel1.setGrid("s6 m6 l6");
             panel2.setVisibility(true);
             // Initialize the second panel with the breadcrumbs from the first..
@@ -613,14 +673,12 @@ public class Layout extends Composite {
             }
             panel3.setVisibility(Style.Visibility.HIDDEN);
             panel4.setVisibility(Style.Visibility.HIDDEN);
-        } else if ( title.contains("4") ) {
-            count = 4;
+        } else if ( count == 4 ) {
             panel1.setGrid("s6 m6 l6");
             panel2.setVisibility(true);
             panel3.setVisibility(Style.Visibility.VISIBLE);
             panel4.setVisibility(Style.Visibility.VISIBLE);
         }
-        return count;
     }
     public void setMap(OLMapWidget map) {
         mapPanel.add(map);
@@ -629,11 +687,10 @@ public class Layout extends Composite {
         dateTimePanel.add(dateTime);
     }
     public void showDataProgress() {
-        dataItem.setActive(true);
-        dataItem.showProgress(ProgressType.INDETERMINATE);
+        dataProgress.setDisplay(Display.BLOCK);
     }
     public void hideDataProgress() {
-        dataItem.hideProgress();
+        dataProgress.setDisplay(Display.NONE);
     }
     public void showProgress() {
         navbar.showProgress(ProgressType.INDETERMINATE);
@@ -660,10 +717,40 @@ public class Layout extends Composite {
         }
         return false;
     }
+    public void allowZAverage(boolean allow) {
+        for (int i = 0; i < overListBox.getItemCount(); i++) {
+            if ( overListBox.getOptionElement(i).getText().equalsIgnoreCase("height/depth") ) {
+                overListBox.getOptionElement(i).setDisabled(!allow);
+            }
+        }
+    }
     public void setAnimateTimeWidget(DateTimeWidget dtw) {
         animationDateTimePanel.add(dtw);
     }
-
+    public void setProperty(RequestProperty p) {
+        if ( p.getType().equals("ferret") ) {
+            List<Widget> ow = options.getChildrenList();
+            for (int i = 0; i < ow.size(); i++) {
+                Widget w = ow.get(i);
+                if ( w instanceof MenuOptionsWidget ) {
+                    MenuOptionsWidget mo = (MenuOptionsWidget) w;
+                    if ( mo.contains(p) ) {
+                        mo.setProperty(p);
+                    }
+                } else if ( w instanceof TextOptionsWidget ) {
+                    TextOptionsWidget to = (TextOptionsWidget) w;
+                    if ( to.contains(p) ) {
+                        to.setProperty(p);
+                    }
+                } else if ( w instanceof YesNoOptionsWidget ) {
+                    YesNoOptionsWidget yno = (YesNoOptionsWidget) w;
+                    if ( yno.contains(p) ) {
+                        yno.setProperty(p);
+                    }
+                }
+            }
+        }
+    }
     ValueChangeHandler addAndDisable = new ValueChangeHandler() {
         @Override
         public void onValueChange(ValueChangeEvent valueChangeEvent) {
@@ -683,7 +770,7 @@ public class Layout extends Composite {
         public void onValueChange(ValueChangeEvent valueChangeEvent) {
             String value = (String) valueChangeEvent.getValue();
             OptionElement optionElement = xVariableListBox.getOptionElement(xVariableListBox.getIndex(value));
-            setUpdate(Color.RED);
+            setUpdate(Constants.UPDATE_NEEDED);
             eventBus.fireEventFromSource(new Correlation(false, true, false, false, false), optionElement);
         }
     };
@@ -692,7 +779,7 @@ public class Layout extends Composite {
         public void onValueChange(ValueChangeEvent valueChangeEvent) {
             String value = (String) valueChangeEvent.getValue();
             OptionElement optionElement = yVariableListBox.getOptionElement(yVariableListBox.getIndex(value));
-            setUpdate(Color.RED);
+            setUpdate(Constants.UPDATE_NEEDED);
             eventBus.fireEventFromSource(new Correlation(false, false, true, false, false), optionElement);
         }
     };
@@ -701,16 +788,17 @@ public class Layout extends Composite {
         public void onValueChange(ValueChangeEvent valueChangeEvent) {
             String value = (String) valueChangeEvent.getValue();
             OptionElement optionElement = cVariableListBox.getOptionElement(cVariableListBox.getIndex(value));
-            setUpdate(Color.RED);
+            setUpdate(Constants.UPDATE_NEEDED);
             eventBus.fireEventFromSource(new Correlation(false, false, false, true, false), optionElement);
         }
     };
     ValueChangeHandler<Boolean> analysisSwitchChange = new ValueChangeHandler<Boolean>() {
         @Override
         public void onValueChange(ValueChangeEvent<Boolean> event) {
-            String over = overButton.getTitle();
-            String type = analysisButton.getTitle();
-            eventBus.fireEventFromSource(new AnalysisActive(type, over, event.getValue()), overButton);
+            boolean active = event.getValue();
+            String over = overListBox.getValue();
+            String type = analysisListBox.getValue();
+            eventBus.fireEventFromSource(new AnalysisActive(type, over, active), overListBox);
         }
     };
     ValueChangeHandler<Boolean> colorByOnChange = new ValueChangeHandler<Boolean>() {
@@ -725,9 +813,18 @@ public class Layout extends Composite {
     }
 
     @UiHandler("plotsDropdown")
-    void onDropDown(SelectionEvent<Widget> selection) {
-        String title = ((MaterialLink)selection.getSelectedItem()).getText();
-        int count = setPanels(title);
+    void onDropDown(ValueChangeEvent<String> selection) {
+
+        String title = selection.getValue();
+        int count = 1;
+        if ( title.contains("1") ) {
+            count = 1;
+        } else if ( title.contains("2") ) {
+            count = 2;
+        } else if ( title.contains("4") ) {
+            count = 4;
+        }
+
         eventBus.fireEventFromSource(new PanelCount(count), selection);
     }
 
@@ -737,26 +834,24 @@ public class Layout extends Composite {
         String title = ((MaterialLink) event.getSelectedItem()).getText();
         formatsButton.setText(title);
     }
-    @UiHandler("analysis")
-    void onAnalysisDropDown(SelectionEvent<Widget> selection) {
-        String title = ((MaterialLink)selection.getSelectedItem()).getText();
-        analysisButton.setText(title);
-        setUpdate(Color.RED);
+    @UiHandler("analysisListBox")
+    void onAnalysisDropDown(ValueChangeEvent<String> selection) {
+        String type = selection.getValue();
+        setUpdate(Constants.UPDATE_NEEDED);
         analysisSwitch.setValue(true);
-        String over = overButton.getText();
+        String over = overListBox.getValue();
         boolean active = analysisSwitch.getValue();
-        eventBus.fireEventFromSource(new AnalysisActive(title, over, active), overButton);
+        eventBus.fireEventFromSource(new AnalysisActive(type, over, active), overListBox);
     }
 
-    @UiHandler("over")
-    void onOverDropDown(SelectionEvent<Widget> selection) {
-        String title = ((MaterialLink)selection.getSelectedItem()).getText();
-        overButton.setText(title);
-        setUpdate(Color.RED);
+    @UiHandler("overListBox")
+    void onOverDropDown(ValueChangeEvent<String> selection) {
+        String over = selection.getValue();
+        setUpdate(Constants.UPDATE_NEEDED);
         analysisSwitch.setValue(true);
-        String type = analysisButton.getText();
+        String type = analysisListBox.getValue();
         boolean active = analysisSwitch.getValue();
-        eventBus.fireEventFromSource(new AnalysisActive(type, title, active), overButton);
+        eventBus.fireEventFromSource(new AnalysisActive(type, over, active), overListBox);
     }
 
     @UiHandler("correlationLink")
@@ -827,7 +922,7 @@ public class Layout extends Composite {
         downloadWindow.open();
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem d = (DataItem) datasets.getWidget(i);
-            DataItem dd = new DataItem(d.getSelection());
+            DataItem dd = new DataItem(d.getSelection(), 10);
             if ( d.getRadioSelected() ) {
                 dd.setRadioSelected();
             }

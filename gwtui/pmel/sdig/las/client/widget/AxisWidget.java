@@ -1,25 +1,18 @@
 package pmel.sdig.las.client.widget;
 
 
-
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.HasVerticalAlignment;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
 import gwt.material.design.client.constants.Color;
+import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.HeadingSize;
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialListBox;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.html.Heading;
 import pmel.sdig.las.client.event.ButtonDropDownSelect;
@@ -32,8 +25,10 @@ import pmel.sdig.las.shared.autobean.VerticalAxis;
  * @author rhs
  * 
  */
-public class AxisWidget extends MaterialContainer {
+public class AxisWidget extends Composite {
     String type;
+
+    MaterialPanel container = new MaterialPanel();
     Heading lo_label = new Heading(HeadingSize.H5);
     Heading hi_label_range = new Heading(HeadingSize.H5);
     MaterialListBox lo_axis = new MaterialListBox();
@@ -80,8 +75,8 @@ public class AxisWidget extends MaterialContainer {
         lo_label_row.add(lo_label);
         lo_widget_row.add(lo_axis);
 
-        add(lo_label_row);
-        add(lo_widget_row);
+        container.add(lo_label_row);
+        container.add(lo_widget_row);
 
         hi_label_range.setGrid("s12");
         hi_axis.setGrid("s6");
@@ -94,6 +89,7 @@ public class AxisWidget extends MaterialContainer {
         hi_label_row.add(hi_label_range);
         hi_widget_row.add(hi_axis);
 
+        initWidget(container);
 
     }
 
@@ -128,7 +124,7 @@ public class AxisWidget extends MaterialContainer {
         initialize(ax);
     }
     protected void initialize(VerticalAxis ax) {
-        clear();
+        container.clear();
         lo_axis.clear();
         hi_axis.clear();
         lo_axis.addValueChangeHandler(loAxisChangeHandler);
@@ -184,17 +180,17 @@ public class AxisWidget extends MaterialContainer {
     }
 
     private void load_layout() {
-        clear();
+        container.clear();
         if (range) {
-            add(lo_label_row);
-            add(lo_widget_row);
-            add(hi_label_row);
-            add(hi_widget_row);
+            container.add(lo_label_row);
+            container.add(lo_widget_row);
+            container.add(hi_label_row);
+            container.add(hi_widget_row);
         } else {
-            add(lo_label_row);
-            add(lo_widget_row);
-            remove(hi_label_row);
-            remove(hi_widget_row);
+            container.add(lo_label_row);
+            container.add(lo_widget_row);
+            container.remove(hi_label_row);
+            container.remove(hi_widget_row);
         }
     }
 
@@ -267,11 +263,11 @@ public class AxisWidget extends MaterialContainer {
     public void setRange(boolean isRange) {
         range = isRange;
         if ( range ) {
-            add(hi_label_row);
-            add(hi_widget_row);
+            container.add(hi_label_row);
+            container.add(hi_widget_row);
         } else {
-            remove(hi_label_row);
-            remove(hi_widget_row);        }
+            container.remove(hi_label_row);
+            container.remove(hi_widget_row);        }
     }
 
     /**
@@ -418,5 +414,8 @@ public class AxisWidget extends MaterialContainer {
                 }
             }
         }
+    }
+    public void setDisplay(Display display) {
+        container.setDisplay(display);
     }
 }

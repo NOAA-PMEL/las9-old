@@ -25,6 +25,7 @@ class MapScale {
     String data_exists
     String xxxStride
     String yyyStride
+    String levels_string
 
 
     static constraints = {

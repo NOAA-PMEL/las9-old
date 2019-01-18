@@ -1,19 +1,12 @@
 package pmel.sdig.las.client.widget;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HTMLPanel;
-import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.IconType;
-import gwt.material.design.client.ui.MaterialCollectionItem;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.html.Div;
-import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.Variable;
@@ -33,14 +26,9 @@ public class Breadcrumb extends Div {
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
 
-    /*
-                            <m:MaterialLink marginLeft="-8" ui:field="home" verticalAlign="BOTTOM" text="Home"></m:MaterialLink>
-                        <m:MaterialIcon iconType="HOME" iconColor="BLUE" marginRight="2" iconPosition="LEFT"></m:MaterialIcon>
-    */
 
     public Breadcrumb () {
         super();
-        icon.setIconColor(Color.BLUE);
         add(icon);
         add(link);
     }

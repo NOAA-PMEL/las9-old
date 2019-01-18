@@ -12,14 +12,11 @@ public class LASRequest {
 
     int targetPanel;
 
-    AxesSet axesSet1 = new AxesSet();
-    AxesSet axesSet2 = new AxesSet();
-    // Will there ever be more than 4 unique axes sets?
-
     String operation;
     List<String> variableHashes;
     List<String> datasetHashes;
     List<Analysis> analysis;
+    List<AxesSet> axesSets = new ArrayList<>();
 
     List<Constraint> constraints;
 
@@ -81,21 +78,14 @@ public class LASRequest {
         this.requestProperties = requestProperties;
     }
 
-    public AxesSet getAxesSet1() {
-        return axesSet1;
+    public List<AxesSet> getAxesSets() {
+        return axesSets;
     }
 
-    public void setAxesSet1(AxesSet axesSet1) {
-        this.axesSet1 = axesSet1;
+    public void setAxesSets(List<AxesSet> axesSets) {
+        this.axesSets = axesSets;
     }
 
-    public AxesSet getAxesSet2() {
-        return axesSet2;
-    }
-
-    public void setAxesSet2(AxesSet axesSet2) {
-        this.axesSet2 = axesSet2;
-    }
     public void addProperty(RequestProperty requestProperty) {
         if ( requestProperties == null ) {
             requestProperties = new ArrayList<>();

@@ -1,6 +1,6 @@
 ---
 server:
-#    port: 8920
+#    port: 8940
     port: 8282
     contextPath: /las
 ---
@@ -19,6 +19,9 @@ grails:
             # Whether to translate GORM events into Reactor events
             # Disabled by default for performance reasons
             events: false
+    # Critical to allow controller to return after starting an async task
+    servlet:
+        version: 3.0
 info:
     app:
         name: '@info.app.name@'

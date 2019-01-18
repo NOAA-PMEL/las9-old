@@ -49,4 +49,31 @@ public class YesNoOptionsWidget extends Composite {
         }
         return olist;
     }
+    public boolean contains(RequestProperty property) {
+        // Not a ferret property, not a plot option
+        if ( !property.getType().equals("ferret") ) {
+            return false;
+        }
+        for ( int i = 0; i < yesnooptions.getChildrenList().size(); i++ ) {
+            YesNoOptionItem ynoi = (YesNoOptionItem) yesnooptions.getChildrenList().get(i);
+            YesNoOption option = ynoi.getOption();
+            if ( option.getName().equals(property.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public void setProperty(RequestProperty property) {
+        for ( int i = 0; i < yesnooptions.getChildrenList().size(); i++ ) {
+            YesNoOptionItem ynoi = (YesNoOptionItem) yesnooptions.getChildrenList().get(i);
+            YesNoOption option = ynoi.getOption();
+            if (option.getName().equals(property.getName())) {
+                if ( property.getValue().equals("0") ) {
+                    ynoi.setValue(false);
+                } else if ( property.getValue().equals("1") ) {
+                    ynoi.setValue(true);
+                }
+            }
+        }
+    }
 }

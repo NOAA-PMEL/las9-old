@@ -26,23 +26,35 @@
         <m:html.Div visible="false" ui:field="chart"/>
 
 
-        <ma:window.MaterialWindow ui:field="window" title="Data Set and Axes Controls">
-            <m:MaterialModalContent>
+        <ma:window.MaterialWindow ui:field="window" title="Data Set and Axes Controls" toolbarColor="BLUE_LIGHTEN_2">
             <m:MaterialColumn grid="s12">
-                <m:MaterialCollapsible>
-                    <m:MaterialCollapsibleItem active="true" ui:field="dataItem">
-                        <m:MaterialCollapsibleHeader>
-                            <las:Breadcrumb ui:field="home" iconType="HOME" text=""></las:Breadcrumb>
-                            <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Data"></m:MaterialLink>
-                            <m:MaterialIcon ui:field="back" paddingTop="2" iconColor="BLUE" iconPosition="RIGHT" iconType="ARROW_BACK"/>
+                <m:MaterialCollapsible ui:field="navcollapsible" addStyleNames="LAS-collapse-headers">
+                    <m:MaterialCollapsibleItem ui:field="dataItem">
+                        <!--
+
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
+                    <m:MaterialPanel addStyleNames="valign-wrapper">
+                    <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
+                    <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data" display="FLEX"></m:MaterialLink>
+                    <m:MaterialIcon ui:field="back"  iconType="ARROW_BACK" iconPosition="RIGHT"/>
+                    </m:MaterialPanel>
+                    <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE" display="NONE"></m:MaterialProgress>
+                </m:MaterialCollapsibleHeader>
+                 -->
+                        <m:MaterialCollapsibleHeader debugId="panelHeaderData">
+                            <m:MaterialPanel addStyleNames="valign-wrapper">
+                                <las:Breadcrumb ui:field="panelHome" iconType="HOME" text=""></las:Breadcrumb>
+                                <m:MaterialLink addStyleNames="panelHeader" width="319px" fontSize="1.4em" fontWeight="BOLDER" text="Data" display="FLEX"></m:MaterialLink>
+                                <m:MaterialIcon ui:field="back" iconPosition="RIGHT" iconType="ARROW_BACK"/>
+                            </m:MaterialPanel>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
-                            <m:MaterialCollection width="250" ui:field="datasets"/>
+                            <m:MaterialCollection ui:field="panelDatasets"/>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
                     <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
-                            <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Axes and Differences"></m:MaterialLink>
+                        <m:MaterialCollapsibleHeader debugId="panelHeaderAxes">
+                            <m:MaterialLink addStyleNames="panelHeader" fontSize="1.4em" fontWeight="BOLDER" text="Axes and Differences"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
                             <m:MaterialPanel m:id="timeRegion" padding="2" overflow="HIDDEN" width="375px">
@@ -52,7 +64,13 @@
                             </m:MaterialPanel>
                             <m:MaterialPanel lineHeight="32" marginBottom="8" textAlign="LEFT" overflow="AUTO">
 
-                                <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Compute Difference"></m:MaterialLabel>
+                                <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" text="Make contour levels match."></m:MaterialLabel>
+                                <m:MaterialPanel paddingLeft="8" ui:field="autoColorsPanel" addStyleNames="valign-wrapper">
+                                    <m:MaterialCheckBox ui:field="useAutoColors"></m:MaterialCheckBox>
+                                    <m:MaterialTextBox ui:field="autocolors" placeholder="(min, max, levels)" ></m:MaterialTextBox>
+                                </m:MaterialPanel>
+
+                                <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" text="Compute Difference"></m:MaterialLabel>
                                 <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="difference" display="INLINE" paddingBottom="8" paddingLeft="8" paddingRight="8" title="Turn on difference calculation when viewing multiple plots." onLabel="Difference On" offLabel="Difference Off" enabled="false" value="false" />
 
                                 <!--
@@ -87,6 +105,7 @@
                             </m:MaterialPanel>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
+                    <!--
                     <m:MaterialCollapsibleItem>
                         <m:MaterialCollapsibleHeader>
                             <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Analysis"></m:MaterialLink>
@@ -94,10 +113,10 @@
                         <m:MaterialCollapsibleBody padding="0">
 
                         </m:MaterialCollapsibleBody>
-                    </m:MaterialCollapsibleItem>
+                    </m:MaterialCollapsibleItem>]
+                    -->
                 </m:MaterialCollapsible>
             </m:MaterialColumn>
-            </m:MaterialModalContent>
         </ma:window.MaterialWindow>
 
     </m:MaterialColumn>

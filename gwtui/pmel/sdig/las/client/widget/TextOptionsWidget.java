@@ -52,4 +52,27 @@ public class TextOptionsWidget extends Composite {
         }
         return olist;
     }
+    public boolean contains(RequestProperty property) {
+        // Not a ferret property, not a plot option
+        if ( !property.getType().equals("ferret") ) {
+            return false;
+        }
+        for ( int i = 0; i < textoptions.getChildrenList().size(); i++ ) {
+            TextOptionItem toi = (TextOptionItem) textoptions.getChildrenList().get(i);
+            TextOption option = toi.getOption();
+            if ( option.getName().equals(property.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public void setProperty(RequestProperty property) {
+        for ( int i = 0; i < textoptions.getChildrenList().size(); i++ ) {
+            TextOptionItem toi = (TextOptionItem) textoptions.getChildrenList().get(i);
+            TextOption option = toi.getOption();
+            if (option.getName().equals(property.getName())) {
+                toi.setValue(property.getValue());
+            }
+        }
+    }
 }

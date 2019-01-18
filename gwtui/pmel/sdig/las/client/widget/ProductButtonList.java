@@ -2,6 +2,7 @@ package pmel.sdig.las.client.widget;
 
 
 import gwt.material.design.client.ui.MaterialContainer;
+import gwt.material.design.client.ui.MaterialPanel;
 import pmel.sdig.las.shared.autobean.Product;
 
 import java.util.HashMap;
@@ -12,7 +13,7 @@ import java.util.Map;
 /**
  * Created by rhs on 9/15/15.
  */
-public class ProductButtonList extends MaterialContainer {
+public class ProductButtonList extends MaterialPanel {
 
     Map<String, ProductGroup> groups = new HashMap<String, ProductGroup>();
 

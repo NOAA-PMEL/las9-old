@@ -312,6 +312,11 @@ class ProductService {
             }
         }
 
+        String levels_string = null;
+        s1 = scale.get("LEVELS_STRING")
+        if ( s1 != null ) {
+            levels_string = s1
+        }
 
         MapScale mapScaleInstance = new MapScale();
         mapScaleInstance.setXxxPixelsPerInch(xppi);
@@ -329,6 +334,7 @@ class ProductService {
         mapScaleInstance.setAxis_horizontal(scale.get("AX_HORIZ"))
         mapScaleInstance.setAxis_vertical(scale.get("AX_VERT"));
         mapScaleInstance.setAxis_vertical_positive(scale.get("AX_VERT_POSTV"));
+        mapScaleInstance.setLevels_string(levels_string)
         if ( mapScaleInstance.getAxis_vertical_positive().equals(" ")) mapScaleInstance.setAxis_vertical_positive("up")
 
         if ( mapScaleInstance.getAxis_vertical_positive().equals("down") ) {

@@ -1,35 +1,19 @@
 package pmel.sdig.las.client.widget;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.Style;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.HTMLPanel;
-import gwt.material.design.addins.client.bubble.MaterialBubble;
-import gwt.material.design.client.constants.Position;
-import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCollectionItem;
+import com.google.gwt.user.client.ui.Widget;
 import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialContainer;
-import gwt.material.design.client.ui.MaterialDropDown;
-import gwt.material.design.client.ui.MaterialHelpBlock;
-import gwt.material.design.client.ui.MaterialIcon;
-import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialListBox;
-import gwt.material.design.client.ui.MaterialModal;
 import gwt.material.design.client.ui.MaterialPanel;
-import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.MaterialTitle;
-import gwt.material.design.client.ui.MaterialToast;
-import gwt.material.design.client.ui.html.Heading;
 import gwt.material.design.client.ui.html.Option;
 import pmel.sdig.las.client.event.PlotOptionChange;
 import pmel.sdig.las.client.main.ClientFactory;
@@ -66,7 +50,6 @@ public class MenuOptionItem extends Composite {
         initWidget(ourUiBinder.createAndBindUi(this));
         String defaultValue = option.getDefaultValue();
         title.setText(option.getTitle());
-        title.addStyleName("h32");
         List<MenuItem> menuList = option.getMenuItems();
         for (int i = 0; i < menuList.size(); i++) {
             MenuItem item = menuList.get(i);
@@ -96,5 +79,15 @@ public class MenuOptionItem extends Composite {
     }
     public String getSelectedValue() {
         return menu.getSelectedValue();
+    }
+    public void setSelectedValue(String value) {
+        int index = menu.getSelectedIndex();
+        for (int i = 0; i < menu.getItemCount(); i++) {
+            String menuValue = menu.getListBox().getValue(i);
+            if ( menuValue.equals(value) ) {
+                index = i;
+            }
+        }
+        menu.setSelectedIndex(index);
     }
 }

@@ -181,4 +181,13 @@ public class ResultsPanel extends Composite {
     public void setIndex(int index) {
         this.index = index;
     }
+    public double getDataMax() {
+        return outputPanel.getDataMax();
+    }
+    public double getDataMin() {
+        return outputPanel.getDataMin();
+    }
+    public String getLevels_string() {
+        return outputPanel.levels;
+    }
 }

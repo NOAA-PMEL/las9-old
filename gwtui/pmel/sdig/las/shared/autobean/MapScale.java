@@ -27,6 +27,7 @@ public class MapScale {
     String data_exists;
     String xxxStride;
     String yyyStride;
+    String levels_string;
 
     public double getXxxPixelsPerInch() {
         return xxxPixelsPerInch;
@@ -210,5 +211,13 @@ public class MapScale {
 
     public void setYyyStride(String yyyStride) {
         this.yyyStride = yyyStride;
+    }
+
+    public String getLevels_string() {
+        return levels_string;
+    }
+
+    public void setLevels_string(String levels_string) {
+        this.levels_string = levels_string;
     }
 }

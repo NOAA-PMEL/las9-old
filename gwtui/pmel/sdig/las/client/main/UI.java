@@ -301,7 +301,7 @@ public class UI implements EntryPoint {
                     String over = event.getOver();
                     turnOnAnalysis(type, over);
                 } else {
-                    //TODO set operations and axes back to full set.
+                    turnOffAnalysis();
                 }
             }
         });
@@ -1156,20 +1156,23 @@ public class UI implements EntryPoint {
             products.init(productsList);
             Product p = products.getSelectedProduct();
             setUpForProduct(p);
-            String type = layout.getAnalysis().getTransformation();
-            String over = layout.getAnalysis().getOver();
-            if ( !type.equals("Compute") && !over.equals("Over")) {
-                // Analysis is active, take first variable.
-                if ( over.equals("Area") ) {
-                    refMap.setTool("xy");
-                } else if ( over.equals("Longitude") ) {
-                    refMap.setTool("x");
-                } else if ( over.equals("Latitude") ) {
-                    refMap.setTool("y");
-                } else if ( over.equals("Z") ) {
-                    zAxisWidget.setRange(true);
-                } else if ( over.equals("Time") ) {
-                    dateTimeWidget.setRange(true);
+            // Could be setting up after turning it off so check
+            if ( layout.isAnalysisActive() ) {
+                String type = layout.getAnalysis().getTransformation();
+                String over = layout.getAnalysis().getOver();
+                if (!type.equals("Compute") && !over.equals("Over")) {
+                    // Analysis is active, take first variable.
+                    if (over.equals("Area")) {
+                        refMap.setTool("xy");
+                    } else if (over.equals("Longitude")) {
+                        refMap.setTool("x");
+                    } else if (over.equals("Latitude")) {
+                        refMap.setTool("y");
+                    } else if (over.equals("Z")) {
+                        zAxisWidget.setRange(true);
+                    } else if (over.equals("Time")) {
+                        dateTimeWidget.setRange(true);
+                    }
                 }
             }
             layout.setProducts(products);
@@ -1576,7 +1579,8 @@ public class UI implements EntryPoint {
         }
     }
     private void turnOffAnalysis() {
-        // TODO turn off analysis
+        String intervals = variables.get(0).getIntervals();
+        pbis.getProductsByInterval(variables.get(0).getGeometry(), intervals, pbisCallback);
     }
     private void update(Product p) {
         layout.showProgress();

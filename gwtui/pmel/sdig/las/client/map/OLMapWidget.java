@@ -1387,6 +1387,7 @@ public class OLMapWidget extends Composite {
 			if (mapListener != null) {
 				mapListener.onFeatureChanged();
 			}
+			eventBus.fireEventFromSource(new MapChangeEvent(getYlo(), getYhi(), getXlo(), getXhi()), tb);
 		}
 	};
 	/**
@@ -1455,6 +1456,7 @@ public class OLMapWidget extends Composite {
 			if (mapListener != null) {
 				mapListener.onFeatureChanged();
 			}
+			eventBus.fireEventFromSource(new MapChangeEvent(getYlo(), getYhi(), getXlo(), getXhi()), tb);
 		}
 	};
 	/**
@@ -1537,6 +1539,7 @@ public class OLMapWidget extends Composite {
 			if (mapListener != null) {
 				mapListener.onFeatureChanged();
 			}
+			eventBus.fireEventFromSource(new MapChangeEvent(getYlo(), getYhi(), getXlo(), getXhi()), tb);
 		}
 	};
 	/**
@@ -1617,6 +1620,7 @@ public class OLMapWidget extends Composite {
 			if (mapListener != null) {
 				mapListener.onFeatureChanged();
 			}
+			eventBus.fireEventFromSource(new MapChangeEvent(getYlo(), getYhi(), getXlo(), getXhi()), tb);
 		}
 	};
 

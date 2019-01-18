@@ -15,7 +15,7 @@ import gwt.material.design.client.ui.MaterialListBox;
 import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.html.Heading;
-import pmel.sdig.las.client.event.ButtonDropDownSelect;
+import pmel.sdig.las.client.event.PlotOptionChange;
 import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.shared.autobean.VerticalAxis;
 
@@ -316,14 +316,14 @@ public class AxisWidget extends Composite {
         @Override
         public void onValueChange(ValueChangeEvent event) {
             checkOrderLo();
-            eventBus.fireEvent(new ButtonDropDownSelect(lo_axis.getValue()));
+            eventBus.fireEvent(new PlotOptionChange());
         }
     };
     public ValueChangeHandler hiAxisChangeHandler = new ValueChangeHandler() {
         @Override
         public void onValueChange(ValueChangeEvent event) {
             checkOrderHi();
-            eventBus.fireEvent(new ButtonDropDownSelect(hi_axis.getValue()));
+            eventBus.fireEvent(new PlotOptionChange());
         }
     };
     public void setNearestLo(double zlo) {

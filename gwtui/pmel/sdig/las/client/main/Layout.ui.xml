@@ -53,116 +53,118 @@
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="false">
             <m:MaterialSideNavContent padding="0">
                 <m:MaterialNavBrand>
-
                     <m:MaterialListBox paddingLeft="8" paddingRight="8" ui:field="plotsDropdown" >
                         <m:html.Option text="Plot 1" value="Plot 1"/>
                         <m:html.Option text="Plot 2" value="Plot 2"/>
                         <m:html.Option text="Plot 4" value="Plot 4"/>
                     </m:MaterialListBox>
                 </m:MaterialNavBrand>
-        <m:MaterialCollapsible ui:field="navcollapsible" accordion="false">
-            <m:MaterialCollapsibleItem ui:field="dataItem">
-                <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
-                    <m:MaterialPanel addStyleNames="valign-wrapper">
-                    <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
-                    <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data" display="FLEX"></m:MaterialLink>
-                    <m:MaterialIcon ui:field="back"  iconType="ARROW_BACK" iconPosition="RIGHT"/>
-                    </m:MaterialPanel>
-                    <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE" display="NONE"></m:MaterialProgress>
-                </m:MaterialCollapsibleHeader>
-                <m:MaterialCollapsibleBody padding="0">
-                    <m:MaterialCollection ui:field="datasets">
-                        <m:MaterialCollectionItem>
-                            <m:MaterialPanel addStyleNames="valign-wrapper">
-                            <m:MaterialLink marginLeft="8" display="FLEX" text="This is a Data Set Title that is rediculously long compare to the space available for it's display"></m:MaterialLink>
-                            <m:MaterialIcon iconPosition="RIGHT" iconType="INFO" display="FLEX" marginRight="4"></m:MaterialIcon>
-                            </m:MaterialPanel>
-                        </m:MaterialCollectionItem>
-                        <m:MaterialCollectionItem>
-                            <m:MaterialPanel addStyleNames="valign-wrapper">
-                                <m:MaterialLink marginLeft="8" display="FLEX" text="Short Name"></m:MaterialLink>
-                                <m:MaterialIcon iconPosition="RIGHT" iconType="INFO" display="FLEX" marginRight="4"></m:MaterialIcon>
-                            </m:MaterialPanel>
-                        </m:MaterialCollectionItem>
-                        <m:MaterialCollectionItem>
-                            <m:MaterialPanel addStyleNames="valign-wrapper">
-                                <m:MaterialLink marginLeft="8" display="FLEX" text="ALL CAPS"></m:MaterialLink>
-                                <m:MaterialIcon iconPosition="RIGHT" iconType="INFO" display="FLEX" marginRight="4"></m:MaterialIcon>
-                            </m:MaterialPanel>
-                        </m:MaterialCollectionItem>
-                    </m:MaterialCollection>
-                </m:MaterialCollapsibleBody>
-            </m:MaterialCollapsibleItem>
-            <m:MaterialCollapsibleItem>
-                <m:MaterialCollapsibleHeader>
-                    <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Axes and Analysis"></m:MaterialLink>
-                </m:MaterialCollapsibleHeader>
-                <m:MaterialCollapsibleBody padding="0">
-                    <m:MaterialPanel m:id="timeRegion" padding="2" width="375px">
-                        <m:MaterialRow grid="s12">
-                            <m:MaterialPanel padding="8" ui:field="mapPanel"></m:MaterialPanel>
-                        </m:MaterialRow>
-                        <m:MaterialRow grid="s12">
-                            <m:MaterialPanel padding="8" ui:field="dateTimePanel" width="375px"/>
-                        </m:MaterialRow>
-                        <m:MaterialRow grid="s12">
-                            <m:MaterialPanel padding="8" ui:field="zaxisPanel" grid="s12"/>
-                        </m:MaterialRow>
-                    </m:MaterialPanel>
-                    <m:MaterialPanel marginBottom="16" textAlign="LEFT" overflow="AUTO">
-                        <m:MaterialLabel marginLeft="16" fontWeight="BOLD" textColor="BLUE" text="Do Analysis"></m:MaterialLabel>
-                        <!--
-                        <m:MaterialSwitch helperText="Does this fill the Label?" verticalAlign="MIDDLE" ui:field="analysisSwitch" display="INLINE" paddingLeft="8" paddingRight="8" title="Activate a data reduction calculation." onLabel="Analysis On" offLabel="Analysis Off" enabled="true" value="false" />
-                        -->
-                        <m:MaterialSwitch marginLeft="32" ui:field="analysisSwitch" onLabel="On" offLabel="Off" enabled="true" value="false" />
 
-                        <m:MaterialRow>
-                            <m:MaterialColumn grid="s6">
-                                <m:MaterialLabel text="Calculate"></m:MaterialLabel>
-                                <m:MaterialListBox ui:field="analysisListBox" old="true">
-                                    <m:html.Option text="Average" value="Average"/>
-                                    <m:html.Option text="Minimum" value="Minimum"/>
-                                    <m:html.Option text="Maximum" value="Maximum"/>
-                                    <m:html.Option text="Sum" value="Sum"/>
-                                    <m:html.Option text="Variance" value="Variance"/>
-                                </m:MaterialListBox>
-                            </m:MaterialColumn>
-                            <m:MaterialColumn grid="s6">
-                                <m:MaterialLabel text="Over"></m:MaterialLabel>
-                                <m:MaterialListBox ui:field="overListBox" old="true">
-                                    <m:html.Option text="Area" value="Area" />
-                                    <m:html.Option text="Longitude" value="Longitude"/>
-                                    <m:html.Option text="Latitude" value="Latitude"/>
-                                    <m:html.Option text="Height/Depth" value="Z"/>
-                                    <m:html.Option text="Time" value="Time" />
-                                </m:MaterialListBox>
-                            </m:MaterialColumn>
-                        </m:MaterialRow>
-                    </m:MaterialPanel>
-                </m:MaterialCollapsibleBody>
-            </m:MaterialCollapsibleItem>
-            <m:MaterialCollapsibleItem>
-                <m:MaterialCollapsibleHeader>
-                    <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Types"></m:MaterialLink>
-                </m:MaterialCollapsibleHeader>
-                <m:MaterialCollapsibleBody padding="0">
-                    <m:MaterialPanel ui:field="products" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Pick a data set and variable and plot choices will appear here."/></m:MaterialPanel>
-                </m:MaterialCollapsibleBody>
-            </m:MaterialCollapsibleItem>
-            <m:MaterialCollapsibleItem>
-                <m:MaterialCollapsibleHeader>
-                    <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Options"></m:MaterialLink>
-                </m:MaterialCollapsibleHeader>
-                <m:MaterialCollapsibleBody padding="0">
+                <m:MaterialCollapsible ui:field="navcollapsible" accordion="false">
+                    <m:MaterialCollapsibleItem ui:field="dataItem">
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
+                            <m:MaterialPanel addStyleNames="valign-wrapper">
+                                <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
+                                <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data" display="FLEX"></m:MaterialLink>
+                                <m:MaterialIcon ui:field="back"  iconType="ARROW_BACK" iconPosition="RIGHT"/>
+                            </m:MaterialPanel>
+                            <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE" display="NONE"></m:MaterialProgress>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
+                            <m:MaterialCollection ui:field="datasets">
+                                <m:MaterialCollectionItem>
+                                    <m:MaterialPanel addStyleNames="valign-wrapper">
+                                        <m:MaterialLink marginLeft="8" display="FLEX" text="This is a Data Set Title that is rediculously long compare to the space available for it's display"></m:MaterialLink>
+                                        <m:MaterialIcon iconPosition="RIGHT" iconType="INFO" display="FLEX" marginRight="4"></m:MaterialIcon>
+                                    </m:MaterialPanel>
+                                </m:MaterialCollectionItem>
+                                <m:MaterialCollectionItem>
+                                    <m:MaterialPanel addStyleNames="valign-wrapper">
+                                        <m:MaterialLink marginLeft="8" display="FLEX" text="Short Name"></m:MaterialLink>
+                                        <m:MaterialIcon iconPosition="RIGHT" iconType="INFO" display="FLEX" marginRight="4"></m:MaterialIcon>
+                                    </m:MaterialPanel>
+                                </m:MaterialCollectionItem>
+                                <m:MaterialCollectionItem>
+                                    <m:MaterialPanel addStyleNames="valign-wrapper">
+                                        <m:MaterialLink marginLeft="8" display="FLEX" text="ALL CAPS"></m:MaterialLink>
+                                        <m:MaterialIcon iconPosition="RIGHT" iconType="INFO" display="FLEX" marginRight="4"></m:MaterialIcon>
+                                    </m:MaterialPanel>
+                                </m:MaterialCollectionItem>
+                            </m:MaterialCollection>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader>
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Axes and Analysis"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
+                            <m:MaterialPanel m:id="timeRegion" padding="2" width="375px">
+                                <m:MaterialRow grid="s12">
+                                    <m:MaterialPanel padding="8" ui:field="mapPanel"></m:MaterialPanel>
+                                </m:MaterialRow>
+                                <m:MaterialRow grid="s12">
+                                    <m:MaterialPanel padding="8" ui:field="dateTimePanel" width="375px"/>
+                                </m:MaterialRow>
+                                <m:MaterialRow grid="s12">
+                                    <m:MaterialPanel padding="8" ui:field="zaxisPanel" grid="s12"/>
+                                </m:MaterialRow>
+                            </m:MaterialPanel>
+                            <m:MaterialPanel marginBottom="16" textAlign="LEFT" overflow="AUTO">
+                                <m:MaterialLabel marginLeft="16" fontWeight="BOLD" textColor="BLUE" text="Do Analysis"></m:MaterialLabel>
+                                <!--
+                                <m:MaterialSwitch helperText="Does this fill the Label?" verticalAlign="MIDDLE" ui:field="analysisSwitch" display="INLINE" paddingLeft="8" paddingRight="8" title="Activate a data reduction calculation." onLabel="Analysis On" offLabel="Analysis Off" enabled="true" value="false" />
+                                -->
+                                <m:MaterialSwitch marginLeft="32" ui:field="analysisSwitch" onLabel="On" offLabel="Off" enabled="true" value="false" />
 
-                    <m:MaterialPanel ui:field="options" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Other options to modify the plot will appear here."/></m:MaterialPanel>
+                                <m:MaterialRow>
+                                    <m:MaterialColumn grid="s6">
+                                        <m:MaterialLabel text="Calculate"></m:MaterialLabel>
+                                        <m:MaterialListBox ui:field="analysisListBox" old="true">
+                                            <m:html.Option text="Average" value="Average"/>
+                                            <m:html.Option text="Minimum" value="Minimum"/>
+                                            <m:html.Option text="Maximum" value="Maximum"/>
+                                            <m:html.Option text="Sum" value="Sum"/>
+                                            <m:html.Option text="Variance" value="Variance"/>
+                                        </m:MaterialListBox>
+                                    </m:MaterialColumn>
+                                    <m:MaterialColumn grid="s6">
+                                        <m:MaterialLabel text="Over"></m:MaterialLabel>
+                                        <m:MaterialListBox ui:field="overListBox" old="true">
+                                            <m:html.Option text="Area" value="Area" />
+                                            <m:html.Option text="Longitude" value="Longitude"/>
+                                            <m:html.Option text="Latitude" value="Latitude"/>
+                                            <m:html.Option text="Height/Depth" value="Z"/>
+                                            <m:html.Option text="Time" value="Time" />
+                                        </m:MaterialListBox>
+                                    </m:MaterialColumn>
+                                </m:MaterialRow>
+                            </m:MaterialPanel>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader>
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Types"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
+                            <m:MaterialPanel ui:field="products" textAlign="LEFT" overflow="AUTO"><m:MaterialLabel text="Pick a data set and variable and plot choices will appear here."/></m:MaterialPanel>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader>
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Options"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
 
-                </m:MaterialCollapsibleBody>
-            </m:MaterialCollapsibleItem>
-        </m:MaterialCollapsible>
+                            <m:MaterialPanel ui:field="options" textAlign="LEFT">
+                                <m:MaterialLabel text="Other options to modify the plot will appear here."/>
+                            </m:MaterialPanel>
+
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                </m:MaterialCollapsible>
             </m:MaterialSideNavContent>
         </m:MaterialSideNavPush>
-        <m:MaterialContainer>
+        <m:MaterialContainer ui:field="main" marginLeft="-400">
             <m:MaterialRow paddingTop="60" ui:field="outputRow01">
 
                 <las:ResultsPanel ui:field="panel1" title="panel01"></las:ResultsPanel>
@@ -205,30 +207,30 @@
                 <m:MaterialProgress ui:field="animateProgress" type="INDETERMINATE" display="NONE"></m:MaterialProgress>
             </m:MaterialRow>
             <m:MaterialRow>
-            <m:MaterialColumn grid="s3">
-               <m:MaterialPanel padding="2" overflow="HIDDEN" width="375px">
-                   <m:MaterialPanel padding="8" ui:field="animationDateTimePanel" width="375px" grid="s12"></m:MaterialPanel>
-                   <m:MaterialPanel padding="8" ui:field="submitPanel" width="375px" grid="s12">
-                       <m:MaterialLabel ui:field="frameCount" fontSize="1.8em" text="0 frames downloaded."/>
-                       <m:MaterialLabel ui:field="animateHelp" marginTop="16" text="Select a time range, the number of time steps to skip between frames, and submit"></m:MaterialLabel>
-                       <m:MaterialTextBox ui:field="time_step" value="1"></m:MaterialTextBox>
-                       <m:MaterialButton ui:field="animateSubmit" text="Submit"></m:MaterialButton>
-                   </m:MaterialPanel>
-                   <m:MaterialPanel padding="8" ui:field="animationControls" display="NONE" width="375px" grid="s12">
-                       <m:MaterialRow>
-                           <m:MaterialLabel ui:field="speedLabel" text="1.5 seconds between images"/>
-                           <m:MaterialRange ui:field="flipSpeed" min="200" max="3000" value="1500" ></m:MaterialRange>
-                       </m:MaterialRow>
-                       <m:MaterialRow>
-                           <m:MaterialButton ui:field="stop" text="Stop" ></m:MaterialButton>
-                       </m:MaterialRow>
-                       <m:MaterialRow ui:field="prevnext" display="NONE">
-                           <m:MaterialButton ui:field="prev" text="Prev" ></m:MaterialButton>
-                           <m:MaterialButton ui:field="next" text="Next" ></m:MaterialButton>
-                       </m:MaterialRow>
-                   </m:MaterialPanel>
-               </m:MaterialPanel>
-            </m:MaterialColumn>
+                <m:MaterialColumn grid="s3">
+                    <m:MaterialPanel padding="2" overflow="HIDDEN" width="375px">
+                        <m:MaterialPanel padding="8" ui:field="animationDateTimePanel" width="375px" grid="s12"></m:MaterialPanel>
+                        <m:MaterialPanel padding="8" ui:field="submitPanel" width="375px" grid="s12">
+                            <m:MaterialLabel ui:field="frameCount" fontSize="1.8em" text="0 frames downloaded."/>
+                            <m:MaterialLabel ui:field="animateHelp" marginTop="16" text="Select a time range, the number of time steps to skip between frames, and submit"></m:MaterialLabel>
+                            <m:MaterialTextBox ui:field="time_step" value="1"></m:MaterialTextBox>
+                            <m:MaterialButton ui:field="animateSubmit" text="Submit"></m:MaterialButton>
+                        </m:MaterialPanel>
+                        <m:MaterialPanel padding="8" ui:field="animationControls" display="NONE" width="375px" grid="s12">
+                            <m:MaterialRow>
+                                <m:MaterialLabel ui:field="speedLabel" text="1.5 seconds between images"/>
+                                <m:MaterialRange ui:field="flipSpeed" min="200" max="3000" value="1500" ></m:MaterialRange>
+                            </m:MaterialRow>
+                            <m:MaterialRow>
+                                <m:MaterialButton ui:field="stop" text="Stop" ></m:MaterialButton>
+                            </m:MaterialRow>
+                            <m:MaterialRow ui:field="prevnext" display="NONE">
+                                <m:MaterialButton ui:field="prev" text="Prev" ></m:MaterialButton>
+                                <m:MaterialButton ui:field="next" text="Next" ></m:MaterialButton>
+                            </m:MaterialRow>
+                        </m:MaterialPanel>
+                    </m:MaterialPanel>
+                </m:MaterialColumn>
                 <m:MaterialColumn grid="s9">
                     <las:ImagePanel ui:field="panel5"></las:ImagePanel>
                 </m:MaterialColumn>

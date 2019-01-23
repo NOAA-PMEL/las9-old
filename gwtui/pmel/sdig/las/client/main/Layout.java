@@ -5,16 +5,24 @@ import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.MouseDownEvent;
+import com.google.gwt.event.dom.client.MouseDownHandler;
+import com.google.gwt.event.dom.client.ScrollEvent;
+import com.google.gwt.event.dom.client.ScrollHandler;
+import com.google.gwt.event.dom.client.TouchStartEvent;
+import com.google.gwt.event.dom.client.TouchStartHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
@@ -30,6 +38,7 @@ import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
 import gwt.material.design.client.ui.MaterialColumn;
+import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialDropDown;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
@@ -80,6 +89,9 @@ import java.util.List;
  * Created by rhs on 9/8/15.
  */
 public class Layout extends Composite {
+
+    @UiField
+    MaterialContainer main;
 
     @UiField
     MaterialNavBrand brand;
@@ -290,16 +302,19 @@ public class Layout extends Composite {
 //                outputRow01.setMarginLeft(Constants.navWidth);
 //                outputRow02.setMarginLeft(Constants.navWidth);
                 scale(Constants.navWidth);
+                main.setMarginLeft(Constants.navWidth);
             }
         });
         sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
             @Override
-            public void onSideNavClosed(SideNavClosedEvent sideNavOpenedEvent) {
+            public void onSideNavClosed(SideNavClosedEvent sideNavClosedEvent) {
 //                outputRow01.setMarginLeft(2);
 //                outputRow02.setMarginLeft(2);
                 scale(8);
+                main.setMarginLeft(4);
             }
         });
+
         animateWindow.addCloseHandler(new CloseHandler<Boolean>() {
             @Override
             public void onClose(CloseEvent<Boolean> closeEvent) {

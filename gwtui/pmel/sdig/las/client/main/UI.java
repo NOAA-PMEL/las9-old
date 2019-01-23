@@ -6,6 +6,10 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.MouseDownEvent;
+import com.google.gwt.event.dom.client.MouseDownHandler;
+import com.google.gwt.event.dom.client.ScrollEvent;
+import com.google.gwt.event.dom.client.ScrollHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
@@ -71,6 +75,7 @@ import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.AnimateActionHandler;
 import pmel.sdig.las.client.event.ShowValues;
 import pmel.sdig.las.client.event.ShowValuesHandler;
+import pmel.sdig.las.client.map.MapSelectionChangeListener;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
 import pmel.sdig.las.client.util.Constants;
@@ -221,6 +226,13 @@ public class UI implements EntryPoint {
         correlationMap = new OLMapWidget("128px", "256px", tile_server, tile_layer);
         layout.setMap(refMap);
 
+        refMap.setMapListener(mapListener);
+        layout.sideNav.addMouseDownHandler(new MouseDownHandler() {
+            @Override
+            public void onMouseDown(MouseDownEvent mouseDownEvent) {
+                refMap.resizeMap();
+            }
+        });
         layout.setAnimateTimeWidget(animateDateTimeWidget);
 
         layout.downloadDateTimePanel.add(downloadDateTime);
@@ -2303,4 +2315,10 @@ public class UI implements EntryPoint {
         }
 
     }
+    MapSelectionChangeListener mapListener = new MapSelectionChangeListener() {
+        @Override
+        public void onFeatureChanged() {
+            layout.setUpdate(Constants.UPDATE_NEEDED);
+        }
+    };
 }

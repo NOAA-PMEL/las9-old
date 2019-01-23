@@ -173,12 +173,7 @@ public class ComparePanel extends Composite {
         gear.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                navcollapsible.setActive(1, true);
-                window.setLayoutPosition(Style.Position.ABSOLUTE);
-                window.setLeft(gear.getAbsoluteLeft());
-                window.setTop(gear.getAbsoluteTop());
-                window.setWidth(Constants.navWidth+"px");
-                window.open();
+                openDatasets();
                 holdBreadcrumbs = getBreadcrumbs();
                 for (int i = 0; i < holdBreadcrumbs.size(); i++) {
                     removeBreadcrumb(holdBreadcrumbs.get(i));
@@ -196,16 +191,20 @@ public class ComparePanel extends Composite {
         window.addCloseHandler(new CloseHandler() {
             @Override
             public void onClose(CloseEvent event) {
-                Object currentEnd = getBreadcrumbs().get(getBreadcrumbs().size()-1).getSelected();
-                if ( getBreadcrumbs().size() <= 0 || !(currentEnd instanceof Variable) ) {
+                Object currentEnd = null;
+                if (getBreadcrumbs().size() > 0) {
+                    currentEnd = getBreadcrumbs().get(getBreadcrumbs().size() - 1).getSelected();
+                }
+                if (getBreadcrumbs().size() <= 0 || (currentEnd != null && !(currentEnd instanceof Variable))) {
                     // If it's not a variable, clear it out and put back what was before
-                    for (int i = 0; i < getBreadcrumbs().size(); i++ ) {
+                    for (int i = 0; i < getBreadcrumbs().size(); i++) {
                         removeBreadcrumb(getBreadcrumbs().get(i));
                     }
                     for (int i = 0; i < holdBreadcrumbs.size(); i++) {
                         addBreadcrumb(holdBreadcrumbs.get(i));
                     }
                 }
+
             }
         });
         breadcrumbs.add(gear);
@@ -249,6 +248,14 @@ public class ComparePanel extends Composite {
             dataItem.hideProgress();
         }
     };
+    public void openDatasets() {
+        navcollapsible.setActive(1, true);
+        window.setLayoutPosition(Style.Position.ABSOLUTE);
+        window.setLeft(gear.getAbsoluteLeft());
+        window.setTop(gear.getAbsoluteTop());
+        window.setWidth(Constants.navWidth+"px");
+        window.open();
+    }
     private List<DataItem> getDataItems() {
         List<DataItem> dataItems = new ArrayList<>();
         for (int i = 0; i < panelDatasets.getWidgetCount(); i++) {
@@ -572,6 +579,23 @@ public class ComparePanel extends Composite {
     }
     public void setAutoLevelsOn(boolean value) {
         useAutoColors.setValue(value);
+    }
+    public int countAnnotations() {
+        int count = 0;
+        for (int i = 0; i < annotationPanel.getWidgetCount(); i++) {
+            Widget w = annotationPanel.getWidget(i);
+            if ( w instanceof MaterialLabel ) {
+                count++;
+            }
+        }
+        return count;
+    }
+    public void padAnnotations(int pad) {
+        for (int i = 0; i < pad; i++) {
+            MaterialLabel label = new MaterialLabel("");
+            label.getElement().setInnerHTML("&nbsp");
+            annotationPanel.add(label);
+        }
     }
     @UiHandler("useAutoColors")
     void onUseAutoColors(ClickEvent event) {

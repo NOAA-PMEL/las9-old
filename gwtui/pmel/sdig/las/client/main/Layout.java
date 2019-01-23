@@ -538,15 +538,21 @@ public class Layout extends Composite {
 
     public void removeBreadcrumbs(Object selected, int targetPanel) {
         int index = 0;
+
+        List<Breadcrumb> crumbs = new ArrayList<>();
         if ( targetPanel == 1 ) {
-            List<Breadcrumb> crumbs = panel1.getBreadcrumbs();
-            for (int i = 0; i < crumbs.size(); i++) {
-                if (crumbs.get(i).getSelected() != null && crumbs.get(i).getSelected().equals(selected)) {
-                    index = i;
-                }
+            crumbs = panel1.getBreadcrumbs();
+        } else if ( targetPanel == 2 ) {
+            crumbs = panel2.getBreadcrumbs();
+        }
+        for (int i = 0; i < crumbs.size(); i++) {
+            if (crumbs.get(i).getSelected() != null && crumbs.get(i).getSelected().equals(selected)) {
+                index = i;
             }
-            //TODO The end value is too big. What should it be?
-            int end = crumbs.size() - index;
+        }
+        //TODO The end value is too big. What should it be?
+        int end = crumbs.size() - index;
+        if ( targetPanel == 1 ) {
             for (int i = 1; i < end; i++) {
                 int removeIndex = panel1.getBreadcrumbContainer().getWidgetCount() - 1;
                 // Start just beyond the select crumb (index+1) and remove every crumb after that...
@@ -555,7 +561,18 @@ public class Layout extends Composite {
                     panel1.getBreadcrumbContainer().remove(removeIndex);
                 }
             }
+        } else if ( targetPanel == 2 ) {
+            // TODO 2, 3 and 4 are all the same and can use a method here. :-)
+            for (int i = 1; i < end; i++) {
+                int removeIndex = panel2.getBreadcrumbContainer().getWidgetCount() - 1;
+                // Start just beyond the select crumb (index+1) and remove every crumb after that...
+                Widget w = panel2.getBreadcrumbContainer().getWidget(removeIndex);
+                if (w instanceof Breadcrumb) {
+                    panel2.getBreadcrumbContainer().remove(removeIndex);
+                }
+            }
         }
+
     }
     public int getBreadcrumbCount(int targetPanel) {
         if ( targetPanel == 1 ) {
@@ -996,7 +1013,9 @@ public class Layout extends Composite {
 
     @UiHandler("home")
     public void onHome(ClickEvent event) {
-        eventBus.fireEventFromSource(new BreadcrumbSelect(), home);
+        BreadcrumbSelect bcse = new BreadcrumbSelect();
+        bcse.setTargetPanel(1);
+        eventBus.fireEventFromSource(bcse, home);
         event.stopPropagation();
     }
     @UiHandler("back")

@@ -11,6 +11,7 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
+import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.ui.MaterialButton;
 import gwt.material.design.client.ui.MaterialCollapsible;
@@ -189,5 +190,22 @@ public class ResultsPanel extends Composite {
     }
     public String getLevels_string() {
         return outputPanel.levels;
+    }
+    public int countAnnotations() {
+        int count = 0;
+        for (int i = 0; i < annotationPanel.getWidgetCount(); i++) {
+            Widget w = annotationPanel.getWidget(i);
+            if ( w instanceof MaterialLabel ) {
+                count++;
+            }
+        }
+        return count;
+    }
+    public void padAnnotations(int pad) {
+        for (int i = 0; i < pad; i++) {
+            MaterialLabel label = new MaterialLabel("blank");
+            label.getElement().setInnerHTML("&nbsp;");
+            annotationPanel.add(label);
+        }
     }
 }

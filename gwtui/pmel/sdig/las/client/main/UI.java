@@ -421,25 +421,39 @@ public class UI implements EntryPoint {
         eventBus.addHandler(BreadcrumbSelect.TYPE, new BreadcrumbSelect.Handler() {
             @Override
             public void onBreadcrumbSelect(BreadcrumbSelect event) {
+                int panel = event.getTargetPanel();
                 Object selected = event.getSelected();
-                if ( selected != null ) {
-                    layout.removeBreadcrumbs(selected, 1);
-                    if (selected instanceof Dataset) {
-                        Dataset dataset = (Dataset) selected;
-                        datasetService.getDataset(dataset.getId()+".json", datasetCallback);
-                    } else if (selected instanceof Variable) {
-                        Variable variable = (Variable) event.getSelected();
-                        newVariable = variable;
-                        applyConfig();
+                if (panel == 1) {
+                    if (selected != null) {
+                        layout.removeBreadcrumbs(selected, 1);
+                        if (selected instanceof Dataset) {
+                            Dataset dataset = (Dataset) selected;
+                            datasetService.getDataset(dataset.getId() + ".json", datasetCallback);
+                        } else if (selected instanceof Variable) {
+                            Variable variable = (Variable) event.getSelected();
+                            newVariable = variable;
+                            applyConfig();
+                        }
+                    } else {
+                        // This was the home button...
+
+                        siteService.getSite("1.json", siteCallback);
+                        layout.removeBreadcrumbs(1);
+                        layout.clearDatasets();
+                        layout.showDataProgress();
+
                     }
                 } else {
-                    // This was the home button...
-
-                    siteService.getSite("1.json", siteCallback);
-                    layout.removeBreadcrumbs(1);
-                    layout.clearDatasets();
-                    layout.showDataProgress();
-
+                    if ( selected != null ) {
+                        if ( selected instanceof Dataset ) {
+                            Dataset p2ds = (Dataset) selected;
+                            layout.removeBreadcrumbs(selected, panel);
+                            if ( panel == 2 ) {
+                                layout.panel2.openDatasets();
+                                datasetService.getDataset(p2ds.getId() + ".json", layout.panel2.datasetCallback);
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -991,6 +1005,7 @@ public class UI implements EntryPoint {
 
                     if ( historyRequestPanel2 != null ) {
                         eventBus.fireEvent(new PanelCount(2));
+                        layout.plotsDropdown.setSelectedIndex(1);
                     }
                     // TODO other panels
 //                    } else if ( currentTokens.size() == 4 ) {
@@ -1004,6 +1019,7 @@ public class UI implements EntryPoint {
                     if ( historyRequestPanel2 != null ) {
                         historyRequestPanel2 = null; // We're finally done with the second panel setup and product request.
                     }
+                    makeAnnotationsEven();
                     // TODO other panels... 5 is the animation window
                 }
 
@@ -1280,6 +1296,7 @@ public class UI implements EntryPoint {
             }
         }
     };
+    // N.B. there are two callbacks. This one deals with history events. Maybe should be renamed.
     MethodCallback<Dataset> panel2DatasetCallback = new MethodCallback<Dataset>() {
         @Override
         public void onFailure(Method method, Throwable throwable) {
@@ -1289,7 +1306,15 @@ public class UI implements EntryPoint {
         @Override
         public void onSuccess(Method method, Dataset dataset) {
             layout.panel2.clearBreadcrumbs();
-            Breadcrumb bc = new Breadcrumb(dataset, false);
+            final Breadcrumb bc = new Breadcrumb(dataset, false);
+            bc.addClickHandler(new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                    eventBus.fireEventFromSource(new BreadcrumbSelect(dataset, 2), bc);
+                    // Breadcrumbs are in the collapsible header, so stop to prevent the crumb from opening the panel.
+                    event.stopPropagation();
+                }
+            });
             layout.panel2.addBreadcrumb(bc);
             layout.panel2.setDataset(dataset);
             String hash = historyRequestPanel2.getVariableHashes().get(0);
@@ -1297,7 +1322,15 @@ public class UI implements EntryPoint {
                 hash = historyRequestPanel2.getVariableHashes().get(1);
             }
             Variable variable = dataset.findVariableByHash(hash);
-            Breadcrumb vbc = new Breadcrumb(variable, true);
+            final Breadcrumb vbc = new Breadcrumb(variable, true);
+            vbc.addClickHandler(new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                    eventBus.fireEventFromSource(new BreadcrumbSelect(variable, 2), bc);
+                    // Breadcrumbs are in the collapsible header, so stop to prevent the crumb from opening the panel.
+                    event.stopPropagation();
+                }
+            });
             layout.panel2.addBreadcrumb(vbc);
             setUpPanel(2, variable);
         }
@@ -1397,10 +1430,26 @@ public class UI implements EntryPoint {
                 if ( selectedIndex >= 0 ) {
                     layout.setSelectedVariable(selectedIndex);
                     newVariable = layout.getSelectedVariable();
-                    Breadcrumb dbc = new Breadcrumb(dataset, false);
+                    final Breadcrumb dbc = new Breadcrumb(dataset, false);
+                    dbc.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent event) {
+                            eventBus.fireEventFromSource(new BreadcrumbSelect(dataset, 1), dbc);
+                            // Breadcrumbs are in the collapsible header, so stop to prevent the crumb from opening the panel.
+                            event.stopPropagation();
+                        }
+                    });
                     layout.removeBreadcrumbs(1);
                     layout.addBreadcrumb(dbc, 1);
-                    Breadcrumb vbc = new Breadcrumb(newVariable, true);
+                    final Breadcrumb vbc = new Breadcrumb(newVariable, true);
+                    vbc.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent event) {
+                            eventBus.fireEventFromSource(new BreadcrumbSelect(newVariable, 1), vbc);
+                            // Breadcrumbs are in the collapsible header, so stop to prevent the crumb from opening the panel.
+                            event.stopPropagation();
+                        }
+                    });
                     layout.addBreadcrumb(vbc, 1);
                 }
 
@@ -2321,4 +2370,17 @@ public class UI implements EntryPoint {
             layout.setUpdate(Constants.UPDATE_NEEDED);
         }
     };
+    private void makeAnnotationsEven() {
+
+        int lines1 = layout.panel1.countAnnotations();
+        int lines2 = layout.panel2.countAnnotations();
+
+        if ( lines1 > lines2 ) {
+            layout.panel2.padAnnotations(lines1 - lines2);
+        }
+
+        if ( lines2 > lines1 ) {
+            layout.panel1.padAnnotations(lines2 - lines1);
+        }
+    }
 }

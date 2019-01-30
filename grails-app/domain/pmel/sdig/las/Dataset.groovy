@@ -9,6 +9,7 @@ class Dataset {
     String type = "dataset"
     Boolean variableChildren
     List variables
+    List vectors
 
     static String INGEST_NOT_STARTED = "Ingest not started"
     static String INGEST_STARTED = "Ingest started"
@@ -19,7 +20,7 @@ class Dataset {
     // A data set can contain other datasets or variables.
     List datasets
 
-    static hasMany = [datasetProperties: DatasetProperty, variables: Variable, datasets: Dataset]
+    static hasMany = [datasetProperties: DatasetProperty, variables: Variable, datasets: Dataset, vectors: Vector]
 
 
     static belongsTo = [parent: Dataset]
@@ -45,6 +46,7 @@ class Dataset {
         datasetProperties(nullable: true)
         status(nullable: true)
         variableChildren (nullable: true)
+        vectors (nullable: true)
     }
 
 

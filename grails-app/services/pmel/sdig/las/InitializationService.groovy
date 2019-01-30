@@ -691,8 +691,111 @@ class InitializationService {
             animateSetup.addToOperations(animateSetup_op)
             animateSetup.save(failOnError: true)
         }
+/*
+  <operation name="Vector plot" ID="Plot_vector" default="true" output_template="zoom" service_action="Plot_vector" order="0103" private="false" category="visualization" isZoomable="true">
+    <service>ferret</service>
+    <response ID="PlotResp">
+      <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+      <!-- <result type="ps" ID="plot_postscript" streamable="true" mime_type="application/postscript"
+                                file_suffix=".ps"/> -->
+      <result type="image" ID="ref_map" file_suffix=".png"/>
+      <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+      <result type="debug" ID="debug" file_suffix=".txt"/>
+      <result type="cancel" ID="cancel" file_suffix=".txt"/>
+    </response>
+    <region>
+      <intervals name="xy" type="Maps" title="Latitude-Longitude"/>
+
+      <intervals name="xt" type="Hovmoller Plots" title="Longitude-Time"/>
+      <intervals name="yt" type="Hovmoller Plots" title="Latitude-Time"/>
+
+      <intervals name="yz" type="Depth Profiles" title="Latitude-Depth"/>
+      <intervals name="xz" type="Depth Profiles" title="Longitude-Depth"/>
+
+      <intervals name="zt" type="Hovmoller Plots" title="Depth-Time"/>
+    </region>
+    <grid_types>
+      <grid_type name="vector"/>
+    </grid_types>
+    <optiondef IDREF="Options_Vector_7"/>
+  </operation>
 
 
+    Repeat this for all the other views as shown in the intervals section above
+
+
+ */
+        Product vector = Product.findByName("Plot_vector")
+        if ( !vector ) {
+            vector = new Product([name: "Plot_vector", title: "Vector Plot", ui_group: "Maps", view: "xy", data_view: "xy", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
+            vector_op.setResultSet(resultsService.getVectorResults())
+            vector_op.addToTextOptions(optionsService.getVector_length())
+            vector_op.addToTextOptions(optionsService.getVector_subsampling())
+            vector_op.addToMenuOptions(optionsService.getVector_style())
+            vector.addToOperations(vector_op)
+            vector.save(failOnError: true)
+        }
+
+        Product vector_xt = Product.findByName("Plot_vector_xt")
+        if ( !vector_xt ) {
+            vector_xt = new Product([name: "Plot_vector", title: "Vector Plot, Longitude Time", ui_group: "Hovmöller Diagram", view: "xt", data_view: "xt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
+            vector_op.setResultSet(resultsService.getVectorResults())
+            vector_op.addToTextOptions(optionsService.getVector_length())
+            vector_op.addToTextOptions(optionsService.getVector_subsampling())
+            vector_op.addToMenuOptions(optionsService.getVector_style())
+            vector_xt.addToOperations(vector_op)
+            vector_xt.save(failOnError: true)
+        }
+
+        Product vector_yt = Product.findByName("Plot_vector_yt")
+        if ( !vector_yt ) {
+            vector_yt = new Product([name: "Plot_vector", title: "Vector Plot, Longitude Time", ui_group: "Hovmöller Diagram", view: "yt", data_view: "yt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000002"])
+            Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
+            vector_op.setResultSet(resultsService.getVectorResults())
+            vector_op.addToTextOptions(optionsService.getVector_length())
+            vector_op.addToTextOptions(optionsService.getVector_subsampling())
+            vector_op.addToMenuOptions(optionsService.getVector_style())
+            vector_yt.addToOperations(vector_op)
+            vector_yt.save(failOnError: true)
+        }
+
+        Product vector_yz = Product.findByName("Plot_vector_yz")
+        if ( !vector_yz ) {
+            vector_yz = new Product([name: "Plot_vector", title: "Vector Plot, Latitude Depth", ui_group: "Depth Profile", view: "yz", data_view: "yz", geometry: GeometryType.VECTOR, hidden: false, product_order: "000002"])
+            Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
+            vector_op.setResultSet(resultsService.getVectorResults())
+            vector_op.addToTextOptions(optionsService.getVector_length())
+            vector_op.addToTextOptions(optionsService.getVector_subsampling())
+            vector_op.addToMenuOptions(optionsService.getVector_style())
+            vector_yz.addToOperations(vector_op)
+            vector_yz.save(failOnError: true)
+        }
+
+        Product vector_xz = Product.findByName("Plot_vector_xz")
+        if ( !vector_xz ) {
+            vector_xz = new Product([name: "Plot_vector", title: "Vector Plot, Longitude Depth", ui_group: "Depth Profile", view: "xz", data_view: "xz", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
+            vector_op.setResultSet(resultsService.getVectorResults())
+            vector_op.addToTextOptions(optionsService.getVector_length())
+            vector_op.addToTextOptions(optionsService.getVector_subsampling())
+            vector_op.addToMenuOptions(optionsService.getVector_style())
+            vector_xz.addToOperations(vector_op)
+            vector_xz.save(failOnError: true)
+        }
+
+        Product vector_zt = Product.findByName("Plot_vector_zt")
+        if ( !vector_zt ) {
+            vector_zt = new Product([name: "Plot_vector", title: "Vector Plot, Depth Time", ui_group: "Depth Time", view: "zt", data_view: "zt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
+            vector_op.setResultSet(resultsService.getVectorResults())
+            vector_op.addToTextOptions(optionsService.getVector_length())
+            vector_op.addToTextOptions(optionsService.getVector_subsampling())
+            vector_op.addToMenuOptions(optionsService.getVector_style())
+            vector_zt.addToOperations(vector_op)
+            vector_zt.save(failOnError: true)
+        }
 
     }
     def loadDefaultLasDatasets() {
@@ -758,6 +861,16 @@ class InitializationService {
                         Variable v = coadsDS.getVariables().get(0);
                         v.addToVariableProperties(new VariableProperty([type: "ferret", name: "time_step", value: "3"]))
                         coadsDS.addToDatasetProperties(new DatasetProperty([type: "ferret", name: "time_step", value: "4"]))
+                        Vector vector = new Vector();
+                        vector.setGeometry(GeometryType.VECTOR)
+                        vector.setTitle("Ocean Currents")
+                        Variable ucomp = coadsDS.getVariables().find{it.name == "UWND"};
+                        Variable vcomp = coadsDS.getVariables().find{it.name == "VWND"}
+                        vector.setHash(ucomp.getHash() + "_" + vcomp.getHash())
+                        vector.setName(ucomp.getName() + " and " + vcomp.getName())
+                        vector.setU(ucomp)
+                        vector.setV(vcomp)
+                        coadsDS.addToVectors(vector)
                         coadsDS.save(flush: true)
                     }
                     if (coadsDS) {

@@ -64,4 +64,21 @@ class ResultsService {
         results.addToResults(frame_list)
         results
     }
+    def getVectorResults() {
+
+        ResultSet vecResults = new ResultSet([name: "results_debug_image_mapscale_annotations"])
+
+        Result debug = new Result([name: "debug", mime_type: "text/plain", type: "debug", file_type: "text", suffix: ".txt"])
+        Result plot_image = new Result([name: "plot_image", mime_type: "image/png", type: "image", file_type: "png", suffix: ".png"])
+        Result map_scale = new Result([name: "map_scale", mime_type: "text/xml", type: "map_scale", file_type: "txt", suffix: ".xml"])
+        Result annotations = new Result([name: "annotations", mime_type: "text/xml", type: "annotations", file_type: "xml", suffix: ".xml"])
+
+        vecResults.addToResults(debug)
+        vecResults.addToResults(plot_image)
+        vecResults.addToResults(map_scale)
+        vecResults.addToResults(annotations)
+
+        vecResults
+
+    }
 }

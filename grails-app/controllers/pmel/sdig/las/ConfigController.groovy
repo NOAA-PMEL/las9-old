@@ -30,6 +30,9 @@ class ConfigController {
 
         Map<String, Map<String, Object>> config = new HashMap<>()
 
+        def regions = new ArrayList<Region>()
+        regions.addAll(Region.findAll())
+
         List<Variable> variables = parent.getVariables();
         for (int i = 0; i < variables.size(); i++) {
 
@@ -40,13 +43,22 @@ class ConfigController {
 
             if ( !config.containsKey(config_key) ) {
                 def products = productService.findProductsByInterval(grid, intervals)
-                def regions = new ArrayList<Region>()
-                regions.addAll(Region.findAll())
-
                 def c = [products: products, regions: regions]
                 config.put(config_key, c)
             }
 
+        }
+        List<Vector> vectors = parent.getVectors()
+        for (int i = 0; i < vectors.size(); i++) {
+            Vector vec = vectors.get(i)
+            String grid = vec.getGeometry()
+            String intervals = vec.getU().getIntervals()
+            String config_key = grid + "_" + intervals
+            if ( !config.containsKey(config_key) ) {
+                def products = productService.findProductsByInterval(grid, intervals)
+                def c = [products: products, regions: regions]
+                config.put(config_key, c)
+            }
         }
 
         def configSet = [config: config]

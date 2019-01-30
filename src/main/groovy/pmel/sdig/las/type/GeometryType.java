@@ -5,6 +5,8 @@ package pmel.sdig.las.type;
  */
 public class GeometryType {
         public static String GRID = "grid";
+        // may have trajectory_vector, timeseries_vector etc.
+        public static String VECTOR = "grid_vector";
         public static String TRAJECTORY = "trajectory";
         public static String PROFILE = "profile";
         public static String TIMESERIES = "timeseries";

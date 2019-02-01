@@ -1,6 +1,6 @@
 ---
 server:
-#    port: 8940
+#   port: 8940
     port: 8282
     contextPath: /las
 ---

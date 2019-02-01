@@ -739,7 +739,7 @@ class InitializationService {
 
         Product vector_xt = Product.findByName("Plot_vector_xt")
         if ( !vector_xt ) {
-            vector_xt = new Product([name: "Plot_vector", title: "Vector Plot, Longitude Time", ui_group: "Hovmöller Diagram", view: "xt", data_view: "xt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            vector_xt = new Product([name: "Plot_vector_xt", title: "Vector Plot, Longitude Time", ui_group: "Hovmöller Diagram", view: "xt", data_view: "xt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
             Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
             vector_op.setResultSet(resultsService.getVectorResults())
             vector_op.addToTextOptions(optionsService.getVector_length())
@@ -751,7 +751,7 @@ class InitializationService {
 
         Product vector_yt = Product.findByName("Plot_vector_yt")
         if ( !vector_yt ) {
-            vector_yt = new Product([name: "Plot_vector", title: "Vector Plot, Longitude Time", ui_group: "Hovmöller Diagram", view: "yt", data_view: "yt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000002"])
+            vector_yt = new Product([name: "Plot_vector_yt", title: "Vector Plot, Latitude Time", ui_group: "Hovmöller Diagram", view: "yt", data_view: "yt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000002"])
             Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
             vector_op.setResultSet(resultsService.getVectorResults())
             vector_op.addToTextOptions(optionsService.getVector_length())
@@ -763,7 +763,7 @@ class InitializationService {
 
         Product vector_yz = Product.findByName("Plot_vector_yz")
         if ( !vector_yz ) {
-            vector_yz = new Product([name: "Plot_vector", title: "Vector Plot, Latitude Depth", ui_group: "Depth Profile", view: "yz", data_view: "yz", geometry: GeometryType.VECTOR, hidden: false, product_order: "000002"])
+            vector_yz = new Product([name: "Plot_vector_yz", title: "Vector Plot, Latitude Depth", ui_group: "Depth Profile", view: "yz", data_view: "yz", geometry: GeometryType.VECTOR, hidden: false, product_order: "000002"])
             Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
             vector_op.setResultSet(resultsService.getVectorResults())
             vector_op.addToTextOptions(optionsService.getVector_length())
@@ -775,7 +775,7 @@ class InitializationService {
 
         Product vector_xz = Product.findByName("Plot_vector_xz")
         if ( !vector_xz ) {
-            vector_xz = new Product([name: "Plot_vector", title: "Vector Plot, Longitude Depth", ui_group: "Depth Profile", view: "xz", data_view: "xz", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            vector_xz = new Product([name: "Plot_vector_xz", title: "Vector Plot, Longitude Depth", ui_group: "Depth Profile", view: "xz", data_view: "xz", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
             Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
             vector_op.setResultSet(resultsService.getVectorResults())
             vector_op.addToTextOptions(optionsService.getVector_length())
@@ -787,7 +787,7 @@ class InitializationService {
 
         Product vector_zt = Product.findByName("Plot_vector_zt")
         if ( !vector_zt ) {
-            vector_zt = new Product([name: "Plot_vector", title: "Vector Plot, Depth Time", ui_group: "Depth Time", view: "zt", data_view: "zt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
+            vector_zt = new Product([name: "Plot_vector_zt", title: "Vector Plot, Depth Time", ui_group: "Depth Time", view: "zt", data_view: "zt", geometry: GeometryType.VECTOR, hidden: false, product_order: "000001"])
             Operation vector_op = new Operation([output_template: "plot_zoom", service_action: "Plot_vector", type: "ferret"])
             vector_op.setResultSet(resultsService.getVectorResults())
             vector_op.addToTextOptions(optionsService.getVector_length())
@@ -796,7 +796,36 @@ class InitializationService {
             vector_zt.addToOperations(vector_op)
             vector_zt.save(failOnError: true)
         }
+        /*
+  <operation ID="Animation_2D_XY_vector" default="true" name="Animation" output_template="output_animation" service_action="Data_Extract_Frames" order="9999" category="animation">
+    <service>ferret</service>
+    <response ID="Data_Extract_Frames_Response">
+      <result type="xml" ID="ferret_listing" streamable="true" mime_type="text/xml" file_suffix=".xml"/>
+      <result type="debug" ID="debug" file_suffix=".txt"/>
+    </response>
+    <region>
+      <intervals name="xyt"/>
+      <intervals name="xy"/>
+    </region>
+    <grid_types>
+      <grid_type name="vector"/>
+    </grid_types>
+    <optiondef IDREF="Options_Vector"/>
+  </operation>
 
+         */
+
+        Product vectorAnim = Product.findByName("Animation_2D_XY_vector")
+        if ( !vectorAnim ) {
+            vectorAnim = new Product([name: "Animation_2D_XY_vector", title: "Animate Vector", ui_group: "none", view: "xy", data_view: "xy", geometry: GeometryType.VECTOR, hidden: true, product_order: "999999"])
+            Operation vecAnimOp = new Operation([output_template: "plot_zoom", service_action: "Data_Extract_Frames", type: "ferret"])
+            vecAnimOp.setResultSet(resultsService.getAnimateSetupResults())
+            vecAnimOp.addToTextOptions(optionsService.getVector_length())
+            vecAnimOp.addToTextOptions(optionsService.getVector_subsampling())
+            vecAnimOp.addToMenuOptions(optionsService.getVector_style())
+            vectorAnim.addToOperations(vecAnimOp)
+            vectorAnim.save(failOnError: true)
+        }
     }
     def loadDefaultLasDatasets() {
 

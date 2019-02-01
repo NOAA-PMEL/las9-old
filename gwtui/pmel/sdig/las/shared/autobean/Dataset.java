@@ -11,6 +11,7 @@ public class Dataset implements Comparable {
     String hash;
     String type;
     List<Variable> variables;
+    List<Vector> vectors;
     List <Dataset> datasets;
     Dataset dataset;
     Set<DatasetProperty> datasetProperties;
@@ -90,6 +91,14 @@ public class Dataset implements Comparable {
     }
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<Vector> getVectors() {
+        return vectors;
+    }
+
+    public void setVectors(List<Vector> vectors) {
+        this.vectors = vectors;
     }
 
     public String getProperty(String type, String name) {

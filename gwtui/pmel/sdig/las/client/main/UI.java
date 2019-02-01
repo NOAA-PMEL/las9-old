@@ -107,6 +107,8 @@ import pmel.sdig.las.shared.autobean.ResultSet;
 import pmel.sdig.las.shared.autobean.Site;
 import pmel.sdig.las.shared.autobean.TimeAxis;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.Vector;
+import pmel.sdig.las.shared.autobean.VerticalAxis;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -184,7 +186,10 @@ public class UI implements EntryPoint {
     String thi;
     Dataset dataset = null;
     Variable newVariable;
+    Vector newVector;
     List<Variable> variables = new ArrayList<>();
+    // Since vector op is just a list of components, keep track of whether it's a vector or not.
+    boolean isVector = false;
     // The ConfigSet is all the configurations of products for all the geometry and axes combinations in the data set
     ConfigSet configSet;
 
@@ -324,7 +329,12 @@ public class UI implements EntryPoint {
                     animateCancel = true;
                     state.setAnimating(false);
                 } else if (event.isSubmit() ) {
-                    LASRequest lasRequest = makeRequest(5, "Animation_2D_XY");
+                    LASRequest lasRequest;
+                    if ( isVector ) {
+                        lasRequest = makeRequest(5, "Animation_2D_XY_vector");
+                    } else {
+                        lasRequest = makeRequest(5, "Animation_2D_XY");
+                    }
                     state.getPanelState(5).setLasRequest(lasRequest);
                     state.getPanelState(5).setFrameIndex(0);
                     state.getPanelState(5).clearFrames();
@@ -346,10 +356,16 @@ public class UI implements EntryPoint {
                         layout.time_step.setText(dts);
                     }
 
-                    Variable v = layout.getSelectedVariable();
-                    String ts = v.getProperty("ferret", "time_step");
-                    if ( ts != null ) {
-                        layout.time_step.setText(ts);
+                    if ( isVector ) {
+                        // TODO need a collection of properties
+                        Vector v = layout.getSelectedVector();
+                    } else {
+                        // TODO look at attributes, variableattributes and variableproperties. Why all three?
+                        Variable v = layout.getSelectedVariable();
+                        String ts = v.getProperty("ferret", "time_step");
+                        if (ts != null) {
+                            layout.time_step.setText(ts);
+                        }
                     }
 
                     layout.animateSubmit.setText("Submit");
@@ -375,6 +391,13 @@ public class UI implements EntryPoint {
                     if ( newVariable != null ) {
                         variables.add(newVariable);
                         layout.addBreadcrumb(new Breadcrumb(newVariable, false), 1);
+                    } else {
+                        newVector = layout.getSelectedVector();
+                        variables.add(newVector.getU());
+                        variables.add(newVector.getV());
+                        if ( newVector.getW() != null ) {
+                            variables.add(newVector.getW());
+                        }
                     }
                 }
 
@@ -485,30 +508,23 @@ public class UI implements EntryPoint {
                         datasetService.getDataset(dataset.getId() + ".json", datasetCallback);
                     } else if (selected instanceof Variable) {
 
-                        newVariable = (Variable) event.getSelected();
+                        newVector = null;
+                        newVariable = (Variable) selected;
                         // save the current widget state
 
                         if ( variables.size() > 0 ) {
-                            xlo = refMap.getXlo();
-                            xhi = refMap.getXhi();
-                            ylo = refMap.getYlo();
-                            yhi = refMap.getYhi();
-                            if (variables.get(0).getVerticalAxis() != null) {
-                                zlo = zAxisWidget.getLo();
-                                zhi = zAxisWidget.getHi();
-                            } else {
-                                zlo = null;
-                                zhi = null;
-                            }
-                            if (variables.get(0).getTimeAxis() != null) {
-                                tlo = dateTimeWidget.getISODateLo();
-                                thi = dateTimeWidget.getISODateHi();
-                            } else {
-                                tlo = null;
-                                thi = null;
-                            }
+                            saveAxes();
                         }
 
+                        applyConfig();
+
+                    } else if ( selected instanceof Vector ) {
+
+                        newVariable = null;
+                        newVector = (Vector) selected;
+                        if ( variables.size() > 0 ) {
+                            saveAxes();
+                        }
                         applyConfig();
                     }
                     layout.addBreadcrumb(bc, 1);
@@ -781,6 +797,26 @@ public class UI implements EntryPoint {
             popHistory(initialHistory);
         }
     }
+    private void saveAxes() {
+        xlo = refMap.getXlo();
+        xhi = refMap.getXhi();
+        ylo = refMap.getYlo();
+        yhi = refMap.getYhi();
+        if (variables.get(0).getVerticalAxis() != null) {
+            zlo = zAxisWidget.getLo();
+            zhi = zAxisWidget.getHi();
+        } else {
+            zlo = null;
+            zhi = null;
+        }
+        if (variables.get(0).getTimeAxis() != null) {
+            tlo = dateTimeWidget.getISODateLo();
+            thi = dateTimeWidget.getISODateHi();
+        } else {
+            tlo = null;
+            thi = null;
+        }
+    }
     public class Mouse {
         public void applyNeeded() {
             if ( layout.animateWindow.isOpen() ) {
@@ -1027,7 +1063,7 @@ public class UI implements EntryPoint {
             } else if ( tp == 5 ) {
                 // Only do things in panel 5 if the animate window is open... Otherwise just ignore them
                 if ( layout.animateWindow.isOpen() ) {
-                    if (results.getProduct().equals("Animation_2D_XY")) {
+                    if (results.getProduct().equals("Animation_2D_XY") || results.getProduct().equals("Animation_2D_XY_vector")) {
                         animation = results.getAnimation();
                         layout.frameCount.setText("0/" + animation.getFrames().size() + " frames downloaded.");
                         layout.animateSubmit.setText("Cancel");
@@ -1363,6 +1399,12 @@ public class UI implements EntryPoint {
                 for (int i = 0; i < returnedVariables.size(); i++) {
                     layout.addSelection(returnedVariables.get(i));
                 }
+                List<Vector> returnedVectors = dataset.getVectors();
+                for (int i = 0; i < returnedVectors.size(); i++) {
+                    Vector v = returnedVectors.get(i);
+                    layout.addSelection(v);
+                }
+
                 MaterialToast.fireToast("Getting products for these variables.");
             } else if ( dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) {
                 layout.setDatasetsMessage(Constants.STARTING_INGEST);
@@ -1421,13 +1463,13 @@ public class UI implements EntryPoint {
                 String historyVariable = null;
 
                 String hash = historyRequest.getVariableHashes().get(0);
-                if ( hash != null && !hash.isEmpty() ) {
+                if (hash != null && !hash.isEmpty()) {
                     historyVariable = hash;
                 }
 
                 int selectedIndex = dataset.findVariableIndexByHash(historyVariable);
 
-                if ( selectedIndex >= 0 ) {
+                if (selectedIndex >= 0) {
                     layout.setSelectedVariable(selectedIndex);
                     newVariable = layout.getSelectedVariable();
                     final Breadcrumb dbc = new Breadcrumb(dataset, false);
@@ -1452,48 +1494,71 @@ public class UI implements EntryPoint {
                     });
                     layout.addBreadcrumb(vbc, 1);
                 }
-
                 applyConfig();
             }
         }
     };
     private void applyConfig() {
 
-        TimeAxis tAxis = newVariable.getTimeAxis();
+        TimeAxis tAxis = null;
+        if (newVariable != null) {
+            tAxis = newVariable.getTimeAxis();
+        } else if (newVector != null) {
+            tAxis = newVector.getU().getTimeAxis();
+        }
 
-        if ( tAxis != null ) {
+        if (tAxis != null) {
             dateTimeWidget.init(tAxis, false);
             animateDateTimeWidget.init(tAxis, true);
             downloadDateTime.init(tAxis, true);
             correlationDateTime.init(tAxis, true);
         }
-        if ( newVariable.getVerticalAxis() != null ) {
-            zAxisWidget.init(newVariable.getVerticalAxis());
-            downloadZaxisWidget.init(newVariable.getVerticalAxis());
+        VerticalAxis vAxis = null;
+        if (newVariable != null) {
+            vAxis = newVariable.getVerticalAxis();
+        } else if (newVector != null) {
+            vAxis = newVector.getU().getVerticalAxis();
+        }
+        if (vAxis != null) {
+            zAxisWidget.init(vAxis);
+            downloadZaxisWidget.init(vAxis);
             downloadZaxisWidget.setRange(true);
-            correlationZaxisWidget.init(newVariable.getVerticalAxis());
+            correlationZaxisWidget.init(vAxis);
             correlationZaxisWidget.setRange(true);
             layout.allowZAverage(true);
         } else {
             layout.allowZAverage(false);
         }
 
-        refMap.setDataExtent(newVariable.getGeoAxisY().getMin(), newVariable.getGeoAxisY().getMax(), newVariable.getGeoAxisX().getMin(), newVariable.getGeoAxisX().getMax(), newVariable.getGeoAxisX().getDelta());
-        downloadMap.setDataExtent(newVariable.getGeoAxisY().getMin(), newVariable.getGeoAxisY().getMax(), newVariable.getGeoAxisX().getMin(), newVariable.getGeoAxisX().getMax(), newVariable.getGeoAxisX().getDelta());
-        correlationMap.setDataExtent(newVariable.getGeoAxisY().getMin(), newVariable.getGeoAxisY().getMax(), newVariable.getGeoAxisX().getMin(), newVariable.getGeoAxisX().getMax(), newVariable.getGeoAxisX().getDelta());
-        List<Product> productsList = configSet.getConfig().get(newVariable.getGeometry()+"_"+newVariable.getIntervals()).getProducts();
-        List<Region> regions = configSet.getConfig().get(newVariable.getGeometry()+"_"+newVariable.getIntervals()).getRegions();
+        Variable useVariable = null;
+        String geometry = "";
+        if (newVariable != null) {
+            useVariable = newVariable;
+            geometry = useVariable.getGeometry();
+        } else if (newVector != null) {
+            useVariable = newVector.getU();
+            geometry = newVector.getGeometry();
+        }
+        refMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
+        downloadMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
+        correlationMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
+
+
+        List<Product> productsList = configSet.getConfig().get(geometry + "_" + useVariable.getIntervals()).getProducts();
+        List<Region> regions = configSet.getConfig().get(geometry + "_" + useVariable.getIntervals()).getRegions();
+
 
         refMap.setRegions(regions);
         downloadMap.setRegions(regions);
         correlationMap.setRegions(regions);
+
 
         Product previousProduct = products.getSelectedProduct();
 
         // Attempt to save the product when changing variables.
         // TODO test this!
         products.init(productsList);
-        if ( productsList.contains(previousProduct) ) {
+        if (previousProduct != null && productsList.contains(previousProduct)) {
             products.setSelected(previousProduct.getName());
         }
 
@@ -1504,7 +1569,7 @@ public class UI implements EntryPoint {
 
         layout.setProducts(products);
 
-        if ( tAxis != null ) {
+        if (tAxis != null) {
             String display_hi = tAxis.getDisplay_hi();
             String display_lo = tAxis.getDisplay_lo();
 
@@ -1520,11 +1585,11 @@ public class UI implements EntryPoint {
         // now restore previous settings if possible if a previous variable exists
         // and it's not a request to go back in history (which dictates all the settings to get to previous state).
 
-        if ( variables.size() > 0 && historyRequest == null ) {
-            if ( useCurrentMapSettings ) {
+        if (variables.size() > 0 && historyRequest == null) {
+            if (useCurrentMapSettings) {
                 refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
             }
-            if ( tAxis != null ) {
+            if (tAxis != null) {
                 dateTimeWidget.setLo(tlo);
                 dateTimeWidget.setHi(thi);
             }
@@ -1535,7 +1600,18 @@ public class UI implements EntryPoint {
         }
 
         variables.clear();
-        variables.add(newVariable);
+        if (newVariable != null) {
+            variables.add(newVariable);
+            isVector = false;
+        }
+        if ( newVector != null ) {
+            isVector = true;
+            variables.add(newVector.getU());
+            variables.add(newVector.getV());
+            if ( newVector.getW() != null ) {
+                variables.add(newVector.getW());
+            }
+        }
 
         // If this came in because of a history token, fix all the other stuff (plot type, plot properties, etc) then update.
 
@@ -1864,7 +1940,7 @@ public class UI implements EntryPoint {
                     }
                 }
             } else if ( panel == 5 ) {
-                if ( productName.equals("Animation_2D_XY") ) {
+                if ( productName.equals("Animation_2D_XY") || productName.equals("Animation_2D_XY_vector") ) {
                     lasRequest.getAxesSets().get(0).setTlo(animateDateTimeWidget.getFerretDateLo());
                     lasRequest.getAxesSets().get(0).setThi(animateDateTimeWidget.getFerretDateHi());
                     String time_step = layout.time_step.getText();
@@ -2252,8 +2328,16 @@ public class UI implements EntryPoint {
             correlationMap.setTool(view);
         }
 
+        Variable useVariable = null;
+        if ( newVariable != null ) {
+            useVariable = newVariable;
+        }
+        if ( newVector != null ) {
+            useVariable = newVector.getU();
+        }
 
-        if (newVariable.getTimeAxis() != null) {
+        if (useVariable.getTimeAxis() != null) {
+
             layout.showDateTime();
             if (view.contains("t") || p.getData_view().contains("t")) {
                 dateTimeWidget.setRange(true);
@@ -2264,7 +2348,7 @@ public class UI implements EntryPoint {
             layout.hideDateTime();
         }
 
-        if (newVariable.getVerticalAxis() != null) {
+        if (useVariable.getVerticalAxis() != null) {
             layout.showVertialAxis();
             if (view.contains("z") ) {
                 zAxisWidget.setRange(true);

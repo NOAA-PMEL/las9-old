@@ -298,7 +298,6 @@ public class ComparePanel extends Composite {
                 }
             }
             dataItem.setActive(true);
-            dataItem.hideProgress();
         }
     };
     public void setVisibility(boolean visibility) {

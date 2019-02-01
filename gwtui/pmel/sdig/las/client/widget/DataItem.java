@@ -33,6 +33,7 @@ import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.Vector;
 
 import javax.swing.*;
 
@@ -116,6 +117,17 @@ public class DataItem extends MaterialCollectionItem {
                 }
             });
 
+            radio.setName("variable_" + targetPanel);
+            radio.setText(v.getTitle());
+            add(radio);
+        } else if ( selection instanceof Vector) {
+            Vector v = (Vector) selection;
+            radio.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+                @Override
+                public void onValueChange(ValueChangeEvent<Boolean> valueChangeEvent) {
+                    eventBus.fireEventFromSource(new NavSelect(selection, targetPanel), selection);
+                }
+            });
             radio.setName("variable_" + targetPanel);
             radio.setText(v.getTitle());
             add(radio);

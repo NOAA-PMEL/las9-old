@@ -80,6 +80,7 @@ import pmel.sdig.las.shared.autobean.AnalysisAxis;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -523,6 +524,16 @@ public class Layout extends Composite {
             Object s = di.getSelection();
             if ( s instanceof Variable && di.getRadioSelected() ) {
                 return (Variable) s;
+            }
+        }
+        return null;
+    }
+    public Vector getSelectedVector() {
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            DataItem di = (DataItem) datasets.getWidget(i);
+            Object s = di.getSelection();
+            if ( s instanceof Vector && di.getRadioSelected() ) {
+                return (Vector) s;
             }
         }
         return null;

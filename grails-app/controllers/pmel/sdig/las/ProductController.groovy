@@ -532,7 +532,7 @@ class ProductController {
                 def annotationGroups = productService.makeAnnotations(result.filename);
                 allResults.setAnnotationGroups(annotationGroups)
                 // TODO this name has to be more specific to the animation product
-            } else if (name == "ferret_listing" && product == "Animation_2D_XY") {
+            } else if (name == "ferret_listing" && (product == "Animation_2D_XY" || product == "Animation_2D_XY_vector") ) {
                 def animation = productService.makeAnimationList(result.filename)
                 allResults.setAnimation(animation)
             }

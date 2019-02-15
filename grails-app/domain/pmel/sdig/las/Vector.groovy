@@ -20,7 +20,9 @@ class Vector {
 
 
     static searchable = {
-        only = ['name', 'title']
+
+        only = ['title', 'geometry']
+
     }
     static constraints = {
         w(nullable: true)

@@ -37,4 +37,5 @@ root(ERROR, ['STDOUT'])
 // Always log every where for now...
 logger("pmel.sdig.las", DEBUG, ['STDOUT'], false)
 logger("grails.app.Bootstrap", DEBUG, ['STDOUT'], false)
+logger("grails.plugins.elasticsearch", DEBUG, ['STDOUT'], false)
 

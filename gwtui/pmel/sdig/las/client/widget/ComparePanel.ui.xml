@@ -6,7 +6,7 @@
     <m:MaterialColumn ui:field="panel" grid="s10" paddingLeft="2" paddingRight="8">
         <m:MaterialCollapsible ui:field="annotationsCollapse">
             <m:MaterialCollapsibleItem>
-                <m:MaterialCollapsibleHeader ui:field="breadcrumbs" paddingLeft="8" paddingBottom="0" marginBottom="0">
+                <m:MaterialCollapsibleHeader ui:field="breadcrumbs" paddingLeft="8" paddingBottom="0" marginTop="8" marginBottom="0" lineHeight="20">
                     <!--
                         <m:MaterialIcon visibility="HIDDEN" display="INLINE" iconType="SETTINGS" iconColor="BLUE" iconPosition="LEFT"></m:MaterialIcon>
                     -->

@@ -111,6 +111,18 @@ dataSource:
     username: sa
     password: ''
 
+# Elastic Search config
+elasticSearch:
+    disableAutoIndex: true
+    datastoreImpl: hibernateDatastore
+    client:
+        mode: local
+    plugin:
+        mapperAttachment:
+            enabled: false
+    path:
+        data: /home/users/rhs/las_db/elastic
+
 environments:
     development:
         dataSource:

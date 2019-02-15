@@ -17,6 +17,7 @@ public class Constants {
     public static final String erddapDataRequest = base + "product/erddapDataRequest";
     public static final String datatable = base + "product/datatable";
     public static final String productsByInterval = base + "config/productsByInterval";
+    public static final String search = base + "search";
 
     public final static int navWidth = 400;
     public final static int imageBorderFactor = 200;
@@ -50,9 +51,9 @@ public class Constants {
     public static String ANIMATE_CANCEL = "Push the cancel button to stop making new frames and animate the ones already downloaded.";
     public static String ANIMATE_SUBMIT = "Select a time range, the number of time steps to skip between frames, and submit";
 
-    public static String STARTING_INGEST = "LAS is downloading the metadata for the variable in this data set. It may take a moment. This panel will update soon.";
-    public static String CHECKING_INGEST_STATUS = "LAS is still downloading and processing the metadata for the variables in this data set. This panel will update soon";
-    public static String INGEST_FAILED = "So sorry. LAS was unable to load the metadata for this data set. Use the back arrow and home button above to try a different data set. Contact the site administrator for help.";
+    public static String STARTING_INGEST = "LAS is downloading the metadata for the variable in this data set. It may take a moment.";
+    public static String CHECKING_INGEST_STATUS = "LAS is still downloading and processing the metadata for the variables in this data set.";
+    public static String INGEST_FAILED = "LAS was unable to load the metadata for this data set. Use the back arrow and home button above to try a different data set. Contact the site administrator for help.";
 
     public static String NO_MIN_MAX = "Unable to compute a global min and max from the available information. Enther your own coutour levels.";
 

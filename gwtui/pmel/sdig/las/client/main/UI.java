@@ -8,8 +8,6 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
-import com.google.gwt.event.dom.client.ScrollEvent;
-import com.google.gwt.event.dom.client.ScrollHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
@@ -73,6 +71,8 @@ import pmel.sdig.las.client.event.ProductSelected;
 import pmel.sdig.las.client.event.ProductSelectedHandler;
 import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.AnimateActionHandler;
+import pmel.sdig.las.client.event.Search;
+import pmel.sdig.las.client.event.SearchHandler;
 import pmel.sdig.las.client.event.ShowValues;
 import pmel.sdig.las.client.event.ShowValuesHandler;
 import pmel.sdig.las.client.map.MapSelectionChangeListener;
@@ -152,6 +152,9 @@ public class UI implements EntryPoint {
 
     Resource productsByIntervalResource = new Resource(Constants.productsByInterval);
     ProductsByIntervalService pbis = GWT.create(ProductsByIntervalService.class);
+
+    Resource searchResource = new Resource(Constants.search);
+    SearchService searchService = GWT.create(SearchService.class);
 
 
     ProductButtonList products = new ProductButtonList();
@@ -250,7 +253,6 @@ public class UI implements EntryPoint {
 
         ((RestServiceProxy)siteService).setResource(siteResource);
 
-
         // Get ready to call for the config when a variable is selected
         ((RestServiceProxy)configService).setResource(configResource);
 
@@ -264,6 +266,8 @@ public class UI implements EntryPoint {
         // call after analysis on or off, rather than compute it in the client
         ((RestServiceProxy)pbis).setResource(productsByIntervalResource);
 
+        ((RestServiceProxy) searchService).setResource(searchResource);
+
         History.addValueChangeHandler(new ValueChangeHandler<String>() {
                                           public void onValueChange(ValueChangeEvent<String> event) {
                                               String historyToken = event.getValue();
@@ -271,6 +275,26 @@ public class UI implements EntryPoint {
                                           }
                                       });
 
+        eventBus.addHandler(Search.TYPE, new SearchHandler() {
+            @Override
+            public void onSearch(Search event) {
+                String query = event.getQuery();
+                if ( query.isEmpty()) {
+                    MaterialToast.fireToast("Please specify at least one search term.");
+                } else {
+                    searchService.getSearchResults(event.getQuery(), datasetCallback);
+                }
+            }
+        });
+        eventBus.addHandler(LoadCancel.TYPE, new LoadCancelHandler() {
+            @Override
+            public void onLoadCancel(LoadCancel event) {
+                timer.cancel();
+                if ( layout.getBreadcrumbCount(1) == 0 ) {
+                    layout.goBack();
+                }
+            }
+        });
         eventBus.addHandler(PlotOptionChange.TYPE, new PlotOptionChangeHandler() {
             @Override
             public void onPlotOptionChange(PlotOptionChange event) {
@@ -879,6 +903,10 @@ public class UI implements EntryPoint {
     }
 
 
+    public interface SearchService extends RestService {
+        @GET
+        public void getSearchResults(@QueryParam("search") String seachQuery, MethodCallback<Dataset> datasetCallback);
+    }
     public interface ProductsByIntervalService extends RestService {
         @GET
         public void getProductsByInterval(@QueryParam("grid") String grid, @QueryParam("intervals") String intervals, MethodCallback<List<Product>> productsByIntervalCallback);
@@ -1375,6 +1403,9 @@ public class UI implements EntryPoint {
         @Override
         public void onFailure(Method method, Throwable exception) {
             layout.hideDataProgress();
+            delay.cancel();
+            if ( layout.loadDialog.isOpen() )
+                layout.loadDialog.close();
             Window.alert("Failed to download data set information for this dataset." + exception.getMessage());
         }
 
@@ -1382,38 +1413,45 @@ public class UI implements EntryPoint {
         public void onSuccess(Method method, Dataset returnedDataset) {
 
             layout.clearDatasets();
-            dataset = returnedDataset;
-            if ( dataset.getDatasets().size() > 0 ) {
-                layout.hideDataProgress();
-                List<Dataset> datasets = dataset.getDatasets();
-                Collections.sort(datasets);
-                for (int i = 0; i < datasets.size(); i++) {
-                    layout.addSelection(datasets.get(i));
-                }
-            }
-
-            if ( dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_FINISHED) ) {
-                configService.getConfig(dataset.getId(), configCallback);
-                List<Variable> returnedVariables = dataset.getVariables();
-                Collections.sort(returnedVariables);
-                for (int i = 0; i < returnedVariables.size(); i++) {
-                    layout.addSelection(returnedVariables.get(i));
-                }
-                List<Vector> returnedVectors = dataset.getVectors();
-                for (int i = 0; i < returnedVectors.size(); i++) {
-                    Vector v = returnedVectors.get(i);
-                    layout.addSelection(v);
+            if ( returnedDataset.getDatasets() != null ) {
+                dataset = returnedDataset;
+                if (dataset.getDatasets().size() > 0) {
+                    layout.hideDataProgress();
+                    List<Dataset> datasets = dataset.getDatasets();
+                    Collections.sort(datasets);
+                    for (int i = 0; i < datasets.size(); i++) {
+                        layout.addSelection(datasets.get(i));
+                    }
                 }
 
-                MaterialToast.fireToast("Getting products for these variables.");
-            } else if ( dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) {
-                layout.setDatasetsMessage(Constants.STARTING_INGEST);
-                delay.schedule(2500);
-            } else if ( dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_STARTED) ) {
-                layout.setDatasetsMessage(Constants.CHECKING_INGEST_STATUS);
-                delay.schedule(2500);
-            } else if ( dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_FAILED) ) {
-                layout.setDatasetsMessage(Constants.INGEST_FAILED);
+                if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_FINISHED)) {
+                    if (layout.loadDialog.isOpen())
+                        layout.loadDialog.close();
+                    configService.getConfig(dataset.getId(), configCallback);
+                    List<Variable> returnedVariables = dataset.getVariables();
+                    Collections.sort(returnedVariables);
+                    for (int i = 0; i < returnedVariables.size(); i++) {
+                        layout.addSelection(returnedVariables.get(i));
+                    }
+                    List<Vector> returnedVectors = dataset.getVectors();
+                    for (int i = 0; i < returnedVectors.size(); i++) {
+                        Vector v = returnedVectors.get(i);
+                        layout.addSelection(v);
+                    }
+
+                    MaterialToast.fireToast("Getting products for these variables.");
+                } else if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED)) {
+                    layout.setDatasetsMessage(Constants.STARTING_INGEST);
+                    delay.schedule(2500);
+                } else if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_STARTED)) {
+                    layout.setDatasetsMessage(dataset.getMessage());
+                    delay.schedule(2500);
+                } else if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_FAILED)) {
+                    layout.setDatasetsMessage(Constants.INGEST_FAILED);
+                    layout.goBack();
+                }
+            } else {
+               layout.setDatasetsMessage(returnedDataset.getMessage());
             }
             layout.dataItem.expand();
         }
@@ -1431,6 +1469,22 @@ public class UI implements EntryPoint {
             layout.hideDataProgress();
             layout.clearDatasets();
             layout.setBrand(site.getTitle());
+            int w = 4;
+            if ( layout.sideNav.isOpen() ) {
+                w = navWidth;
+            }
+            layout.setBrandWidth(w);
+
+
+            String t = site.getTotal() + " data sets";
+            layout.total.setText(t);
+
+            String g = site.getGrids() + " grids";
+            layout.grids.setText(g);
+
+            String d = site.getDiscrete() + " discrete";
+            layout.discrete.setText(d);
+
             if ( site.getDatasets().size() > 0 ) {
                 List<Dataset> datasets = site.getDatasets();
                 Collections.sort(datasets);

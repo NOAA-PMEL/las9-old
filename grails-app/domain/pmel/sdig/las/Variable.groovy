@@ -24,7 +24,8 @@ class Variable {
 
     static searchable = {
 
-        only = ['name', 'title']
+        only = ['title', 'name', 'geometry']
+
     }
     static constraints = {
         verticalAxis(nullable: true)

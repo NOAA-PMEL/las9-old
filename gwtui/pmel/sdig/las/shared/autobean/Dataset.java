@@ -18,6 +18,16 @@ public class Dataset implements Comparable {
     String status;
     boolean variableChildren;
 
+    String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public static String INGEST_NOT_STARTED = "Ingest not started";
     public static String INGEST_STARTED = "Ingest started";
     public static String INGEST_FAILED = "Ingest failed";

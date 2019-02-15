@@ -1,40 +1,19 @@
 package pmel.sdig.las
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
-import com.google.gson.JsonStreamParser
-import grails.transaction.Transactional
+import com.google.gson.*
+import grails.gorm.transactions.Transactional
+import grails.plugins.elasticsearch.ElasticSearchService
+import grails.web.context.ServletContextHolder
 import opendap.dap.AttributeTable
 import opendap.dap.DAS
 import org.apache.http.HttpException
 import org.apache.http.client.utils.URIBuilder
-import org.joda.time.Chronology
-import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
-import org.joda.time.Days
-import org.joda.time.Period
+import org.joda.time.*
 import org.joda.time.chrono.GregorianChronology
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.format.DateTimeFormatter
-import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.format.ISOPeriodFormat
-import org.joda.time.format.PeriodFormatter
-
-import pmel.sdig.las.Dataset
-import pmel.sdig.las.GeoAxisX
-import pmel.sdig.las.GeoAxisY
-import pmel.sdig.las.TimeAxis
-import pmel.sdig.las.Variable
-import pmel.sdig.las.VerticalAxis
-import pmel.sdig.las.Zvalue
+import org.joda.time.format.*
+import pmel.sdig.las.*
 import pmel.sdig.las.type.GeometryType
-import thredds.catalog.InvAccess
-import thredds.catalog.InvCatalog
-import thredds.catalog.InvCatalogFactory
-import thredds.catalog.InvDataset
-import thredds.catalog.ServiceType
+import thredds.catalog.*
 import ucar.nc2.Attribute
 import ucar.nc2.constants.FeatureType
 import ucar.nc2.dataset.CoordinateAxis
@@ -57,9 +36,12 @@ import java.text.DecimalFormat
 @Transactional
 class IngestService {
 
-    //MakeStatsService makeStatsService
-    FerretService ferretService
+    IngestStatusService ingestStatusService;
     DateTimeService dateTimeService
+
+    ElasticSearchService elasticSearchService
+
+    def servletContext = ServletContextHolder.servletContext
 
     LASProxy lasProxy = new LASProxy()
     PeriodFormatter pf = ISOPeriodFormat.standard()
@@ -67,7 +49,7 @@ class IngestService {
     Dataset processRequset(AddRequest addRequest) {
 
         if ( addRequest.getType().equals("netcdf") ) {
-            return ingest(addRequest.getUrl())
+            return ingest(null, addRequest.getUrl())
         } else if ( addRequest.getType().equals("dsg") ) {
             return ingestDSG(addRequest)
         }
@@ -106,13 +88,17 @@ class IngestService {
         return minmax
     }
 
-    def addVariablesAndSaveFromThredds(String url, String erddap, boolean full) {
+    def addVariablesAndSaveFromThredds(String url, String parentHash, String erddap, boolean full) {
+
 
         Dataset dataset = Dataset.findByUrl(url)
+        // If this is being done by the background process, it is possible that a user already requested this data set be loaded.
+        log.debug("dataset found" + url)
             try {
-                log.debug("Looking to load variables for " + dataset.getUrl())
-                Dataset temp = ingestFromThredds(dataset.getUrl(), erddap, full)
-                log.debug("Finished loading variables for " + dataset.getUrl())
+                log.debug("Loading the catalog for" +url)
+                ingestStatusService.saveProgress(parentHash, "Loading the THREDDS catalog for these variables.")
+                Dataset temp = ingestFromThredds(url, parentHash, erddap, full)
+                log.debug("Finished loading variables for " + url)
 
                 // There will be a layer that represents the catalog at the top with the variables in a data set one level down.
 
@@ -122,21 +108,27 @@ class IngestService {
                         log.debug(temp2.getVariables().size() + " vairables found " + dataset.getUrl())
                         dataset.setVariables(temp2.getVariables())
                         dataset.setStatus(Dataset.INGEST_FINISHED)
-                        dataset.save(failOnError: true)
+                        dataset.save(failOnError: true, flush: true)
+                        elasticSearchService.index(dataset)
+                    } else {
+                        if ( temp2.getStatus() == Dataset.INGEST_FAILED ) {
+                            dataset.setStatus(Dataset.INGEST_FAILED)
+                            dataset.save(failOnError: true, flush: true)
+                        }
                     }
                 } else {
                     log.debug("No variables found for " + dataset.getUrl())
                     dataset.setStatus(Dataset.INGEST_FAILED)
-                    dataset.save(failOnError: true)
+                    dataset.save(failOnError: true, flush: true)
                 }
             } catch (Exception e) {
                 log.debug("Ingest failed " + e.getMessage())
                 dataset.setStatus(Dataset.INGEST_FAILED)
-                dataset.save(failOnError: true)
+                dataset.save(failOnError: true, flush:true)
             }
 
     }
-    Dataset ingestFromThredds(String url, String erddap, boolean full) {
+    Dataset ingestFromThredds(String url, String parentHash, String erddap, boolean full) {
 
         log.debug("Starting ingest of " + url)
         dateTimeService.init()
@@ -152,6 +144,7 @@ class IngestService {
         } else {
             urlwithid = url;
         }
+        ingestStatusService.saveProgress(parentHash, "Reading the catalog from the remote server.")
         InvCatalog catalog = (InvCatalog) factory.readXML(urlwithid);
         StringBuilder buff = new StringBuilder();
         boolean show = false
@@ -163,7 +156,8 @@ class IngestService {
             return null
         }
         if ( erddap == null ) { // Just a thredds catalog, no supporting ERDDAP
-            return createDatasetFromCatalog(catalog, full);
+            ingestStatusService.saveProgress(parentHash, "Catalog read. Looking for data sources.")
+            return createDatasetFromCatalog(catalog, parentHash, full);
         } else {
             return createDatasetFromUAF(catalog, erddap);
         }
@@ -578,7 +572,7 @@ class IngestService {
     private String fixName(String url) {
         def main
         try {
-            URIBuilder builder = new URIBuilder(catalog.getUriString())
+            URIBuilder builder = new URIBuilder(url)
             String host = builder.getHost()
             def parts = host.tokenize(".")
             main = main + host
@@ -590,7 +584,7 @@ class IngestService {
         }
         main
     }
-    Dataset createDatasetFromCatalog(InvCatalog catalog, boolean full) {
+    Dataset createDatasetFromCatalog(InvCatalog catalog, String parentHash, boolean full) {
         Dataset dataset = new Dataset()
         if (catalog.getName()) {
             if ( catalog.getName().toLowerCase().contains("you must change") ) {
@@ -600,44 +594,35 @@ class IngestService {
                 dataset.setTitle(catalog.getName())
             }
         } else {
-            dataset.setTitle(catalog.getUriString())
+            String name = fixName(catalog.getUriString())
+            dataset.setTitle(name)
         }
         dataset.setUrl(catalog.getUriString())
         dataset.setHash(getDigest(catalog.getUriString()))
-        /*
 
-        invDatasetList
-         List<InvDataset> datasets = dataset.getDatasets();
-        boolean access = false;
-        InvAccess da = dataset.getAccess(ServiceType.OPENDAP);
-        if ( da != null ) {
-            access = true;
-        }
-        List<InvDataset> remove = new ArrayList<>();
-        for (int i = 0; i < datasets.size(); i++) {
-            InvAccess a = datasets.get(i).getAccess(ServiceType.OPENDAP);
-            if (datasets.get(i).getName().contains("TDS Quality")) {
-                remove.add(datasets.get(i));
-            }
-            if ( a != null ) {
-                access = true;
-            }
-        }
-
-         */
         List<InvDataset> children = catalog.getDatasets();
 
+
+        if ( children.size() == 2 && !children.get(0).hasAccess() && children.get(1).getFullName().toLowerCase().contains("rubric") ) {
+            InvDataset onlyChild = children.get(0);
+            String name = onlyChild.getName();
+            if ( name == null ) {
+                name = "TDS Data"
+            }
+            dataset.setTitle(name)
+            children = onlyChild.getDatasets()
+        }
         for (int i = 0; i < children.size(); i++) {
 
             InvDataset nextChild = (InvDataset) children.get(i)
             if (!nextChild.getName().toLowerCase().contains("tds quality") && !nextChild.getName().contains("automated cleaning process")) {
-                Dataset child = processDataset(nextChild, full, dataset)
+                Dataset child = processDataset(nextChild, parentHash, full, dataset)
                 dataset.addToDatasets(child)
             }
         }
         dataset
     }
-    Dataset processDataset(InvDataset invDataset, boolean full, Dataset parent) {
+    Dataset processDataset(InvDataset invDataset, String parentHash, boolean full, Dataset parent) {
 
         List<InvDataset> invDatasetList = invDataset.getDatasets();
         List<InvDataset> remove = new ArrayList<>()
@@ -673,14 +658,17 @@ class IngestService {
                 if (invDataset.hasAccess() && invDataset.getAccess(ServiceType.OPENDAP) != null) {
                     if (full) {
                         try {
-                            d = ingest(invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName())
+                            d = ingest(parentHash, invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName())
                         } catch (Exception e) {
                             log.debug("We failed..." + e.getMessage())
                         }
                         d.variableChildren = true
-                        d.setStatus(Dataset.INGEST_FINISHED)
+                        d.geometry = GeometryType.GRID
+                        if ( d.getStatus() != Dataset.INGEST_FAILED)
+                            d.setStatus(Dataset.INGEST_FINISHED)
                     } else {
                         d.variableChildren = true
+                        d.geometry = GeometryType.GRID
                         d.setStatus(Dataset.INGEST_NOT_STARTED)
                     }
                 }
@@ -692,7 +680,7 @@ class IngestService {
         for (int i = 0; i < kids.size(); i++) {
             InvDataset kid = kids.get(i)
             if (!kid.getName().toLowerCase().contains("quality rubric") && !kid.getName().contains("automated cleaning process")) {
-                Dataset dkid = processDataset(kid, full, saveToDataset)
+                Dataset dkid = processDataset(kid, parentHash, full, saveToDataset)
                 if ( dkid != null ) {
                     saveToDataset.addToDatasets(dkid)
                 }
@@ -785,6 +773,9 @@ class IngestService {
             String grid_type = cdm_data_type.getValueAt(0).toLowerCase(Locale.ENGLISH)
             opendap.dap.Attribute subset_names = null
             opendap.dap.Attribute title_attribute = global.getAttribute("title")
+            if ( title_attribute == null ) {
+                title_attribute = global.getAttribute("dataset_title")
+            }
             String title = "No title global attribute"
             if ( title_attribute != null ) {
                 Iterator<String> titleIt = title_attribute.getValuesIterator()
@@ -1722,11 +1713,15 @@ class IngestService {
 
 
     }
-    Dataset ingest(String url) {
+    Dataset ingest(String parentHash, String url) {
+
+        // Set the status of the parent for each variable using the parentHash key.
+
         // Is it a netCDF data source?
 
         def hash = getDigest(url)
         def dataset = new Dataset([url: url, hash: hash])
+        if (!parentHash) parentHash = dataset.getHash();
 
         // TODO catch exepctions and keep going...
 
@@ -1734,10 +1729,12 @@ class IngestService {
 
         GridDataset gridDs
         try {
+            ingestStatusService.saveProgress(parentHash, "Reading the OPeNDAP data source for the variables.")
             gridDs = (GridDataset) FeatureDatasetFactoryManager.open(FeatureType.GRID, url, null, error)
         } catch (IOException e) {
-            e.printStackTrace()
-            return null
+            dataset.setMessage(e.getMessage())
+            dataset.setStatus(Dataset.INGEST_FAILED)
+            return dataset
         }
 
         if ( gridDs != null) {
@@ -1754,6 +1751,8 @@ class IngestService {
                 Attribute attribute = (Attribute) iterator.next()
                 if ( attribute.getShortName().equals("title") ) {
                     title = attribute.getStringValue()
+                } else if ( attribute.getShortName().equals("dataset_title") ) {
+                    title = attribute.getStringValue();
                 }
                 drsParams.put(attribute.getShortName(), attribute.getStringValue())
             }
@@ -1761,9 +1760,12 @@ class IngestService {
             dataset.setTitle(title)
 
             List<GridDatatype> grids = gridDs.getGrids()
+            String m = grids.size() + " variables were found. Processing..."
+            ingestStatusService.saveProgress(parentHash, m)
 
-            for (Iterator iterator = grids.iterator(); iterator.hasNext(); ) {
-                GridDatatype gridDatatype = (GridDatatype) iterator.next()
+            for (int i = 0; i < grids.size(); i++) {
+
+                GridDatatype gridDatatype = (GridDatatype) grids.get(i);
 
                 // The variable basics
                 String vname = gridDatatype.getShortName()
@@ -1888,6 +1890,8 @@ class IngestService {
                             log.debug("Setting delta " + pf.print(p0))
                             if (p0 != null) {
                                 tAxis.setDelta(pf.print(p0))
+                            } else {
+                                tAxis.setDelta("P1D")
                             }
                             log.debug("Setting data set period to " + pf.print(period))
                             if (period != null) {
@@ -2171,6 +2175,11 @@ class IngestService {
                 log.debug("Adding " + variable.getTitle() + " to data set")
                 dataset.addToVariables(variable)
                 dataset.variableChildren = true;
+                dataset.geometry = GeometryType.GRID
+
+                int done = i + 1;
+                String m2 = done + "variables out of a total of " + grids.size() + " have been processed."
+                ingestStatusService.saveProgress(parentHash, m2)
 
             }
 
@@ -2229,6 +2238,19 @@ class IngestService {
             }
         }
     }
+    public void addVariablesToAll() {
+
+        List<Dataset> needIngest = Dataset.withCriteria{
+            eq("variableChildren", true)
+            isEmpty("variables")
+        }
+
+        for (int i = 0; i < needIngest.size(); i++) {
+            Dataset d = needIngest.get(i)
+            log.debug("Adding variables to " + d.getUrl() + " which has variableChildren = " + d.variableChildren)
+            addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
+        }
+    }
     private static Period getPeriod(CalendarDateUnit cdu, double t0, double t1) {
         CalendarDate cdt0 = cdu.makeCalendarDate(t0)
         CalendarDate cdt1 = cdu.makeCalendarDate(t1)
@@ -2277,4 +2299,6 @@ class IngestService {
 
 
     }
+
+
 }

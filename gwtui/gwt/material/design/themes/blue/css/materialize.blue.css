@@ -5525,7 +5525,9 @@ nav {
     display: inline-block;
     font-size: 2.1rem;
     padding: 0;
-    white-space: nowrap; }
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
     nav .brand-logo.center {
       left: 50%;
       transform: translateX(-50%); }

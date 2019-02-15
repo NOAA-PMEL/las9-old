@@ -31,6 +31,7 @@ public class Breadcrumb extends Div {
         super();
         add(icon);
         add(link);
+        setDisplay(Display.INLINE);
     }
     public Breadcrumb(String text, IconType iconType) {
         link.setText(text);

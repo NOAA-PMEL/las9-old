@@ -5,6 +5,7 @@ model {
 }
 //json g.render(dataset)
 json g.render(dataset, [excludes: ["datasets","variables"]]) {
-    datasets g.render(dataset.datasets, [excludes: ["variables", "datasets", "parent"]])
+    datasets g.render(dataset.datasets, [excludes: ["variables", "vectors", "datasets", "parent"]])
     variables g.render(dataset.variables, [excludes: ["dataset","geoAxisX","geoAxisY","timeAxis","verticalAxis"]])
+    vectors g.render(dataset.vectors, [excludes: ["dataset"]])
 }

@@ -8,6 +8,11 @@ import java.util.List;
 public class Site {
 
     String title;
+
+    int total;
+    int grids;
+    int discrete;
+
     List<Dataset> datasets;
 
     public String getTitle() {
@@ -24,5 +29,29 @@ public class Site {
 
     public void setDatasets(List<Dataset> datasets) {
         this.datasets = datasets;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
+
+    public int getGrids() {
+        return grids;
+    }
+
+    public void setGrids(int grids) {
+        this.grids = grids;
+    }
+
+    public int getDiscrete() {
+        return discrete;
+    }
+
+    public void setDiscrete(int discrete) {
+        this.discrete = discrete;
     }
 }

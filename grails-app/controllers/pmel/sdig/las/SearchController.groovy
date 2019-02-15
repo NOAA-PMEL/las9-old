@@ -1,10 +1,9 @@
 package pmel.sdig.las
 
 import grails.converters.JSON
+import grails.plugins.elasticsearch.ElasticSearchService
 
 class SearchController {
-
-    def elasticSearchService
 
     def search() {
 
@@ -12,23 +11,23 @@ class SearchController {
 
         def results = Dataset.search(searchQuery)
 
-        def datasets = []
-
-        results.searchResults.each {
-            if(it instanceof Dataset) {
-                datasets.add(it)
+        Dataset resultsDataset = new Dataset([title: "Search Results"])
+        if ( results.total == 0 ) {
+            resultsDataset.setMessage("No results found matching search.")
+        }
+        boolean deep = true;
+        results.getSearchResults().each {Dataset result ->
+            deep = deep && result.variableChildren
+            resultsDataset.addToDatasets(result)
+        }
+        resultsDataset.setVariableChildren(deep)
+        if ( resultsDataset.variableChildren ) {
+            JSON.use("deep") {
+                render resultsDataset as JSON
             }
+        } else {
+            respond resultsDataset, formats: ['json'], view: 'dataset'
         }
 
-        def variables = []
-
-        def variableResults = Variable.search(searchQuery)
-        variableResults.searchResults.each {
-            if ( it instanceof Variable ) {
-                variables.add(it)
-            }
-        }
-        results = [datasets: datasets, variables: variables]
-        render results as JSON
     }
 }

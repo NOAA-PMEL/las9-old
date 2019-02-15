@@ -6,6 +6,7 @@ class Dataset {
     String title
     String hash
     String url
+    String geometry
     String type = "dataset"
     Boolean variableChildren
     List variables
@@ -16,6 +17,7 @@ class Dataset {
     static String INGEST_FAILED = "Ingest failed"
     static String INGEST_FINISHED = "Ingest finished"
 
+    String message;
 
     // A data set can contain other datasets or variables.
     List datasets
@@ -26,8 +28,9 @@ class Dataset {
     static belongsTo = [parent: Dataset]
 
     static searchable = {
-        variables reference: true
-        only = ['title', "variables"]
+        variables component: true
+        vectors component: true
+        only = ['variables', 'vectors', 'title', 'geometry', 'variableChildren']
     }
 
     static mapping = {
@@ -38,6 +41,7 @@ class Dataset {
 
 
     static constraints = {
+        geometry(nullable: true)
         parent(nullable: true)
         url(nullable: true)
         title(nullable: true)
@@ -47,6 +51,7 @@ class Dataset {
         status(nullable: true)
         variableChildren (nullable: true)
         vectors (nullable: true)
+        message(nullable: true)
     }
 
 

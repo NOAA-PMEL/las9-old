@@ -5,24 +5,18 @@ import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.MouseDownEvent;
-import com.google.gwt.event.dom.client.MouseDownHandler;
-import com.google.gwt.event.dom.client.ScrollEvent;
-import com.google.gwt.event.dom.client.ScrollHandler;
-import com.google.gwt.event.dom.client.TouchStartEvent;
-import com.google.gwt.event.dom.client.TouchStartHandler;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
@@ -33,12 +27,13 @@ import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.SideNavClosedEvent;
 import gwt.material.design.client.events.SideNavOpenedEvent;
 import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
 import gwt.material.design.client.ui.MaterialColumn;
 import gwt.material.design.client.ui.MaterialContainer;
+import gwt.material.design.client.ui.MaterialDialog;
+import gwt.material.design.client.ui.MaterialDialogContent;
 import gwt.material.design.client.ui.MaterialDropDown;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
@@ -46,19 +41,22 @@ import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialListBox;
 import gwt.material.design.client.ui.MaterialNavBar;
 import gwt.material.design.client.ui.MaterialNavBrand;
+import gwt.material.design.client.ui.MaterialNavSection;
 import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialPreLoader;
 import gwt.material.design.client.ui.MaterialProgress;
 import gwt.material.design.client.ui.MaterialRange;
 import gwt.material.design.client.ui.MaterialRow;
+import gwt.material.design.client.ui.MaterialSearch;
 import gwt.material.design.client.ui.MaterialSideNavPush;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
+import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
 import pmel.sdig.las.client.event.PanelCount;
-import pmel.sdig.las.client.event.AnimateAction;
+import pmel.sdig.las.client.event.Search;
 import pmel.sdig.las.client.event.ShowValues;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
@@ -84,6 +82,8 @@ import pmel.sdig.las.shared.autobean.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static pmel.sdig.las.client.util.Constants.navWidth;
 
 
 /**
@@ -231,6 +231,12 @@ public class Layout extends Composite {
     @UiField
     MaterialProgress correlationProgress;
 
+    @UiField
+    MaterialDialogContent loadMessage;
+    @UiField
+    MaterialDialog loadDialog;
+    @UiField
+    MaterialButton loadCancel;
 
     @UiField
     MaterialPanel dateTimePanel;
@@ -265,6 +271,24 @@ public class Layout extends Composite {
     @UiField
     MaterialRow outputRow02;
 
+    @UiField
+    MaterialLink total;
+
+    @UiField
+    MaterialLink discrete;
+
+    @UiField
+    MaterialLink grids;
+
+    @UiField
+    MaterialLink btnSearch;
+    @UiField
+    MaterialSearch txtSearch;
+    @UiField
+    MaterialNavBar navBarSearch;
+    @UiField
+    MaterialNavSection navSection;
+
     Widget root;
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
@@ -282,6 +306,7 @@ public class Layout extends Composite {
 
     public Layout() {
         root = ourUiBinder.createAndBindUi(this);
+
         initWidget(root);
 
         Constants.UPDATE_NOT_NEEDED = update.getBackgroundColor();
@@ -297,6 +322,30 @@ public class Layout extends Composite {
         analysisSwitch.addValueChangeHandler(analysisSwitchChange);
 //        outputRow01.setMarginLeft(2);
 //        outputRow02.setMarginLeft(2);
+
+        // Add Open Handler
+        txtSearch.addOpenHandler(openEvent -> {
+            navbar.setVisible(false);
+            navBarSearch.setVisible(true);
+        });
+        // Add Close Handler
+        txtSearch.addCloseHandler(event -> {
+            navbar.setVisible(true);
+            navBarSearch.setVisible(false);
+        });
+
+        txtSearch.getLabel().addClickHandler(event -> {
+            String search = txtSearch.getText();
+            startSearch(search);
+        });
+
+        txtSearch.addKeyPressHandler(event -> {
+            if ( event.getCharCode() == KeyCodes.KEY_ENTER ) {
+                String search = txtSearch.getText();
+                startSearch(search);
+            }
+        });
+
         sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
             @Override
             public void onSideNavOpened(SideNavOpenedEvent sideNavOpenedEvent) {
@@ -304,6 +353,7 @@ public class Layout extends Composite {
 //                outputRow02.setMarginLeft(Constants.navWidth);
                 scale(Constants.navWidth);
                 main.setMarginLeft(Constants.navWidth);
+                setBrandWidth(Constants.navWidth);
             }
         });
         sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
@@ -313,6 +363,7 @@ public class Layout extends Composite {
 //                outputRow02.setMarginLeft(2);
                 scale(8);
                 main.setMarginLeft(4);
+                setBrandWidth(4);
             }
         });
 
@@ -453,11 +504,15 @@ public class Layout extends Composite {
         datasets.clear();
     }
     public void setDatasetsMessage(String message) {
+        loadMessage.clear();
         MaterialLabel mess = new MaterialLabel(message);
         mess.setMargin(16);
         mess.setFontSize(1.2, Style.Unit.EM);
         mess.setTextColor(Color.BLUE);
-        datasets.add(mess);
+        loadMessage.add(mess);
+        if ( !loadDialog.isOpen() ) {
+            loadDialog.open();
+        }
     }
     public void addMap(OLMapWidget map) {
 //        mapPanelBody.add(map);
@@ -562,6 +617,10 @@ public class Layout extends Composite {
             }
         }
         //TODO The end value is too big. What should it be?
+        removeBreadcrumbs(crumbs, index, targetPanel);
+
+    }
+    public void removeBreadcrumbs(List<Breadcrumb> crumbs, int index, int targetPanel) {
         int end = crumbs.size() - index;
         if ( targetPanel == 1 ) {
             for (int i = 1; i < end; i++) {
@@ -583,7 +642,6 @@ public class Layout extends Composite {
                 }
             }
         }
-
     }
     public int getBreadcrumbCount(int targetPanel) {
         if ( targetPanel == 1 ) {
@@ -793,6 +851,32 @@ public class Layout extends Composite {
                 }
             }
         }
+    }
+    public void setBrandWidth(int nav) {
+        int total = Window.getClientWidth();
+        int left = navSection.getOffsetWidth();
+        int right = btnSearch.getOffsetWidth();
+        int brandWidth = total - (nav + left + right + 80);
+        String set = brandWidth + "px";
+        brand.setWidth(set);
+    }
+    private void startSearch(String query) {
+        navbar.setVisible(true);
+        navBarSearch.setVisible(false);
+        removeBreadcrumbs(1);
+        Breadcrumb bc = new Breadcrumb();
+        bc.setText("Search: \"" + query + "\"");
+        bc.setTitle("Search: \"" + query + "\"");
+        bc.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent clickEvent) {
+                List<Breadcrumb> crumbs = panel1.getBreadcrumbs();
+                removeBreadcrumbs(crumbs, 0, 1);
+                eventBus.fireEventFromSource(new Search(query), txtSearch);
+            }
+        });
+        addBreadcrumb(bc, 1);
+        eventBus.fireEventFromSource(new Search(query), txtSearch);
     }
     ValueChangeHandler addAndDisable = new ValueChangeHandler() {
         @Override
@@ -1031,16 +1115,18 @@ public class Layout extends Composite {
     }
     @UiHandler("back")
     public void onBack(ClickEvent event) {
+        goBack();
+        event.stopPropagation();
+    }
+    public void goBack(){
         if ( getBreadcrumbCount(1) > 0 ) {
             panel1.getBreadcrumbContainer().remove(panel1.getBreadcrumbContainer().getWidgetCount()-1);
         }
         if ( getBreadcrumbCount(1) > 0 ) {
             Breadcrumb bc = (Breadcrumb) panel1.getBreadcrumbContainer().getWidget(panel1.getBreadcrumbContainer().getWidgetCount()-1);
             eventBus.fireEventFromSource(new BreadcrumbSelect(bc.getSelected(), 1), bc);
-            event.stopPropagation();
         } else {
             eventBus.fireEventFromSource(new BreadcrumbSelect(), home);
-            event.stopPropagation();
         }
     }
     @UiHandler("next")
@@ -1070,4 +1156,15 @@ public class Layout extends Composite {
         eventBus.fireEventFromSource(new AnimationSpeed(flipSpeed.getValue()), flipSpeed);
     }
 
+    @UiHandler("loadCancel")
+    public void onLoadCancel(ClickEvent event) {
+        if (loadDialog.isOpen()) {
+            loadDialog.close();
+        }
+        eventBus.fireEventFromSource(new LoadCancel(), loadCancel);
+    }
+    @UiHandler("btnSearch")
+    void onSearch(ClickEvent e){
+        txtSearch.open();
+    }
 }

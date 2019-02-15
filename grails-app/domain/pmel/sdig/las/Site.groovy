@@ -3,6 +3,9 @@ package pmel.sdig.las
 class Site {
     List datasets
     String title
+    long total
+    long grids
+    long discrete
     String base // This is the base URL from the point of view of the client.
     static hasMany = [datasets: Dataset, siteProperties: SiteProperty]
     static constraints = {

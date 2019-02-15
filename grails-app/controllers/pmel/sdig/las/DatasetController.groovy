@@ -14,7 +14,7 @@ class DatasetController {
         if ( url ) {
             def dataset = Dataset.findByUrl(url);
             if ( !dataset ) {
-                ingestService.ingest(url)
+                ingestService.ingest(null, url)
                 dataset = Dataset.findByUrl(url)
                 if ( dataset ) {
                     // request.message and reqeust.info appear to be a reserved key... using my own key...
@@ -42,21 +42,32 @@ class DatasetController {
                 dataset = Dataset.findByHash(did)
             }
 
-            if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ||  dataset.getStatus().equals(Dataset.INGEST_FAILED)) ) {
+            if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) ) {
                 dataset.setStatus(Dataset.INGEST_STARTED)
+                dataset.setMessage("Ingest of data from remote server started... This may take a while. This message will update progress.")
                 dataset.save(flush: true)
 
-                    asyncIngestService.addVariablesAndSaveFromThredds(dataset.getUrl(), null, true)
+                asyncIngestService.addVariablesAndSaveFromThredds(dataset.getUrl(), dataset.getHash(), null, true)
+//              ingestService.addVariablesAndSaveFromThredds(dataset.getUrl(), null, true)
 
+            } else if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_STARTED) ) ) {
+                IngestStatus ingestStatus = IngestStatus.findByHash(dataset.getHash())
+                String message = "Loading data set."
+                if (ingestStatus) {
+                    message = ingestStatus.getMessage()
+                }
+                dataset.setMessage(message)
             }
         }
         withFormat {
             html { respond dataset }
             json {
-                if ( dataset ) {
+                if ( dataset && dataset.variableChildren ) {
                     JSON.use("deep") {
                         render dataset as JSON
                     }
+                } else if ( dataset ) {
+                    respond dataset
                 }
             }
         }

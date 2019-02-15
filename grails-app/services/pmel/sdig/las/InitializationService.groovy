@@ -1,5 +1,7 @@
 package pmel.sdig.las
 
+import grails.gorm.transactions.Transactional
+import grails.plugins.elasticsearch.ElasticSearchService
 import grails.util.Environment
 import org.jdom2.Document
 import org.jdom2.Element
@@ -9,17 +11,20 @@ import pmel.sdig.las.type.GeometryType
 
 import javax.servlet.ServletContext
 
+@Transactional
 class InitializationService {
 
     IngestService ingestService
     OptionsService optionsService
     ResultsService resultsService
+    ElasticSearchService elasticSearchService
     ServletContext servletContext
 
     /**
      * Initialize the Ferret environment. If the values of the environment are available, then they are set. If not, the user will be led to a page where they can be filled in on startup.
      * @return
      */
+    @Transactional
     def initEnvironment() {
 
         log.debug("Setting up Ferret environment from the runtime environment.")
@@ -876,15 +881,14 @@ class InitializationService {
                         ocean_atlas = "$dsets" + File.separator + "data" + File.separator + "ocean_atlas_subset.nc"
                         levitus = "$dsets" + File.separator + "data" + File.separator + "levitus_climatology.cdf"
                     }
-                } else {
-
                 }
                 if (coads) {
                     log.debug("Ingesting COADS")
-                    def coadshash = IngestService.getDigest(coads)
+                    // Use the ferret shorthand for the default data set
+                    def coadshash = IngestService.getDigest("coads_climatology")
                     Dataset coadsDS = Dataset.findByHash(coadshash)
                     if (!coadsDS) {
-                        coadsDS = ingestService.ingest(coads)
+                        coadsDS = ingestService.ingest(coadshash, coads)
                         coadsDS.setTitle("COADS")
                         coadsDS.setStatus(Dataset.INGEST_FINISHED)
                         Variable v = coadsDS.getVariables().get(0);
@@ -901,6 +905,7 @@ class InitializationService {
                         vector.setV(vcomp)
                         coadsDS.addToVectors(vector)
                         coadsDS.save(flush: true)
+                        elasticSearchService.index(coadsDS)
                     }
                     if (coadsDS) {
                         site.addToDatasets(coadsDS)
@@ -908,13 +913,14 @@ class InitializationService {
                 }
                 if (ocean_atlas) {
                     log.debug("Ingesting the ocean atlas subset.")
-                    def oahash = IngestService.getDigest(ocean_atlas)
+                    def oahash = IngestService.getDigest("ocean_atlas_subset")
                     Dataset ocean_atlasDS = Dataset.findByHash(oahash)
                     if (!ocean_atlasDS) {
-                        ocean_atlasDS = ingestService.ingest(ocean_atlas)
+                        ocean_atlasDS = ingestService.ingest(oahash, ocean_atlas)
                         ocean_atlasDS.setTitle("Ocean Atlas Subset")
                         ocean_atlasDS.setStatus(Dataset.INGEST_FINISHED)
                         ocean_atlasDS.save(flush: true)
+                        elasticSearchService.index(ocean_atlasDS)
                     }
                     if (ocean_atlasDS) {
                         site.addToDatasets(ocean_atlasDS)
@@ -922,13 +928,14 @@ class InitializationService {
                 }
                 if ( levitus ) {
                     log.debug("Ingesting Levitus climatology")
-                    def levhash = IngestService.getDigest(levitus)
+                    def levhash = IngestService.getDigest("levitus_climatology.cdf")
                     Dataset levitusDS = Dataset.findByHash(levhash)
                     if ( !levitusDS ) {
-                        levitusDS = ingestService.ingest(levitus)
+                        levitusDS = ingestService.ingest(levhash, levitus)
                         levitusDS.setTitle("Levitus Ocean Climatology")
                         levitusDS.setStatus(Dataset.INGEST_FINISHED)
                         levitusDS.save(flush: true)
+                        elasticSearchService.index(levitusDS)
                     }
                     if ( levitusDS ) {
                         site.addToDatasets(levitusDS)

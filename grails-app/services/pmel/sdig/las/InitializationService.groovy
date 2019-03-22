@@ -983,6 +983,13 @@ class InitializationService {
 //                }
 
 //                ingestService.cleanup(site)
+
+            def n = "https://oceanwatch.pfeg.noaa.gov/thredds/dodsC/satellite/QA/vekm/3day"
+            Dataset wind = ingestService.ingest(null, n)
+                wind.setStatus(Dataset.INGEST_FINISHED)
+                wind.save()
+            site.addToDatasets(wind)
+
                 site.save(failOnError: true)
             }
         }

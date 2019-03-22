@@ -1,6 +1,6 @@
 package pmel.sdig.las
 
-class Constraint {
+class DataConstraint {
     String type;
     String lhs;
     String op;

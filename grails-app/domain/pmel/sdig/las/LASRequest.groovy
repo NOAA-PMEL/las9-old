@@ -5,7 +5,7 @@ class LASRequest {
     String operation
     int targetPanel;
 
-    static hasMany = [requestProperties: RequestProperty, datasetHashes: String, variableHashes: String, analysis: Analysis, constraints: Constraint, axesSets: AxesSet]
+    static hasMany = [requestProperties: RequestProperty, datasetHashes: String, variableHashes: String, analysis: Analysis, constraints: DataConstraint, axesSets: AxesSet]
 
     List variableHashes
     List datasetHashes

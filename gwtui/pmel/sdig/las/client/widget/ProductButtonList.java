@@ -1,7 +1,6 @@
 package pmel.sdig.las.client.widget;
 
 
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialPanel;
 import pmel.sdig.las.shared.autobean.Product;
 

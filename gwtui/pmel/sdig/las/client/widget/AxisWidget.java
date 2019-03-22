@@ -75,6 +75,8 @@ public class AxisWidget extends Composite {
         lo_label_row.add(lo_label);
         lo_widget_row.add(lo_axis);
 
+        container.setMarginBottom(0);
+
         container.add(lo_label_row);
         container.add(lo_widget_row);
 
@@ -90,7 +92,6 @@ public class AxisWidget extends Composite {
         hi_widget_row.add(hi_axis);
 
         initWidget(container);
-
     }
 
     /**

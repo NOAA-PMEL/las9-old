@@ -53,6 +53,7 @@ import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
 import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
+import pmel.sdig.las.client.event.Browse;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
 import pmel.sdig.las.client.event.PanelCount;
@@ -65,6 +66,7 @@ import pmel.sdig.las.client.widget.AxisWidget;
 import pmel.sdig.las.client.widget.Breadcrumb;
 import pmel.sdig.las.client.widget.ComparePanel;
 import pmel.sdig.las.client.widget.DataItem;
+import pmel.sdig.las.client.widget.DatasetInfo;
 import pmel.sdig.las.client.widget.DateTimeWidget;
 import pmel.sdig.las.client.widget.ImagePanel;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
@@ -105,7 +107,9 @@ public class Layout extends Composite {
     MaterialCollapsible navcollapsible;
 
     @UiField
-    MaterialListBox plotsDropdown;
+    MaterialDropDown plotsDropdown;
+    @UiField
+    MaterialButton plotsDropdownButton;
 
     @UiField
     MaterialLink animate;
@@ -245,6 +249,8 @@ public class Layout extends Composite {
 
     @UiField
     MaterialIcon home;
+    @UiField
+    MaterialLink browse;
 
     @UiField
     MaterialIcon back;
@@ -271,14 +277,14 @@ public class Layout extends Composite {
     @UiField
     MaterialRow outputRow02;
 
-    @UiField
-    MaterialLink total;
-
-    @UiField
-    MaterialLink discrete;
-
-    @UiField
-    MaterialLink grids;
+//    @UiField
+//    MaterialLink total;
+//
+//    @UiField
+//    MaterialLink discrete;
+//
+//    @UiField
+//    MaterialLink grids;
 
     @UiField
     MaterialLink btnSearch;
@@ -288,6 +294,9 @@ public class Layout extends Composite {
     MaterialNavBar navBarSearch;
     @UiField
     MaterialNavSection navSection;
+
+    @UiField
+    MaterialPanel infoPanel;
 
     Widget root;
 
@@ -352,8 +361,14 @@ public class Layout extends Composite {
 //                outputRow01.setMarginLeft(Constants.navWidth);
 //                outputRow02.setMarginLeft(Constants.navWidth);
                 scale(Constants.navWidth);
-                main.setMarginLeft(Constants.navWidth);
-                setBrandWidth(Constants.navWidth);
+                // with header=false use Constants.navWidth
+//                main.setPaddingLeft(Constants.navWidth);
+                // else use this
+
+
+                // TODO DEBUG
+//                main.setMarginLeft(4);
+//                setBrandWidth(Constants.navWidth);
             }
         });
         sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
@@ -362,8 +377,9 @@ public class Layout extends Composite {
 //                outputRow01.setMarginLeft(2);
 //                outputRow02.setMarginLeft(2);
                 scale(8);
-                main.setMarginLeft(4);
-                setBrandWidth(4);
+                // TODO DEBUG
+//                main.setPaddingLeft(4);
+//                setBrandWidth(4);
             }
         });
 
@@ -502,6 +518,65 @@ public class Layout extends Composite {
 
     public void clearDatasets() {
         datasets.clear();
+    }
+    public Dataset getDataset(String hash) {
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            Widget w = datasets.getWidget(i);
+            if ( w instanceof DataItem ) {
+                DataItem item = (DataItem)w;
+                Dataset did = (Dataset) item.getSelection();
+                if ( hash.equals(did.getHash())) {
+                    return did;
+                }
+            }
+        }
+        return null;
+    }
+    public void setInfoSelect(long id) {
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            Widget w = datasets.getWidget(i);
+            if (w instanceof DataItem) {
+                DataItem item = (DataItem) w;
+                Dataset did = (Dataset) item.getSelection();
+                if (did.getId() == id) {
+                    item.setIconColor(Color.BLUE_DARKEN_2);
+                } else {
+                    item.setIconColor(Color.BLACK);
+                }
+            }
+        }
+    }
+    public int getDatasetIndex(String hash) {
+        for (int i = 0; i < datasets.getWidgetCount(); i++) {
+            Widget w = datasets.getWidget(i);
+            if ( w instanceof DataItem ) {
+                DataItem item = (DataItem)w;
+                Dataset did = (Dataset) item.getSelection();
+                if ( hash.equals(did.getHash())) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+    public long getNextDataset(Dataset dataset) {
+        int index = getDatasetIndex(dataset.getHash());
+        if ( index < 9 ) {
+            int wi = index + 1;
+            DataItem di = (DataItem) datasets.getWidget(wi);
+            Dataset nextDS = (Dataset) di.getSelection();
+            return nextDS.getId();
+        } else {
+            return -1l;
+        }
+    }
+    public long getPrevDataset(Dataset dataset) {
+        int index = getDatasetIndex(dataset.getHash());
+        if ( index == 0 ) return -1l;
+        int wi = index - 1;
+        DataItem di = (DataItem) datasets.getWidget(wi);
+        Dataset prevDS = (Dataset) di.getSelection();
+        return prevDS.getId();
     }
     public void setDatasetsMessage(String message) {
         loadMessage.clear();
@@ -760,12 +835,12 @@ public class Layout extends Composite {
     public void setPanels(int count) {
         if ( count == 1 ) {
             panel1.setGrid("s12 m12 l12");
-            panel2.setVisibility(false);
+            panel2.setVisible(false);
             panel3.setVisibility(Style.Visibility.HIDDEN);
             panel4.setVisibility(Style.Visibility.HIDDEN);
         } else if ( count == 2 ) {
             panel1.setGrid("s6 m6 l6");
-            panel2.setVisibility(true);
+            panel2.setVisible(true);
             // Initialize the second panel with the breadcrumbs from the first..
             List<Breadcrumb> b = panel1.getBreadcrumbs();
             for ( int i = 0; i < b.size(); i++ ) {
@@ -776,7 +851,7 @@ public class Layout extends Composite {
             panel4.setVisibility(Style.Visibility.HIDDEN);
         } else if ( count == 4 ) {
             panel1.setGrid("s6 m6 l6");
-            panel2.setVisibility(true);
+            panel2.setVisible(true);
             panel3.setVisibility(Style.Visibility.VISIBLE);
             panel4.setVisibility(Style.Visibility.VISIBLE);
         }
@@ -878,6 +953,21 @@ public class Layout extends Composite {
         addBreadcrumb(bc, 1);
         eventBus.fireEventFromSource(new Search(query), txtSearch);
     }
+    public void setPlotCount(int count) {
+        if ( count == 1 ) {
+            plotsDropdownButton.setText("Plot 1");
+        } else if ( count == 2) {
+            plotsDropdownButton.setText("Plot 2");
+        } else if ( count == 4 ) {
+            plotsDropdownButton.setText("Plot 4");
+        }
+    }
+    public void topMenuEnabled(boolean enabled) {
+        correlationLink.setEnabled(enabled);
+        showValuesButton.setEnabled(enabled);
+        saveAsButton.setEnabled(enabled);
+        plotsDropdownButton.setEnabled(enabled);
+    }
     ValueChangeHandler addAndDisable = new ValueChangeHandler() {
         @Override
         public void onValueChange(ValueChangeEvent valueChangeEvent) {
@@ -940,16 +1030,19 @@ public class Layout extends Composite {
     }
 
     @UiHandler("plotsDropdown")
-    void onDropDown(ValueChangeEvent<String> selection) {
-
-        String title = selection.getValue();
+    void onDropDown(SelectionEvent<Widget> event) {
+        MaterialLink selection = (MaterialLink) event.getSelectedItem();
+        String title = selection.getTitle();
         int count = 1;
         if ( title.contains("1") ) {
             count = 1;
+            plotsDropdownButton.setText("Plot 1");
         } else if ( title.contains("2") ) {
             count = 2;
+            plotsDropdownButton.setText("Plot 2");
         } else if ( title.contains("4") ) {
             count = 4;
+            plotsDropdownButton.setText("Plot 4");
         }
 
         eventBus.fireEventFromSource(new PanelCount(count), selection);
@@ -1166,5 +1259,10 @@ public class Layout extends Composite {
     @UiHandler("btnSearch")
     void onSearch(ClickEvent e){
         txtSearch.open();
+    }
+    @UiHandler("browse")
+    void onBrowse(ClickEvent event) {
+        eventBus.fireEventFromSource(new Browse(0), browse);
+        event.stopPropagation();
     }
 }

@@ -7,35 +7,23 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.Composite;
-import gwt.material.design.client.constants.CollectionType;
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.IconPosition;
-import gwt.material.design.client.constants.IconSize;
 import gwt.material.design.client.constants.IconType;
-import gwt.material.design.client.ui.MaterialBadge;
 import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollectionItem;
-import gwt.material.design.client.ui.MaterialCollectionSecondary;
-import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialIcon;
-import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRadioButton;
-import gwt.material.design.client.ui.MaterialRow;
 import pmel.sdig.las.client.event.AddVariable;
+import pmel.sdig.las.client.event.Info;
 import pmel.sdig.las.client.event.NavSelect;
 import pmel.sdig.las.client.main.ClientFactory;
-import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.Variable;
 import pmel.sdig.las.shared.autobean.Vector;
-
-import javax.swing.*;
 
 /**
  * Created by rhs on 12/30/16.
@@ -61,13 +49,7 @@ public class DataItem extends MaterialCollectionItem {
     public DataItem(Object selection, int targetPanel) {
         super();
         this.selection = selection;
-        badge.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent event) {
-                Window.alert("Open the data set information page now!");
-                event.stopPropagation();
-            }
-        });
+
         if ( selection instanceof Dataset ) {
             Dataset d = (Dataset) selection;
 
@@ -75,10 +57,19 @@ public class DataItem extends MaterialCollectionItem {
             link.setMarginLeft(8);
             link.setDisplay(Display.FLEX);
 
-
-            badge.setIconPosition(IconPosition.RIGHT);
-            badge.setDisplay(Display.FLEX);
-            badge.setMarginRight(4);
+            if ( d.hasVariableChildren() ) {
+                badge.setIconPosition(IconPosition.RIGHT);
+                badge.setDisplay(Display.FLEX);
+                badge.setMarginRight(4);
+                badge.addClickHandler(new ClickHandler() {
+                    @Override
+                    public void onClick(ClickEvent event) {
+                        eventBus.fireEventFromSource(new Info(d.getId()), badge);
+                    }
+                });
+            } else {
+                badge.setDisplay(Display.NONE);
+            }
 
             wrapper.add(link);
             wrapper.add(badge);
@@ -132,6 +123,9 @@ public class DataItem extends MaterialCollectionItem {
             radio.setText(v.getTitle());
             add(radio);
         }
+    }
+    public void setIconColor(Color color) {
+        badge.setIconColor(color);
     }
     public void toCheck() {
         remove(radio);

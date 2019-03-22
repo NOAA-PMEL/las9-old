@@ -4,6 +4,7 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.OptionElement;
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.MouseDownEvent;
@@ -57,10 +58,14 @@ import pmel.sdig.las.client.event.AddVariableHandler;
 import pmel.sdig.las.client.event.AutoColors;
 import pmel.sdig.las.client.event.AutoColorsHandler;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
+import pmel.sdig.las.client.event.Browse;
+import pmel.sdig.las.client.event.BrowseHandler;
 import pmel.sdig.las.client.event.DateChange;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.DownloadHandler;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
+import pmel.sdig.las.client.event.Info;
+import pmel.sdig.las.client.event.InfoHandler;
 import pmel.sdig.las.client.event.MapChangeEvent;
 import pmel.sdig.las.client.event.NavSelect;
 import pmel.sdig.las.client.event.PanelControlOpen;
@@ -82,12 +87,14 @@ import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.client.widget.AxisWidget;
 import pmel.sdig.las.client.widget.Breadcrumb;
 import pmel.sdig.las.client.widget.ComparePanel;
+import pmel.sdig.las.client.widget.DatasetInfo;
 import pmel.sdig.las.client.widget.DateTimeWidget;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
 import pmel.sdig.las.client.widget.ProductButton;
 import pmel.sdig.las.client.widget.ProductButtonList;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
 import pmel.sdig.las.client.widget.VariableConstraintWidget;
+import pmel.sdig.las.client.widget.VariableInfo;
 import pmel.sdig.las.client.widget.YesNoOptionsWidget;
 import pmel.sdig.las.shared.autobean.AxesSet;
 import pmel.sdig.las.shared.autobean.Constraint;
@@ -140,6 +147,9 @@ public class UI implements EntryPoint {
 
     Resource datasetResource = new Resource(Constants.datasetJson);
     DatasetService datasetService = GWT.create(DatasetService.class);
+
+    Resource infoResource = new Resource(Constants.thumbinfo);
+    InfoService infoService = GWT.create(InfoService.class);
 
     Resource configResource = new Resource(Constants.configJson);
     ConfigService configService = GWT.create(ConfigService.class);
@@ -196,6 +206,8 @@ public class UI implements EntryPoint {
     // The ConfigSet is all the configurations of products for all the geometry and axes combinations in the data set
     ConfigSet configSet;
 
+    // "Page" number of data sets with variables
+    int offset = 0;
 
     String tile_server;
     String tile_layer;
@@ -212,6 +224,14 @@ public class UI implements EntryPoint {
 
     LASRequest historyRequest = null;
     LASRequest historyRequestPanel2 = null;
+
+    // Used for both history and for loading a variable from the description page.
+    String historyVariable = null;
+
+    // Display the info page of the first data set
+    boolean info = true;
+    // Display the browse navigation
+    boolean browse = false;
 
     public void onModuleLoad() {
 
@@ -262,6 +282,8 @@ public class UI implements EntryPoint {
 
         ((RestServiceProxy)datasetService).setResource(datasetResource);
 
+        ((RestServiceProxy)infoService).setResource(infoResource);
+
         // Server-side computation of which products apply to a set of intervals,
         // call after analysis on or off, rather than compute it in the client
         ((RestServiceProxy)pbis).setResource(productsByIntervalResource);
@@ -269,11 +291,11 @@ public class UI implements EntryPoint {
         ((RestServiceProxy) searchService).setResource(searchResource);
 
         History.addValueChangeHandler(new ValueChangeHandler<String>() {
-                                          public void onValueChange(ValueChangeEvent<String> event) {
-                                              String historyToken = event.getValue();
-                                              popHistory(historyToken);
-                                          }
-                                      });
+            public void onValueChange(ValueChangeEvent<String> event) {
+                String historyToken = event.getValue();
+                popHistory(historyToken);
+            }
+        });
 
         eventBus.addHandler(Search.TYPE, new SearchHandler() {
             @Override
@@ -310,11 +332,11 @@ public class UI implements EntryPoint {
                     Variable v = event.getVariable();
                     variables.add(v);
                     if ( variables.size() > 1 ) {
-                        if ( !layout.plotsDropdown.getValue().contains("1") ) {
+                        if ( !layout.plotsDropdownButton.getText().contains("1") ) {
                             layout.setPanels(1);
                             eventBus.fireEventFromSource(new PanelCount(1), layout.plotsDropdown);
                         }
-                        layout.plotsDropdown.setEnabled(false);
+                        layout.plotsDropdownButton.setEnabled(false);
                     }
                 } else {
                     Variable v = event.getVariable();
@@ -329,7 +351,7 @@ public class UI implements EntryPoint {
                         variables.remove(removei);
                     }
                     if ( variables.size() == 1 ) {
-                        layout.plotsDropdown.setEnabled(true);
+                        layout.plotsDropdownButton.setEnabled(true);
                     }
                 }
             }
@@ -406,7 +428,7 @@ public class UI implements EntryPoint {
                 if ( p.getMaxArgs() > 1 ) {
                     layout.toDatasetChecks();
                 } else {
-                    layout.plotsDropdown.setEnabled(true);
+                    layout.plotsDropdownButton.setEnabled(true);
                     // Potentially going from a multi-variable situation to a single variable
                     // so clear it and re-add the selected variable.
                     variables.clear();
@@ -484,10 +506,15 @@ public class UI implements EntryPoint {
                     } else {
                         // This was the home button...
 
+                        info = false;
+                        browse = false;
                         siteService.getSite("1.json", siteCallback);
+                        layout.panel1.getOutputPanel().clear();
+                        layout.panel1.clearAnnotations();
                         layout.removeBreadcrumbs(1);
                         layout.clearDatasets();
                         layout.showDataProgress();
+
 
                     }
                 } else {
@@ -510,6 +537,52 @@ public class UI implements EntryPoint {
 
                 Object selected = event.getSelected();
                 int index = event.getTargetPanel();
+                Object source = event.getSource();
+                if ( source instanceof VariableInfo ) {
+                    layout.clearDatasets();
+                    layout.showProgress();
+                    Variable infoVariable = (Variable) selected;
+                    final Breadcrumb bc = new Breadcrumb(dataset, layout.getBreadcrumbCount(index) > 0);
+                    bc.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent event) {
+                            eventBus.fireEventFromSource(new BreadcrumbSelect(dataset, index), bc);
+                            // Breadcrumbs are in the collapsible header, so stop to prevent the crumb from opening the panel.
+                            event.stopPropagation();
+                        }
+                    });
+                    layout.addBreadcrumb(bc, 1);
+                    final Breadcrumb vbc = new Breadcrumb(selected, layout.getBreadcrumbCount(index) > 0);
+                    bc.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent event) {
+                            eventBus.fireEventFromSource(new BreadcrumbSelect(selected, index), vbc);
+                            // Breadcrumbs are in the collapsible header, so stop to prevent the crumb from opening the panel.
+                            event.stopPropagation();
+                        }
+                    });
+                    layout.addBreadcrumb(vbc, 1);
+                    List<Variable> returnedVariables = dataset.getVariables();
+                    Collections.sort(returnedVariables);
+                    for (int i = 0; i < returnedVariables.size(); i++) {
+                        layout.addSelection(returnedVariables.get(i));
+                    }
+                    List<Vector> returnedVectors = dataset.getVectors();
+                    for (int i = 0; i < returnedVectors.size(); i++) {
+                        Vector v = returnedVectors.get(i);
+                        layout.addSelection(v);
+                    }
+
+                    historyVariable = infoVariable.getHash();
+                    int selectedIndex = dataset.findVariableIndexByHash(infoVariable.getHash());
+
+                    if (selectedIndex >= 0) {
+                        layout.setSelectedVariable(selectedIndex);
+                    }
+
+                    configService.getConfig(dataset.getId(), configCallback);
+                    return;
+                }
 
                 final Breadcrumb bc = new Breadcrumb(selected, layout.getBreadcrumbCount(index) > 0);
                 bc.addClickHandler(new ClickHandler() {
@@ -524,6 +597,10 @@ public class UI implements EntryPoint {
 
                 if ( index == 1 ) {
 
+                    layout.infoPanel.setDisplay(Display.NONE);
+                    layout.panel1.setVisible(true);
+                    layout.panel1.clearAnnotations();
+                    layout.panel1.clearPlot();
                     if (selected instanceof Dataset) {
                         Dataset dataset = (Dataset) selected;
                         layout.clearDatasets();
@@ -564,6 +641,14 @@ public class UI implements EntryPoint {
                         layout.setUpdate(Constants.UPDATE_NEEDED);
                     }
                 }
+            }
+        });
+        eventBus.addHandler(Browse.TYPE, new BrowseHandler() {
+            @Override
+            public void onBrowse(Browse event) {
+                offset = event.getOffset();
+                layout.showProgress();
+                infoService.getInfo(String.valueOf(offset), browseCallback);
             }
         });
         eventBus.addHandler(DateChange.TYPE, new DateChange.Handler() {
@@ -738,6 +823,17 @@ public class UI implements EntryPoint {
                 layout.setUpdate(Constants.UPDATE_NEEDED);
             }
         });
+        eventBus.addHandler(Info.TYPE, new InfoHandler() {
+            @Override
+            public void onInfo(Info event) {
+                layout.showProgress();
+                layout.infoPanel.setDisplay(Display.NONE);
+                long id = event.getId();
+                layout.setInfoSelect(id);
+                String rid = id + ".json";
+                datasetService.getDataset(rid, infoCallback);
+            }
+        });
         eventBus.addHandler(Correlation.TYPE, new CorrelationHandler() {
             @Override
             public void onCorrelation(Correlation event) {
@@ -789,7 +885,7 @@ public class UI implements EntryPoint {
         layout.addMouse(1, mouse);
         Mouse correlationMouse = new Mouse();
         layout.addMouse(8, correlationMouse);
-//
+
         layout.setDateTime(dateTimeWidget);
         layout.addVerticalAxis(zAxisWidget);
         RootPanel.get("load").getElement().setInnerHTML("");
@@ -915,6 +1011,10 @@ public class UI implements EntryPoint {
         @GET
         @Path("/{id}") // String so it can have ".json" suffix
         public void getDataset(@PathParam("id") String id, MethodCallback<Dataset> datasetCallback);
+    }
+    public interface InfoService extends RestService {
+        @GET
+        public void getInfo(@QueryParam("offset") String offset, MethodCallback<Dataset> datasetCallback);
     }
     public interface SiteService extends RestService {
         @GET
@@ -1054,14 +1154,14 @@ public class UI implements EntryPoint {
             } else {
                 layout.animate.setEnabled(false);
             }
-            layout.correlationLink.setEnabled(true);
-            layout.showValuesButton.setEnabled(true);
-            layout.saveAsButton.setEnabled(true);
+            layout.topMenuEnabled(true);
             layout.setUpdate(Constants.UPDATE_NOT_NEEDED);
             layout.hideProgress();
             int tp = results.getTargetPanel();
 
             if ( tp < 5 ) {
+                layout.infoPanel.setDisplay(Display.NONE);
+                layout.panel1.setVisible(true);
                 state.getPanelState(tp).setResultSet(results);
                 layout.setState(tp, state);
                 if ( historyRequest != null ) {
@@ -1069,7 +1169,7 @@ public class UI implements EntryPoint {
 
                     if ( historyRequestPanel2 != null ) {
                         eventBus.fireEvent(new PanelCount(2));
-                        layout.plotsDropdown.setSelectedIndex(1);
+                        layout.setPlotCount(2);
                     }
                     // TODO other panels
 //                    } else if ( currentTokens.size() == 4 ) {
@@ -1077,6 +1177,7 @@ public class UI implements EntryPoint {
 //                    }
 
                     historyRequest = null;
+                    historyVariable = null;
                 }
                 if (tp == 2) {
                     layout.panel2.scale();
@@ -1399,6 +1500,73 @@ public class UI implements EntryPoint {
             setUpPanel(2, variable);
         }
     };
+    MethodCallback<Dataset> infoCallback = new MethodCallback<Dataset>() {
+        @Override
+        public void onFailure(Method method, Throwable throwable) {
+            layout.hideProgress();
+        }
+
+        @Override
+        public void onSuccess(Method method, Dataset infoDataset) {
+            layout.hideProgress();
+            layout.panel1.setVisible(false);
+            layout.infoPanel.setDisplay(Display.BLOCK);
+            layout.animate.setEnabled(false);
+            layout.topMenuEnabled(false);
+            layout.infoPanel.clear();
+            dataset = infoDataset;
+            DatasetInfo di = new DatasetInfo(infoDataset);
+            info = false;
+            if ( browse ) {
+                long next = layout.getNextDataset(infoDataset);
+                long prev = layout.getPrevDataset(infoDataset);
+                di.showNav(offset, next, prev);
+            }
+            if ( infoDataset != null ) {
+                List<Variable> returnedVariables = infoDataset.getVariables();
+                Collections.sort(returnedVariables);
+                for (int i = 0; i < returnedVariables.size(); i++) {
+                    Variable variable = returnedVariables.get(i);
+                    di.addVariable(variable);
+                }
+                layout.infoPanel.add(di);
+            }
+        }
+    };
+    MethodCallback<Dataset> browseCallback = new MethodCallback<Dataset>() {
+        @Override
+        public void onFailure(Method method, Throwable throwable) {
+            layout.hideProgress();
+        }
+
+        @Override
+        public void onSuccess(Method method, Dataset containerDataset) {
+            layout.hideProgress();
+            layout.panel1.setVisible(false);
+            layout.infoPanel.setDisplay(Display.BLOCK);
+            layout.infoPanel.clear();
+            browse = true;
+            List<Dataset> browseDatasets = containerDataset.getDatasets();
+            if (browseDatasets != null && browseDatasets.size() > 0) {
+                Collections.sort(browseDatasets);
+                Dataset infoDataset = browseDatasets.get(0);
+                dataset = infoDataset;
+                layout.clearDatasets();
+                layout.hideDataProgress();
+
+                for (int i = 0; i < browseDatasets.size(); i++) {
+                    layout.addSelection(browseDatasets.get(i));
+                }
+                layout.setInfoSelect(infoDataset.getId());
+                datasetService.getDataset(infoDataset.getId()+".json", infoCallback);
+            } else {
+                MaterialToast.fireToast("No more datasets to browse.");
+                browse = false;
+                info = true;
+                siteService.getSite("1.json", siteCallback);
+            }
+        }
+    };
     MethodCallback<Dataset> datasetCallback = new MethodCallback<Dataset>() {
         @Override
         public void onFailure(Method method, Throwable exception) {
@@ -1451,7 +1619,7 @@ public class UI implements EntryPoint {
                     layout.goBack();
                 }
             } else {
-               layout.setDatasetsMessage(returnedDataset.getMessage());
+                layout.setDatasetsMessage(returnedDataset.getMessage());
             }
             layout.dataItem.expand();
         }
@@ -1475,24 +1643,44 @@ public class UI implements EntryPoint {
             }
             layout.setBrandWidth(w);
 
+//
+//            String t = site.getTotal() + " data sets";
+//            layout.total.setText(t);
+//
+//            String g = site.getGrids() + " grids";
+//            layout.grids.setText(g);
+//
+//            String d = site.getDiscrete() + " discrete";
+//            layout.discrete.setText(d);
 
-            String t = site.getTotal() + " data sets";
-            layout.total.setText(t);
-
-            String g = site.getGrids() + " grids";
-            layout.grids.setText(g);
-
-            String d = site.getDiscrete() + " discrete";
-            layout.discrete.setText(d);
-
+            long infoID = -1l;
             if ( site.getDatasets().size() > 0 ) {
                 List<Dataset> datasets = site.getDatasets();
                 Collections.sort(datasets);
                 for (int i = 0; i < datasets.size(); i++) {
-                    layout.addSelection(datasets.get(i));
+                    Dataset iterDataset = datasets.get(i);
+                    // Take the first one...
+                    if ( iterDataset.hasVariableChildren() && infoID == -1l ) {
+                        infoID = iterDataset.getId();
+                    }
+                    layout.addSelection(iterDataset);
+                }
+                // Only show the first data set info page if
+                // info set set which is only set on the initial load...
+                if ( info ) {
+                    if (infoID == -1l) {
+                        layout.showProgress();
+                        infoService.getInfo(null, infoCallback);
+                    } else {
+                        layout.showProgress();
+                        String infoJson = infoID + ".json";
+                        layout.setInfoSelect(infoID);
+                        datasetService.getDataset(infoJson, infoCallback);
+                    }
                 }
             }
             layout.navcollapsible.setActive(1, true);
+
         }
 
         public void onFailure(Method method, Throwable exception) {
@@ -1514,7 +1702,7 @@ public class UI implements EntryPoint {
             // If there's more than one, set up the rest in applyConfig.
             if ( historyRequest != null ) {
 
-                String historyVariable = null;
+
 
                 String hash = historyRequest.getVariableHashes().get(0);
                 if (hash != null && !hash.isEmpty()) {
@@ -1548,6 +1736,11 @@ public class UI implements EntryPoint {
                     });
                     layout.addBreadcrumb(vbc, 1);
                 }
+                historyVariable = null;
+                applyConfig();
+            } else if ( historyVariable != null ) {
+                // It's been selected, now apply the config and plot.
+                newVariable = layout.getSelectedVariable();
                 applyConfig();
             }
         }
@@ -1639,7 +1832,7 @@ public class UI implements EntryPoint {
         // now restore previous settings if possible if a previous variable exists
         // and it's not a request to go back in history (which dictates all the settings to get to previous state).
 
-        if (variables.size() > 0 && historyRequest == null) {
+        if (variables.size() > 0 && historyRequest == null && historyVariable == null) {
             if (useCurrentMapSettings) {
                 refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
             }
@@ -1673,14 +1866,13 @@ public class UI implements EntryPoint {
 
             List<Analysis> historyAnalysisList = historyRequest.getAnalysis();
             if ( historyAnalysisList != null && historyAnalysisList.size() > 0 && historyAnalysisList.get(0) != null) {
+                Analysis a = historyAnalysisList.get(0);
+                // TODO is the list for each panel or multiple transformations?
+                layout.setAnalysisOver(a.getAnalysisAxes().get(0).getType());
+                layout.setAnalysisTransformation(a.getTransformation());
+                layout.setAnalysisActive(true);
+                turnOnAnalysis(a.getTransformation(), a.getOver());
                 return;
-//                Analysis a = historyAnalysisList.get(0);
-//                // TODO is the list for each panel or multiple transformations?
-//                layout.setAnalysisOver(a.getAnalysisAxes().get(0).getType());
-//                layout.setAnalysisTransformation(a.getTransformation());
-//                layout.setAnalysisActive(true);
-//                turnOnAnalysis(a.getTransformation(), a.getOver());
-//                return;
             }
 
             String op = historyRequest.getOperation();

@@ -22,11 +22,11 @@ import java.util.List;
 /**
  * Created by rhs on 9/16/15.
  */
-public class ProductGroup extends MaterialContainer {
+public class ProductGroup extends MaterialPanel {
 
     MaterialRow product_header = new MaterialRow();
 //
-    MaterialContainer products = new MaterialContainer();
+    MaterialPanel products = new MaterialPanel();
 
     String ui_group;
 

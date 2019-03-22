@@ -1,0 +1,65 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:m='urn:import:gwt.material.design.client.ui'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+    <m:MaterialColumn grid="s3">
+        <m:MaterialCard backgroundColor="WHITE">
+            <m:MaterialCardImage>
+              <m:MaterialImage ui:field="thumbnail" waves="LIGHT" url="http://bilbo.weathertopconsulting.com:8282/las/product/thumbnail/697a9886eb84056594a7d317f7aadfa3/915aa27f0a0aceb2ced807e16578c37f"/>
+            </m:MaterialCardImage>
+            <m:MaterialPanel addStyleNames="valign-wrapper">
+                <m:MaterialIcon ui:field="titleIcon" iconType="LAUNCH" iconSize="SMALL" marginLeft="12"/>
+                <m:MaterialCardTitle lineHeight="24" ui:field="title" marginLeft="16" text="Air Temperature"/>
+            </m:MaterialPanel>
+            <m:MaterialCardContent textColor="BLACK">
+                <m:MaterialRow marginBottom="0">
+                    <m:MaterialColumn grid="s6">
+                        <m:MaterialLabel fontWeight="BOLD" ui:field="lat" text="Latitude:" />
+                    </m:MaterialColumn>
+                    <m:MaterialColumn grid="s3">
+                        <m:MaterialLabel ui:field="latMin" textAlign="RIGHT" text="" />
+                    </m:MaterialColumn>
+                    <m:MaterialColumn grid="s3">
+                        <m:MaterialLabel ui:field="latMax" textAlign="RIGHT" text="" />
+                    </m:MaterialColumn>
+                </m:MaterialRow>
+                    <m:MaterialRow marginBottom="0">
+                    <m:MaterialColumn grid="s6">
+                        <m:MaterialLabel fontWeight="BOLD" ui:field="lon" text="Longitude:" />
+                    </m:MaterialColumn>
+                        <m:MaterialColumn grid="s3">
+                            <m:MaterialLabel ui:field="lonMin" textAlign="RIGHT" text="" />
+                        </m:MaterialColumn>
+                        <m:MaterialColumn grid="s3">
+                            <m:MaterialLabel ui:field="lonMax" textAlign="RIGHT" text="" />
+                        </m:MaterialColumn>
+                    </m:MaterialRow>
+                <m:MaterialRow marginBottom="0">
+                    <m:MaterialColumn grid="s6">
+                        <m:MaterialLabel fontWeight="BOLD" ui:field="z" text="Vertical:" />
+                    </m:MaterialColumn>
+                    <m:MaterialColumn grid="s3">
+                        <m:MaterialLabel ui:field="zMin" textAlign="RIGHT" text="" />
+                    </m:MaterialColumn>
+                    <m:MaterialColumn grid="s3">
+                        <m:MaterialLabel ui:field="zMax" textAlign="RIGHT" text="" />
+                    </m:MaterialColumn>
+                </m:MaterialRow>
+                <m:MaterialRow marginBottom="0">
+                    <m:MaterialColumn grid="s12">
+                        <m:MaterialLabel fontWeight="BOLD" ui:field="time" text="Time:" />
+                    </m:MaterialColumn>
+                </m:MaterialRow>
+                <m:MaterialRow marginBottom="0">
+                    <m:MaterialColumn grid="s12">
+                        <m:MaterialLabel ui:field="timeStart" textAlign="RIGHT" text="" />
+                    </m:MaterialColumn>
+                </m:MaterialRow>
+                <m:MaterialRow marginBottom="0">
+                    <m:MaterialColumn grid="s12">
+                        <m:MaterialLabel ui:field="timeEnd" textAlign="RIGHT" text="" />
+                    </m:MaterialColumn>
+                </m:MaterialRow>
+            </m:MaterialCardContent>
+        </m:MaterialCard>
+    </m:MaterialColumn>
+</ui:UiBinder>

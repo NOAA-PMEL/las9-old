@@ -4,8 +4,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
-import gwt.material.design.client.ui.MaterialCollection;
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialPanel;
 import pmel.sdig.las.shared.autobean.MenuOption;
 import pmel.sdig.las.shared.autobean.RequestProperty;

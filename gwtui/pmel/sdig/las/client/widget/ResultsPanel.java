@@ -2,39 +2,27 @@ package pmel.sdig.las.client.widget;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
-import com.google.gwt.event.dom.client.BlurEvent;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
-import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.IconType;
-import gwt.material.design.client.ui.MaterialButton;
+import gwt.material.design.client.events.CollapseEvent;
+import gwt.material.design.client.events.ExpandEvent;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
 import gwt.material.design.client.ui.MaterialCollapsibleHeader;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialPanel;
-import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.MaterialTab;
 import gwt.material.design.client.ui.html.Div;
-import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.main.ClientFactory;
-import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
-import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Annotation;
 import pmel.sdig.las.shared.autobean.AnnotationGroup;
-import pmel.sdig.las.shared.autobean.Dataset;
-import pmel.sdig.las.shared.autobean.LASRequest;
 import pmel.sdig.las.shared.autobean.Variable;
 
 import java.util.ArrayList;
@@ -70,6 +58,8 @@ public class ResultsPanel extends Composite {
 
     @UiField
     MaterialCollapsible annotationsCollapse;
+    @UiField
+    MaterialIcon trigger;
 
     int index;
 
@@ -80,10 +70,18 @@ public class ResultsPanel extends Composite {
 
     public ResultsPanel() {
         initWidget(ourUiBinder.createAndBindUi(this));
-    }
-
-    public void setVisibility(boolean visibility) {
-        this.setVisible(visibility);
+        annotationsCollapse.addExpandHandler(new ExpandEvent.ExpandHandler<MaterialCollapsibleItem>() {
+            @Override
+            public void onExpand(ExpandEvent<MaterialCollapsibleItem> expandEvent) {
+                trigger.setIconType(IconType.EXPAND_LESS);
+            }
+        });
+        annotationsCollapse.addCollapseHandler(new CollapseEvent.CollapseHandler<MaterialCollapsibleItem>() {
+            @Override
+            public void onCollapse(CollapseEvent<MaterialCollapsibleItem> collapseEvent) {
+                trigger.setIconType(IconType.EXPAND_MORE);
+            }
+        });
     }
     public void clearAnnotations() {
         annotationPanel.clear();
@@ -93,15 +91,14 @@ public class ResultsPanel extends Composite {
     }
     public void setState(State state) {
         String error = state.getPanelState(this.getTitle()).getResultSet().getError();
+        annotationPanel.clear();
         if ( error != null && !error.equals("") ) {
-            annotationPanel.clear();
             MaterialLabel l = new MaterialLabel();
             l.setText(error);
             annotationPanel.add(l);
         } else {
             outputPanel.setState(state);
             List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
-            annotationPanel.clear();
             for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
                 AnnotationGroup ag = gIt.next();
                 for (Iterator<Annotation> aIt = ag.getAnnotations().iterator(); aIt.hasNext(); ) {
@@ -190,6 +187,9 @@ public class ResultsPanel extends Composite {
     }
     public String getLevels_string() {
         return outputPanel.levels;
+    }
+    public void clearPlot() {
+        outputPanel.clearPlot();
     }
     public int countAnnotations() {
         int count = 0;

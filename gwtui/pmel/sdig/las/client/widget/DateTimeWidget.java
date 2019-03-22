@@ -1,52 +1,38 @@
 package pmel.sdig.las.client.widget;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.user.client.Window;
 import gwt.material.design.client.constants.Color;
-import gwt.material.design.client.constants.HeadingSize;
-import gwt.material.design.client.ui.MaterialAnchorButton;
-import gwt.material.design.client.ui.MaterialCollapsible;
-import gwt.material.design.client.ui.MaterialCollapsibleBody;
-import gwt.material.design.client.ui.MaterialCollapsibleHeader;
-import gwt.material.design.client.ui.MaterialCollapsibleItem;
-import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialListBox;
 import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.html.Heading;
-import org.gwttime.time.format.*;
-import pmel.sdig.las.client.main.ClientFactory;
-import pmel.sdig.las.client.event.DateChange;
-import pmel.sdig.las.client.map.GeoUtil;
-import pmel.sdig.las.client.time.AllLeapChronology;
-import pmel.sdig.las.client.time.NoLeapChronology;
-import pmel.sdig.las.client.time.ThreeSixtyDayChronology;
-
-import java.util.List;
-import java.util.Locale;
-
 import org.gwttime.time.Chronology;
 import org.gwttime.time.DateTime;
 import org.gwttime.time.DateTimeZone;
 import org.gwttime.time.Period;
 import org.gwttime.time.chrono.GregorianChronology;
 import org.gwttime.time.chrono.JulianChronology;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
-import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.FlexTable;
-import com.google.gwt.user.client.ui.FlexTable.FlexCellFormatter;
-import com.google.gwt.user.client.ui.HTMLTable.CellFormatter;
-import com.google.gwt.user.client.ui.HasVerticalAlignment;
+import org.gwttime.time.format.DateTimeFormat;
+import org.gwttime.time.format.DateTimeFormatter;
+import org.gwttime.time.format.ISODateTimeFormat;
+import org.gwttime.time.format.ISOPeriodFormat;
+import org.gwttime.time.format.PeriodFormatter;
+import pmel.sdig.las.client.event.DateChange;
+import pmel.sdig.las.client.main.ClientFactory;
+import pmel.sdig.las.client.map.GeoUtil;
+import pmel.sdig.las.client.time.AllLeapChronology;
+import pmel.sdig.las.client.time.NoLeapChronology;
+import pmel.sdig.las.client.time.ThreeSixtyDayChronology;
 import pmel.sdig.las.shared.autobean.NameValuePair;
 import pmel.sdig.las.shared.autobean.TimeAxis;
+
+import java.util.List;
+import java.util.Locale;
 
 
 /**

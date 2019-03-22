@@ -10,7 +10,7 @@
                     <!--
                         <m:MaterialIcon visibility="HIDDEN" display="INLINE" iconType="SETTINGS" iconColor="BLUE" iconPosition="LEFT"></m:MaterialIcon>
                     -->
-                        <m:MaterialIcon display="INLINE" iconType="ADD" iconPosition="RIGHT"></m:MaterialIcon>
+                        <m:MaterialIcon ui:field="trigger" display="INLINE" iconType="EXPAND_MORE" iconSize="LARGE" iconPosition="RIGHT"></m:MaterialIcon>
                 </m:MaterialCollapsibleHeader>
                 <m:MaterialCollapsibleBody ui:field="annotations" paddingTop="0" paddingLeft="0" paddingRight="0">
                     <m:MaterialPanel marginTop="8" paddingLeft="8" ui:field="annotationPanel" m:id="annotations"  textAlign="LEFT" overflow="AUTO">

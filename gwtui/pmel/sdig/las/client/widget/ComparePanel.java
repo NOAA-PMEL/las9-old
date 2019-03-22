@@ -300,9 +300,6 @@ public class ComparePanel extends Composite {
             dataItem.setActive(true);
         }
     };
-    public void setVisibility(boolean visibility) {
-        this.setVisible(visibility);
-    }
     public void clearAnnotations() {
         annotationPanel.clear();
     }

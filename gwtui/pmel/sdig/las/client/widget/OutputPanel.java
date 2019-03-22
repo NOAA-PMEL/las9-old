@@ -147,8 +147,10 @@ public class OutputPanel extends AbsolutePanel {
         setFromMapScale(myState.getMapScale());
 
         clear();
+
         add(imageCanvas, 0, 0);
         add(drawingCanvas, 0, 0);
+
 
         plotImage = new IESafeImage(myState.getImageUrl());
         plotImage.addLoadHandler(imageLoadHandler);
@@ -225,6 +227,9 @@ public class OutputPanel extends AbsolutePanel {
         }
     };
 
+    public void clearPlot() {
+        imageCanvasContext.clearRect(0, 0, imageCanvas.getCoordinateSpaceWidth(), imageCanvas.getCoordinateSpaceHeight());
+    }
     public void clearOverlay() {
         drawingCanvasContext.clearRect(0, 0, drawingCanvas.getCoordinateSpaceWidth(), drawingCanvas.getCoordinateSpaceHeight());
     }

@@ -1,11 +1,9 @@
 package pmel.sdig.las.client.widget;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Composite;
-import gwt.material.design.client.ui.MaterialContainer;
 import gwt.material.design.client.ui.MaterialPanel;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 import pmel.sdig.las.shared.autobean.TextOption;

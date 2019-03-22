@@ -45,9 +45,16 @@
             </m:MaterialDialogFooter>
         </m:MaterialDialog>
         <m:MaterialHeader ui:field="header">
-            <m:MaterialNavBar activates="sidenav" ui:field="navbar">
+            <m:MaterialNavBar activates="sidenav" ui:field="navbar" shadow="1">
                 <m:MaterialNavSection ui:field="navSection" float="LEFT">
                     <m:MaterialButton ui:field="update" text="Update"></m:MaterialButton>
+
+                    <m:MaterialButton text="Plot 1" enabled="false" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" textColor="WHITE" activates="plots-3" ui:field="plotsDropdownButton"/>
+                    <m:MaterialDropDown activator="plots-3" constrainWidth="true" ui:field="plotsDropdown">
+                        <m:MaterialLink title="Plot 1" text="Plot 1" separator="true"/>
+                        <m:MaterialLink title="Plot 2" text="Plot 2" separator="true"/>
+                        <m:MaterialLink title="Plot 4" text="Plot 4" separator="true"/>
+                    </m:MaterialDropDown>
 
                     <m:MaterialLink ui:field="animate" text="Animate" waves="LIGHT" enabled="false"></m:MaterialLink>
                     <m:MaterialLink ui:field="correlationLink" text="Correlation Viewer" waves="LIGHT"
@@ -65,33 +72,29 @@
                 <m:MaterialSearch ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" grid="s12" shadow="1"/>
             </m:MaterialNavBar>
         </m:MaterialHeader>
-        <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="false">
+        <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
             <m:MaterialSideNavContent padding="0">
-                <m:MaterialNavBrand>
-                    <m:MaterialListBox paddingLeft="8" paddingRight="8" ui:field="plotsDropdown">
-                        <m:html.Option text="Plot 1" value="Plot 1"/>
-                        <m:html.Option text="Plot 2" value="Plot 2"/>
-                        <m:html.Option text="Plot 4" value="Plot 4"/>
-                    </m:MaterialListBox>
-                </m:MaterialNavBrand>
-                <m:MaterialRow marginBottom="0" lineHeight="20">
-                    <m:MaterialColumn height="32" grid="s4">
-                        <m:MaterialLink ui:field="total" height="32" textColor="BLUE" text="Data Sets"></m:MaterialLink>
-                    </m:MaterialColumn>
-                    <m:MaterialColumn height="32" grid="s4">
-                        <m:MaterialLink ui:field="grids" height="32" textColor="BLUE" text="Grids"></m:MaterialLink>
-                    </m:MaterialColumn>
-                    <m:MaterialColumn height="32" grid="s4">
-                        <m:MaterialLink ui:field="discrete" height="32" textColor="BLUE" text="Discrete"></m:MaterialLink>
-                    </m:MaterialColumn>
-                </m:MaterialRow>
+                <!--<m:MaterialNavBrand>-->
+                    <!---->
+                <!--</m:MaterialNavBrand>-->
+                <!--<m:MaterialRow marginBottom="0" lineHeight="20">-->
+                    <!--<m:MaterialColumn height="32" grid="s4">-->
+                        <!--<m:MaterialLink ui:field="total" height="32" textColor="BLUE" text="Data Sets"></m:MaterialLink>-->
+                    <!--</m:MaterialColumn>-->
+                    <!--<m:MaterialColumn height="32" grid="s4">-->
+                        <!--<m:MaterialLink ui:field="grids" height="32" textColor="BLUE" text="Grids"></m:MaterialLink>-->
+                    <!--</m:MaterialColumn>-->
+                    <!--<m:MaterialColumn height="32" grid="s4">-->
+                        <!--<m:MaterialLink ui:field="discrete" height="32" textColor="BLUE" text="Discrete"></m:MaterialLink>-->
+                    <!--</m:MaterialColumn>-->
+                <!--</m:MaterialRow>-->
                 <m:MaterialCollapsible ui:field="navcollapsible" accordion="false">
                     <m:MaterialCollapsibleItem ui:field="dataItem">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialPanel addStyleNames="valign-wrapper">
                                 <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
-                                <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data"
-                                                display="FLEX"></m:MaterialLink>
+                                <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data" display="FLEX"></m:MaterialLink>
+                                <m:MaterialLink ui:field="browse" fontSize="1.2em" text="(Browse)" display="FLEX"></m:MaterialLink>
                                 <m:MaterialIcon ui:field="back" iconType="ARROW_BACK" iconPosition="RIGHT"/>
                             </m:MaterialPanel>
                             <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE"
@@ -127,21 +130,38 @@
                     </m:MaterialCollapsibleItem>
                     <m:MaterialCollapsibleItem>
                         <m:MaterialCollapsibleHeader>
-                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em"
-                                            text="Axes and Analysis"></m:MaterialLink>
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Axes Selections"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
                             <m:MaterialPanel m:id="timeRegion" padding="2" width="375px">
-                                <m:MaterialRow grid="s12">
+                                <m:MaterialRow grid="s12" margin="0">
                                     <m:MaterialPanel padding="8" ui:field="mapPanel"></m:MaterialPanel>
                                 </m:MaterialRow>
-                                <m:MaterialRow grid="s12">
+                                <m:MaterialRow grid="s12" marginBottom="0">
                                     <m:MaterialPanel padding="8" ui:field="dateTimePanel" width="375px"/>
                                 </m:MaterialRow>
-                                <m:MaterialRow grid="s12">
-                                    <m:MaterialPanel padding="8" ui:field="zaxisPanel" grid="s12"/>
+                                <m:MaterialRow grid="s12" marginBottom="0">
+                                    <m:MaterialPanel margin="0" padding="8" ui:field="zaxisPanel" grid="s12"/>
                                 </m:MaterialRow>
                             </m:MaterialPanel>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader>
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Types"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
+                            <m:MaterialPanel ui:field="products" textAlign="LEFT" overflow="AUTO">
+                                <m:MaterialLabel
+                                        text="Pick a data set and variable and plot choices will appear here."/>
+                            </m:MaterialPanel>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader>
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Analysis Transformations"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
                             <m:MaterialPanel marginBottom="16" textAlign="LEFT" overflow="AUTO">
                                 <m:MaterialLabel marginLeft="16" fontWeight="BOLD" textColor="BLUE"
                                                  text="Do Analysis"></m:MaterialLabel>
@@ -178,17 +198,6 @@
                     </m:MaterialCollapsibleItem>
                     <m:MaterialCollapsibleItem>
                         <m:MaterialCollapsibleHeader>
-                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Types"></m:MaterialLink>
-                        </m:MaterialCollapsibleHeader>
-                        <m:MaterialCollapsibleBody padding="0">
-                            <m:MaterialPanel ui:field="products" textAlign="LEFT" overflow="AUTO">
-                                <m:MaterialLabel
-                                        text="Pick a data set and variable and plot choices will appear here."/>
-                            </m:MaterialPanel>
-                        </m:MaterialCollapsibleBody>
-                    </m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
                             <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Options"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
@@ -202,11 +211,15 @@
                 </m:MaterialCollapsible>
             </m:MaterialSideNavContent>
         </m:MaterialSideNavPush>
-        <m:MaterialContainer ui:field="main" marginLeft="-400">
+        <m:MaterialContainer ui:field="main">
             <m:MaterialRow paddingTop="60" ui:field="outputRow01">
 
+                <m:MaterialPanel ui:field="infoPanel" paddingTop="20">
+
+                </m:MaterialPanel>
+
                 <las:ResultsPanel ui:field="panel1" title="panel01"></las:ResultsPanel>
-                <las:ComparePanel ui:field="panel2" title="panel02" grid="s6" visibility="false"></las:ComparePanel>
+                <las:ComparePanel ui:field="panel2" title="panel02" grid="s6" visible="false"></las:ComparePanel>
 
             </m:MaterialRow>
             <m:MaterialRow ui:field="outputRow02">
@@ -284,7 +297,7 @@
         <ma:window.MaterialWindow ui:field="showValuesWindow" title="Values">
         </ma:window.MaterialWindow>
         <ma:window.MaterialWindow ui:field="downloadWindow" title="Data Download">
-            <m:MaterialContainer paddingTop="16">
+            <m:MaterialPanel paddingTop="16">
                 <m:MaterialRow>
                     <m:MaterialColumn grid="s4">
                         <m:MaterialLabel paddingTop="8" paddingBottom="8"
@@ -322,7 +335,7 @@
                         <m:MaterialLabel ui:field="downloadError" textColor="RED" text=""></m:MaterialLabel>
                     </m:MaterialColumn>
                 </m:MaterialRow>
-            </m:MaterialContainer>
+            </m:MaterialPanel>
         </ma:window.MaterialWindow>
         <ma:window.MaterialWindow ui:field="correlationWindow" title="Property-Property Plots">
             <m:MaterialRow>

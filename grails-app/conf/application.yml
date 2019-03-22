@@ -121,8 +121,10 @@ elasticSearch:
         mapperAttachment:
             enabled: false
     path:
-        data: /home/users/rhs/las_db/elastic
-
+        data: /home/rhs/las_db/elastic
+    index:
+        store:
+            type: simplefs
 environments:
     development:
         dataSource:

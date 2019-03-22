@@ -11,7 +11,6 @@ import org.apache.http.client.utils.URIBuilder
 import org.joda.time.*
 import org.joda.time.chrono.GregorianChronology
 import org.joda.time.format.*
-import pmel.sdig.las.*
 import pmel.sdig.las.type.GeometryType
 import thredds.catalog.*
 import ucar.nc2.Attribute
@@ -87,45 +86,543 @@ class IngestService {
         minmax[1] = max
         return minmax
     }
+    Dataset ingest(String parentHash, String url) {
 
+        // Set the status of the parent for each variable using the parentHash key.
+
+        // Is it a netCDF data source?
+
+        def hash = getDigest(url)
+        def dataset = new Dataset([url: url, hash: hash])
+        if (!parentHash) parentHash = dataset.getHash();
+
+        // TODO catch exepctions and keep going...
+
+        Formatter error = new Formatter()
+
+        GridDataset gridDs
+        try {
+            ingestStatusService.saveProgress(parentHash, "Reading the OPeNDAP data source for the variables.")
+            gridDs = (GridDataset) FeatureDatasetFactoryManager.open(FeatureType.GRID, url, null, error)
+        } catch (IOException e) {
+            dataset.setMessage(e.getMessage())
+            dataset.setStatus(Dataset.INGEST_FAILED)
+            return dataset
+        }
+
+        if ( gridDs != null) {
+
+            log.debug("Grid data set found ... ")
+            List<Attribute> globals = gridDs.getGlobalAttributes()
+            // Get the DRS information
+
+
+            Map<String, String> drsParams = new HashMap<String, String>()
+
+            String title = url
+            for (Iterator iterator = globals.iterator(); iterator.hasNext(); ) {
+                Attribute attribute = (Attribute) iterator.next()
+                if ( attribute.getShortName().equals("title") ) {
+                    title = attribute.getStringValue()
+                } else if ( attribute.getShortName().equals("dataset_title") ) {
+                    title = attribute.getStringValue();
+                }
+                drsParams.put(attribute.getShortName(), attribute.getStringValue())
+            }
+
+            dataset.setTitle(title)
+
+            List<GridDatatype> grids = gridDs.getGrids()
+            String m = grids.size() + " variables were found. Processing..."
+            ingestStatusService.saveProgress(parentHash, m)
+
+            for (int i = 0; i < grids.size(); i++) {
+
+                GridDatatype gridDatatype = (GridDatatype) grids.get(i);
+
+                // The variable basics
+                String vname = gridDatatype.getShortName()
+
+                log.debug("Processing variable " + vname + " ...")
+
+                def vtitle = null
+
+                Attribute ln_attr = gridDatatype.findAttributeIgnoreCase("long_name")
+                Attribute sn_attr = gridDatatype.findAttributeIgnoreCase("standard_name")
+                if ( ln_attr ) {
+                    vtitle = ln_attr.getStringValue()
+                }
+                if ( !vtitle && sn_attr ) {
+                    vtitle = sn_attr.getStringValue()
+                }
+                if ( !vtitle ) {
+                    vtitle = gridDatatype.getName()
+                }
+
+                String vhash = getDigest(url + ":" + gridDatatype.getDescription())
+
+                // Set the variable name in the DRS params...
+                drsParams.put("shortname", gridDatatype.getShortName())
+
+                // Build the DRS
+//                DataReferenceSyntax drs = new DataReferenceSyntax()
+//                // Map constructor does not work when called from Java!?!
+//                drs.setActivity(drsParams.get("activity"))
+//                drs.setData_structure(drsParams.get("data_structure"))
+//                drs.setEnsemble(drsParams.get("ensemble"))
+//                drs.setExperiment_id(drsParams.get("experiement_id"))
+//                drs.setFrequency(drsParams.get("frequency"))
+//                drs.setInstitute_id(drsParams.get("institute_id"))
+//                drs.setInstrument(drsParams.get("instrument"))
+//                drs.setModel_id(drsParams.get("model_id"))
+//                drs.setObs_project(drsParams.get("obs_project"))
+//                drs.setProduct(drsParams.get("product"))
+//                drs.setRealm(drsParams.get("realm"))
+//                drs.setSource_id(drsParams.get("source_id"))
+//                drs.setShortname(drsParams.get("shortname"))
+
+                GridCoordSystem gcs = gridDatatype.getCoordinateSystem()
+
+                String units = gridDatatype.getUnitsString()
+                // Axes are next...
+                long tIndex = -1
+                long zIndex = -1
+                TimeAxis tAxis = null
+                if (gcs.hasTimeAxis()) {
+
+                    if (gcs.hasTimeAxis1D()) {
+                        log.debug("1D time axis found ... ")
+                        CoordinateAxis1DTime time = gcs.getTimeAxis1D()
+                        CalendarDateRange range = time.getCalendarDateRange()
+
+                        // Get the basics
+                        String start = range.getStart().toString()
+                        String end = range.getEnd().toString()
+                        long size = time.getSize()
+                        tIndex = size / 2
+                        if (tIndex <= 0) tIndex = 1
+                        String timeunits = time.getUnitsString()
+                        Attribute cal = time.findAttribute("calendar")
+                        String calendar = "standard"
+                        if (cal != null) {
+                            calendar = cal.getStringValue(0)
+                        }
+                        String shortname = time.getShortName()
+                        String timetitle = time.getFullName()
+
+                        // Figure out the delta (as a period string) and where the time is marked (beginning, middle, or end of the period
+                        double[] tb1 = time.getBound1()
+                        double[] tb2 = time.getBound2()
+                        double[] times = time.getCoordValues()
+
+                        CalendarDateUnit cdu = CalendarDateUnit.of(calendar, timeunits)
+                        Period p0 = null
+                        String position0 = getPosition(times[0], tb1[0], tb2[0])
+                        boolean regular = true
+                        boolean constant_position = true
+                        regular = time.isRegular()
+                        tAxis = new TimeAxis()
+
+                        TimeUnit tu = time.getTimeResolution()
+                        double du = tu.getValue()
+                        String u = tu.getUnitString()
+
+                        if ( times.length > 1 ) {
+                            if (regular) {
+                                // TODO sec, week, year?
+                                if (u.contains("hour")) {
+                                    for (int d = 0; d < 27; d++) {
+                                        if (du < 23.5 * d && du < 23.5 * d + 1) {
+                                            // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
+                                            p0 = new Period(0, 0, 0, d, 0, 0, 0, 0)
+                                        }
+                                    }
+                                    if (p0 == null) {
+                                        if (du > 28 * 24 && du < 33 * 24) {
+                                            p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0)
+                                        }
+                                    }
+
+                                } else if (u.contains("day")) {
+                                    if (du < 1) {
+                                        int hours = du * 24.0d
+                                        p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0)
+                                    } else {
+                                        p0 = new Period(0, 0, 0, du, 0, 0, 0, 0)
+                                    }
+
+                                }
+                            } else {
+                                p0 = getPeriod(cdu, times[0], times[1])
+                                int hours = p0.getHours()
+                                int days = p0.getDays()
+                                int months = p0.getMonths()
+                                int years = p0.getYears()
+                                if (days >= 28) {
+                                    p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0)
+                                } else if (hours == 0 && days > 0) {
+                                    p0 = new Period(0, 0, 0, days, 0, 0, 0, 0)
+                                } else if (hours > 0) {
+                                    p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0)
+                                }
+                            }
+
+                            Period period = getPeriod(cdu, times[0], times[times.length - 1])
+
+                            log.debug("Setting delta " + pf.print(p0))
+                            if (p0 != null) {
+                                tAxis.setDelta(pf.print(p0))
+                            } else {
+                                tAxis.setDelta("P1D")
+                            }
+                            log.debug("Setting data set period to " + pf.print(period))
+                            if (period != null) {
+                                tAxis.setPeriod(pf.print(period))
+                            }
+
+                        } else if ( times.length ) {
+                            tAxis.setDelta(pf.print(Period.ZERO));
+                            tAxis.setPeriod(pf.print(Period.ZERO))
+                        }
+
+
+                        tAxis.setStart(start)
+                        tAxis.setEnd(end)
+                        if (start.contains("0000") && end.contains("0000")) {
+                            tAxis.setClimatology(true)
+                        } else {
+                            tAxis.setClimatology(false)
+                        }
+                        tAxis.setSize(size)
+                        tAxis.setUnits(units)
+                        tAxis.setCalendar(calendar)
+                        tAxis.setTitle(title)
+                        tAxis.setName(shortname)
+
+                        if (constant_position) {
+                            tAxis.setPosition(position0)
+                        }
+
+
+                    } else {
+                        // TODO 2D Time Axis
+                    }
+                }
+
+                CoordinateAxis xca = gcs.getXHorizAxis()
+                GeoAxisX xAxis = null
+                if (xca instanceof CoordinateAxis1D) {
+                    CoordinateAxis1D x = (CoordinateAxis1D) xca
+                    xAxis = new GeoAxisX()
+                    xAxis.setType("x")
+                    xAxis.setTitle(x.getFullName())
+                    xAxis.setName(x.getShortName())
+                    xAxis.setUnits(x.getUnitsString())
+                    xAxis.setRegular(x.isRegular())
+                    if (x.isRegular()) {
+                        xAxis.setDelta(x.getIncrement())
+                    }
+                    xAxis.setMin(x.getMinValue())
+                    xAxis.setMax(x.getMaxValue())
+                    xAxis.setSize(x.getSize())
+                    xAxis.setDimensions(1)
+
+                } else if (xca instanceof CoordinateAxis2D) {
+                    CoordinateAxis2D x = (CoordinateAxis2D) xca
+                    xAxis = new GeoAxisX()
+                    xAxis.setType("x")
+                    xAxis.setTitle(x.getFullName())
+                    xAxis.setName(x.getShortName())
+                    xAxis.setUnits(x.getUnitsString())
+                    xAxis.setRegular(false)
+                    xAxis.setDimensions(2)
+                    xAxis.setMin(x.getMinValue())
+                    xAxis.setMax(x.getMaxValue())
+                    xAxis.setSize(x.getSize())
+                }
+                GeoAxisY yAxis = null
+                CoordinateAxis yca = gcs.getYHorizAxis()
+                if (yca instanceof CoordinateAxis1D) {
+                    CoordinateAxis1D y = (CoordinateAxis1D) yca
+                    yAxis = new GeoAxisY()
+                    yAxis.setType("y")
+                    yAxis.setTitle(y.getFullName())
+                    yAxis.setName(y.getShortName())
+                    yAxis.setUnits(y.getUnitsString())
+                    yAxis.setRegular(y.isRegular())
+                    if (y.isRegular()) {
+                        yAxis.setDelta(y.getIncrement())
+                    }
+                    yAxis.setMin(y.getMinValue())
+                    yAxis.setMax(y.getMaxValue())
+                    yAxis.setSize(y.getSize())
+                    yAxis.setDimensions(1)
+
+                } else {
+                    CoordinateAxis2D y = (CoordinateAxis2D) yca
+                    yAxis = new GeoAxisY()
+                    yAxis.setType("y")
+                    yAxis.setTitle(y.getFullName())
+                    yAxis.setName(y.getShortName())
+                    yAxis.setUnits(y.getUnitsString())
+                    yAxis.setRegular(false)
+                    yAxis.setMin(y.getMinValue())
+                    yAxis.setMax(y.getMaxValue())
+                    yAxis.setSize(y.getSize())
+                    yAxis.setDimensions(2)
+                }
+                CoordinateAxis1D z = gcs.getVerticalAxis()
+                VerticalAxis zAxis = null
+                if (z != null) {
+                    // Use the first z. It's probably more interesting.
+                    zIndex = 1
+                    zAxis = new VerticalAxis()
+                    zAxis.setSize(z.getSize())
+                    zAxis.setType("z")
+                    zAxis.setTitle(z.getFullName())
+                    zAxis.setName(z.getShortName())
+                    zAxis.setMin(z.getMinValue())
+                    zAxis.setMax(z.getMaxValue())
+                    zAxis.setRegular(z.isRegular())
+                    zAxis.setUnits(z.getUnitsString())
+                    if (zAxis.isRegular()) {
+                        zAxis.setDelta(z.getIncrement())
+                    }
+                    double[] v = z.getCoordValues()
+                    List<Zvalue> values = new ArrayList<Zvalue>()
+                    for (int j = 0; j < v.length; j++) {
+                        Zvalue zv = new Zvalue()
+                        zv.setZ(v[j])
+                        values.add(zv)
+                    }
+                    zAxis.setZV(values)
+                    String posi = z.getPositive()
+                    if ( posi != null ) {
+                        zAxis.setPositive(posi)
+                    } else {
+                        zAxis.setPositive("not specified")
+                    }
+                }
+
+// The make stats code in-line
+//                def ferret = Ferret.first()
+//                def palette = "blue_darkorange"
+//                if ( vtitle.toLowerCase().contains("temp") ) {
+//                    palette = "blue_darkred"
+//                } else if ( vtitle.toLowerCase().contains("precip") ) {
+//                    palette = "brown_blue"
+//                }
+//
+//                int tsize
+//                if ( tAxis ) {
+//                    tsize = tAxis.size
+//                } else {
+//                    tsize = 1
+//                }
+//                int min = Math.min(12, tsize)
+//                // DEBUG
+//                //TODO remove this debug
+//                min = 1
+//                Stats stats = null
+//                for ( int tcounter = 0 tcounter < min tcounter++ ) {
+//                    StringBuilder jnl = new StringBuilder()
+//                    StringBuilder timeRange = new StringBuilder()
+//                    StringBuilder levelRange = new StringBuilder()
+//
+//                    def xcount = xAxis.size
+//                    def ycount = yAxis.size
+//
+//                    def xstride = 1
+//                    if ( xcount >= 1000 && xcount < 3000 ) {
+//                        xstride = 5
+//                    } else if ( xcount >=3000 && xcount < 5000 ) {
+//                        xstride = 10
+//                    } else if ( xcount >= 5000 ) {
+//                        xstride = 50
+//                    }
+//
+//                    def ystride = 1
+//                    if ( ycount >= 1000 && ycount < 3000 ) {
+//                        ystride = 5
+//                    } else if ( ycount >=3000 && ycount < 5000 ) {
+//                        ystride = 10
+//                    } else if ( ycount >= 5000){
+//                        ystride = 50
+//                    }
+//                    if ( tAxis ) {
+//                        int tindex = tcounter + 1
+//
+//                        timeRange.append("l=\""+tindex+"\"")
+//                    }
+//
+//                    if ( zAxis ) {
+//                        // Always do the first level.
+//                        levelRange.append("/k=1")
+//                    }
+//
+//                    def relativeStatsBase = dataset.hash + File.separator + vname
+//                    File base = new File(ferret.tempDir + File.separator + relativeStatsBase)
+//                    if ( !base.exists() ) {
+//                        base.mkdirs()
+//                    }
+//                    def relativeStatsPath = relativeStatsBase + File.separator + "stats.txt"
+//                    def relativeColorBar = relativeStatsBase
+//                    jnl.append("DEFINE SYMBOL DATA = ${url}\n")
+//                    if ( vname.contains("-") ) {
+//                        jnl.append("DEFINE SYMBOL PARAMETER = '$vname'\n")
+//                    } else {
+//                        jnl.append("DEFINE SYMBOL PARAMETER = $vname\n")
+//                    }
+//                    if ( timeRange.length() > 0 || levelRange.length() > 0 ) {
+//                        jnl.append("DEFINE SYMBOL RANGES=${timeRange.toString()}${levelRange.toString()}\n")
+//                    }
+//                    jnl.append("DEFINE SYMBOL OUTPUT = ${relativeStatsPath}\n")
+//                    jnl.append("LET XSTRIDE = ${xstride}\n")
+//                    jnl.append("LET YSTRIDE = ${ystride}\n")
+//
+//                    jnl.append("go stats\n")
+//
+//                    File statsFile = new File(ferret.tempDir + File.separator + relativeStatsPath)
+//
+//
+//
+//                    def ferretResult = ferretService.runScript(jnl.toString())
+//                    if ( ferretResult["error"] == false ) {
+//                        Stats statsTemp = new Stats(ferret.tempDir + File.separator + relativeStatsPath)
+//                        statsTemp.setPalette(palette)
+//                        if ( !stats ) {
+//                            stats = statsTemp
+//                        } else {
+//                            if ( statsTemp.histogram_lev_min < stats.histogram_lev_min) {
+//                                stats.histogram_lev_min = statsTemp.histogram_lev_min
+//                            }
+//                            if ( statsTemp.histogram_lev_max > stats.histogram_lev_max ) {
+//                                stats.histogram_lev_max = statsTemp.histogram_lev_max
+//                            }
+//                        }
+//
+//                    } else {
+//                        log.error(ferretResult["message"])
+//                        return null
+//                    }
+//                    statsFile.delete()
+//
+//                }
+//
+//
+//                stats.computeDel()
+// End of make stats in-line
+
+                String intervals = ""
+                if (xAxis) {
+                    intervals = intervals + "x"
+                }
+                if (yAxis) {
+                    intervals = intervals + "y"
+                }
+                if (zAxis) {
+                    intervals = intervals + "z"
+                }
+                if (tAxis) {
+                    intervals = intervals + "t"
+                }
+
+                Variable variable = new Variable()
+                variable.setUrl(url)
+                variable.setName(vname)
+                variable.setHash(vhash)
+                variable.setTitle(vtitle)
+                variable.setGeometry(GeometryType.GRID)
+                variable.setIntervals(intervals)
+                variable.setUnits(units)
+
+                variable.setGeoAxisX(xAxis)
+                xAxis.setVariable(variable)
+
+                variable.setGeoAxisY(yAxis)
+                yAxis.setVariable(variable)
+
+                if (zAxis) {
+                    variable.setVerticalAxis(zAxis)
+                    zAxis.setVariable(variable)
+                }
+                if (tAxis) {
+                    variable.setTimeAxis(tAxis)
+                    tAxis.setVariable(variable)
+                }
+
+//                if ( variable.validate() ) {
+//                    variable.save(failOnError: true)
+//                } else {
+//                    variable.errors.allErrors.each {
+//                        print it
+//                    }
+//                }
+
+                log.debug("Adding " + variable.getTitle() + " to data set")
+                dataset.addToVariables(variable)
+                dataset.variableChildren = true;
+                dataset.geometry = GeometryType.GRID
+
+                int done = i + 1;
+                String m2 = done + "variables out of a total of " + grids.size() + " have been processed."
+                ingestStatusService.saveProgress(parentHash, m2)
+
+            }
+
+            if ( !dataset.validate() ) {
+                dataset.errors.each {
+                    log.debug(it.toString())
+                }
+            }
+
+        } else {
+            // Is it a THREDDS catalog?
+        }
+        dataset
+        // Is it an ESGF catalog or data set?
+    }
     def addVariablesAndSaveFromThredds(String url, String parentHash, String erddap, boolean full) {
-
-
         Dataset dataset = Dataset.findByUrl(url)
         // If this is being done by the background process, it is possible that a user already requested this data set be loaded.
         log.debug("dataset found" + url)
-            try {
-                log.debug("Loading the catalog for" +url)
-                ingestStatusService.saveProgress(parentHash, "Loading the THREDDS catalog for these variables.")
-                Dataset temp = ingestFromThredds(url, parentHash, erddap, full)
-                log.debug("Finished loading variables for " + url)
+        try {
+            log.debug("Loading the catalog for" +url)
+            ingestStatusService.saveProgress(parentHash, "Loading the THREDDS catalog for these variables.")
+            Dataset temp = ingestFromThredds(url, parentHash, erddap, full)
+            log.debug("Finished loading variables for " + url)
 
-                // There will be a layer that represents the catalog at the top with the variables in a data set one level down.
+            // There will be a layer that represents the catalog at the top with the variables in a data set one level down.
 
-                if (temp.getDatasets() && temp.getDatasets().size() == 1) {
-                    Dataset temp2 = temp.getDatasets().get(0)
-                    if (temp2 && temp2.getVariables()) {
-                        log.debug(temp2.getVariables().size() + " vairables found " + dataset.getUrl())
-                        dataset.setVariables(temp2.getVariables())
-                        dataset.setStatus(Dataset.INGEST_FINISHED)
-                        dataset.save(failOnError: true, flush: true)
-                        elasticSearchService.index(dataset)
-                    } else {
-                        if ( temp2.getStatus() == Dataset.INGEST_FAILED ) {
-                            dataset.setStatus(Dataset.INGEST_FAILED)
-                            dataset.save(failOnError: true, flush: true)
-                        }
+            if (temp.getDatasets() && temp.getDatasets().size() == 1) {
+                Dataset temp2 = temp.getDatasets().get(0)
+                if (temp2 && temp2.getVariables()) {
+                    def t2v = temp2.getVariables();
+                    log.debug(t2v.size() + " variables found " + dataset.getUrl())
+                    for (int i = 0; i < t2v.size(); i++) {
+                        dataset.addToVariables(t2v.get(i))
                     }
+                    dataset.setStatus(Dataset.INGEST_FINISHED)
+                    if ( dataset.validate() ) {
+                        dataset.save(flush: true)
+                    }
+                    elasticSearchService.index(dataset)
                 } else {
-                    log.debug("No variables found for " + dataset.getUrl())
-                    dataset.setStatus(Dataset.INGEST_FAILED)
-                    dataset.save(failOnError: true, flush: true)
+                    if ( temp2.getStatus() == Dataset.INGEST_FAILED ) {
+                        dataset.setStatus(Dataset.INGEST_FAILED)
+                        dataset.save(failOnError: true, flush: true)
+                    }
                 }
-            } catch (Exception e) {
-                log.debug("Ingest failed " + e.getMessage())
+            } else {
+                log.debug("No variables found for " + dataset.getUrl())
                 dataset.setStatus(Dataset.INGEST_FAILED)
-                dataset.save(failOnError: true, flush:true)
+                dataset.save(failOnError: true, flush: true)
             }
+        } catch (Exception e) {
+            log.debug("Ingest failed " + e.getMessage())
+            dataset.setStatus(Dataset.INGEST_FAILED)
+            dataset.save(failOnError: true, flush:true)
+        }
 
     }
     Dataset ingestFromThredds(String url, String parentHash, String erddap, boolean full) {
@@ -617,7 +1114,8 @@ class IngestService {
             InvDataset nextChild = (InvDataset) children.get(i)
             if (!nextChild.getName().toLowerCase().contains("tds quality") && !nextChild.getName().contains("automated cleaning process")) {
                 Dataset child = processDataset(nextChild, parentHash, full, dataset)
-                dataset.addToDatasets(child)
+                if ( child )
+                    dataset.addToDatasets(child)
             }
         }
         dataset
@@ -1713,488 +2211,6 @@ class IngestService {
 
 
     }
-    Dataset ingest(String parentHash, String url) {
-
-        // Set the status of the parent for each variable using the parentHash key.
-
-        // Is it a netCDF data source?
-
-        def hash = getDigest(url)
-        def dataset = new Dataset([url: url, hash: hash])
-        if (!parentHash) parentHash = dataset.getHash();
-
-        // TODO catch exepctions and keep going...
-
-        Formatter error = new Formatter()
-
-        GridDataset gridDs
-        try {
-            ingestStatusService.saveProgress(parentHash, "Reading the OPeNDAP data source for the variables.")
-            gridDs = (GridDataset) FeatureDatasetFactoryManager.open(FeatureType.GRID, url, null, error)
-        } catch (IOException e) {
-            dataset.setMessage(e.getMessage())
-            dataset.setStatus(Dataset.INGEST_FAILED)
-            return dataset
-        }
-
-        if ( gridDs != null) {
-
-            log.debug("Grid data set found ... ")
-            List<Attribute> globals = gridDs.getGlobalAttributes()
-            // Get the DRS information
-
-
-            Map<String, String> drsParams = new HashMap<String, String>()
-
-            String title = url
-            for (Iterator iterator = globals.iterator(); iterator.hasNext(); ) {
-                Attribute attribute = (Attribute) iterator.next()
-                if ( attribute.getShortName().equals("title") ) {
-                    title = attribute.getStringValue()
-                } else if ( attribute.getShortName().equals("dataset_title") ) {
-                    title = attribute.getStringValue();
-                }
-                drsParams.put(attribute.getShortName(), attribute.getStringValue())
-            }
-
-            dataset.setTitle(title)
-
-            List<GridDatatype> grids = gridDs.getGrids()
-            String m = grids.size() + " variables were found. Processing..."
-            ingestStatusService.saveProgress(parentHash, m)
-
-            for (int i = 0; i < grids.size(); i++) {
-
-                GridDatatype gridDatatype = (GridDatatype) grids.get(i);
-
-                // The variable basics
-                String vname = gridDatatype.getShortName()
-
-                log.debug("Processing variable " + vname + " ...")
-                //TODO do I need to get the attributes and find the long_name myself?
-
-                String vtitle = gridDatatype.getDescription()
-                if (vtitle == null) {
-                    vtitle = vname
-                }
-                String vhash = getDigest(url + ":" + gridDatatype.getDescription())
-
-                // Set the variable name in the DRS params...
-                drsParams.put("shortname", gridDatatype.getShortName())
-
-                // Build the DRS
-//                DataReferenceSyntax drs = new DataReferenceSyntax()
-//                // Map constructor does not work when called from Java!?!
-//                drs.setActivity(drsParams.get("activity"))
-//                drs.setData_structure(drsParams.get("data_structure"))
-//                drs.setEnsemble(drsParams.get("ensemble"))
-//                drs.setExperiment_id(drsParams.get("experiement_id"))
-//                drs.setFrequency(drsParams.get("frequency"))
-//                drs.setInstitute_id(drsParams.get("institute_id"))
-//                drs.setInstrument(drsParams.get("instrument"))
-//                drs.setModel_id(drsParams.get("model_id"))
-//                drs.setObs_project(drsParams.get("obs_project"))
-//                drs.setProduct(drsParams.get("product"))
-//                drs.setRealm(drsParams.get("realm"))
-//                drs.setSource_id(drsParams.get("source_id"))
-//                drs.setShortname(drsParams.get("shortname"))
-
-                GridCoordSystem gcs = gridDatatype.getCoordinateSystem()
-
-                String units = gridDatatype.getUnitsString()
-                // Axes are next...
-                long tIndex = -1
-                long zIndex = -1
-                TimeAxis tAxis = null
-                if (gcs.hasTimeAxis()) {
-
-                    if (gcs.hasTimeAxis1D()) {
-                        log.debug("1D time axis found ... ")
-                        CoordinateAxis1DTime time = gcs.getTimeAxis1D()
-                        CalendarDateRange range = time.getCalendarDateRange()
-
-                        // Get the basics
-                        String start = range.getStart().toString()
-                        String end = range.getEnd().toString()
-                        long size = time.getSize()
-                        tIndex = size / 2
-                        if (tIndex <= 0) tIndex = 1
-                        String timeunits = time.getUnitsString()
-                        Attribute cal = time.findAttribute("calendar")
-                        String calendar = "standard"
-                        if (cal != null) {
-                            calendar = cal.getStringValue(0)
-                        }
-                        String shortname = time.getShortName()
-                        String timetitle = time.getFullName()
-
-                        // Figure out the delta (as a period string) and where the time is marked (beginning, middle, or end of the period
-                        double[] tb1 = time.getBound1()
-                        double[] tb2 = time.getBound2()
-                        double[] times = time.getCoordValues()
-
-                        CalendarDateUnit cdu = CalendarDateUnit.of(calendar, timeunits)
-                        Period p0 = null
-                        String position0 = getPosition(times[0], tb1[0], tb2[0])
-                        boolean regular = true
-                        boolean constant_position = true
-                        regular = time.isRegular()
-                        tAxis = new TimeAxis()
-
-                        TimeUnit tu = time.getTimeResolution()
-                        double du = tu.getValue()
-                        String u = tu.getUnitString()
-
-                        if ( times.length > 1 ) {
-                            if (regular) {
-                                // TODO sec, week, year?
-                                if (u.contains("hour")) {
-                                    for (int d = 0; d < 27; d++) {
-                                        if (du < 23.5 * d && du < 23.5 * d + 1) {
-                                            // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
-                                            p0 = new Period(0, 0, 0, d, 0, 0, 0, 0)
-                                        }
-                                    }
-                                    if (p0 == null) {
-                                        if (du > 28 * 24 && du < 33 * 24) {
-                                            p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0)
-                                        }
-                                    }
-
-                                } else if (u.contains("day")) {
-                                    if (du < 1) {
-                                        int hours = du * 24.0d
-                                        p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0)
-                                    } else {
-                                        p0 = new Period(0, 0, 0, du, 0, 0, 0, 0)
-                                    }
-
-                                }
-                            } else {
-                                p0 = getPeriod(cdu, times[0], times[1])
-                                int hours = p0.getHours()
-                                int days = p0.getDays()
-                                int months = p0.getMonths()
-                                int years = p0.getYears()
-                                if (days >= 28) {
-                                    p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0)
-                                } else if (hours == 0 && days > 0) {
-                                    p0 = new Period(0, 0, 0, days, 0, 0, 0, 0)
-                                } else if (hours > 0) {
-                                    p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0)
-                                }
-                            }
-
-                            Period period = getPeriod(cdu, times[0], times[times.length - 1])
-
-                            log.debug("Setting delta " + pf.print(p0))
-                            if (p0 != null) {
-                                tAxis.setDelta(pf.print(p0))
-                            } else {
-                                tAxis.setDelta("P1D")
-                            }
-                            log.debug("Setting data set period to " + pf.print(period))
-                            if (period != null) {
-                                tAxis.setPeriod(pf.print(period))
-                            }
-
-                        } else if ( times.length ) {
-                            tAxis.setDelta(pf.print(Period.ZERO));
-                            tAxis.setPeriod(pf.print(Period.ZERO))
-                        }
-
-
-                        tAxis.setStart(start)
-                        tAxis.setEnd(end)
-                        if (start.contains("0000") && end.contains("0000")) {
-                            tAxis.setClimatology(true)
-                        } else {
-                            tAxis.setClimatology(false)
-                        }
-                        tAxis.setSize(size)
-                        tAxis.setUnits(units)
-                        tAxis.setCalendar(calendar)
-                        tAxis.setTitle(title)
-                        tAxis.setName(shortname)
-
-                        if (constant_position) {
-                            tAxis.setPosition(position0)
-                        }
-
-
-                    } else {
-                        // TODO 2D Time Axis
-                    }
-                }
-
-                CoordinateAxis xca = gcs.getXHorizAxis()
-                GeoAxisX xAxis = null
-                if (xca instanceof CoordinateAxis1D) {
-                    CoordinateAxis1D x = (CoordinateAxis1D) xca
-                    xAxis = new GeoAxisX()
-                    xAxis.setType("x")
-                    xAxis.setTitle(x.getFullName())
-                    xAxis.setName(x.getShortName())
-                    xAxis.setUnits(x.getUnitsString())
-                    xAxis.setRegular(x.isRegular())
-                    if (x.isRegular()) {
-                        xAxis.setDelta(x.getIncrement())
-                    }
-                    xAxis.setMin(x.getMinValue())
-                    xAxis.setMax(x.getMaxValue())
-                    xAxis.setSize(x.getSize())
-                    xAxis.setDimensions(1)
-
-                } else if (xca instanceof CoordinateAxis2D) {
-                    CoordinateAxis2D x = (CoordinateAxis2D) xca
-                    xAxis = new GeoAxisX()
-                    xAxis.setType("x")
-                    xAxis.setTitle(x.getFullName())
-                    xAxis.setName(x.getShortName())
-                    xAxis.setUnits(x.getUnitsString())
-                    xAxis.setRegular(false)
-                    xAxis.setDimensions(2)
-                    xAxis.setMin(x.getMinValue())
-                    xAxis.setMax(x.getMaxValue())
-                    xAxis.setSize(x.getSize())
-                }
-                GeoAxisY yAxis = null
-                CoordinateAxis yca = gcs.getYHorizAxis()
-                if (yca instanceof CoordinateAxis1D) {
-                    CoordinateAxis1D y = (CoordinateAxis1D) yca
-                    yAxis = new GeoAxisY()
-                    yAxis.setType("y")
-                    yAxis.setTitle(y.getFullName())
-                    yAxis.setName(y.getShortName())
-                    yAxis.setUnits(y.getUnitsString())
-                    yAxis.setRegular(y.isRegular())
-                    if (y.isRegular()) {
-                        yAxis.setDelta(y.getIncrement())
-                    }
-                    yAxis.setMin(y.getMinValue())
-                    yAxis.setMax(y.getMaxValue())
-                    yAxis.setSize(y.getSize())
-                    yAxis.setDimensions(1)
-
-                } else {
-                    CoordinateAxis2D y = (CoordinateAxis2D) yca
-                    yAxis = new GeoAxisY()
-                    yAxis.setType("y")
-                    yAxis.setTitle(y.getFullName())
-                    yAxis.setName(y.getShortName())
-                    yAxis.setUnits(y.getUnitsString())
-                    yAxis.setRegular(false)
-                    yAxis.setMin(y.getMinValue())
-                    yAxis.setMax(y.getMaxValue())
-                    yAxis.setSize(y.getSize())
-                    yAxis.setDimensions(2)
-                }
-                CoordinateAxis1D z = gcs.getVerticalAxis()
-                VerticalAxis zAxis = null
-                if (z != null) {
-                    // Use the first z. It's probably more interesting.
-                    zIndex = 1
-                    zAxis = new VerticalAxis()
-                    zAxis.setSize(z.getSize())
-                    zAxis.setType("z")
-                    zAxis.setTitle(z.getFullName())
-                    zAxis.setName(z.getShortName())
-                    zAxis.setMin(z.getMinValue())
-                    zAxis.setMax(z.getMaxValue())
-                    zAxis.setRegular(z.isRegular())
-                    zAxis.setUnits(z.getUnitsString())
-                    if (zAxis.isRegular()) {
-                        zAxis.setDelta(z.getIncrement())
-                    }
-                    double[] v = z.getCoordValues()
-                    List<Zvalue> values = new ArrayList<Zvalue>()
-                    for (int j = 0; j < v.length; j++) {
-                        Zvalue zv = new Zvalue()
-                        zv.setZ(v[j])
-                        values.add(zv)
-                    }
-                    zAxis.setZV(values)
-                    zAxis.setPositive(z.getPositive())
-
-                }
-// The make stats code in-line
-//                def ferret = Ferret.first()
-//                def palette = "blue_darkorange"
-//                if ( vtitle.toLowerCase().contains("temp") ) {
-//                    palette = "blue_darkred"
-//                } else if ( vtitle.toLowerCase().contains("precip") ) {
-//                    palette = "brown_blue"
-//                }
-//
-//                int tsize
-//                if ( tAxis ) {
-//                    tsize = tAxis.size
-//                } else {
-//                    tsize = 1
-//                }
-//                int min = Math.min(12, tsize)
-//                // DEBUG
-//                //TODO remove this debug
-//                min = 1
-//                Stats stats = null
-//                for ( int tcounter = 0 tcounter < min tcounter++ ) {
-//                    StringBuilder jnl = new StringBuilder()
-//                    StringBuilder timeRange = new StringBuilder()
-//                    StringBuilder levelRange = new StringBuilder()
-//
-//                    def xcount = xAxis.size
-//                    def ycount = yAxis.size
-//
-//                    def xstride = 1
-//                    if ( xcount >= 1000 && xcount < 3000 ) {
-//                        xstride = 5
-//                    } else if ( xcount >=3000 && xcount < 5000 ) {
-//                        xstride = 10
-//                    } else if ( xcount >= 5000 ) {
-//                        xstride = 50
-//                    }
-//
-//                    def ystride = 1
-//                    if ( ycount >= 1000 && ycount < 3000 ) {
-//                        ystride = 5
-//                    } else if ( ycount >=3000 && ycount < 5000 ) {
-//                        ystride = 10
-//                    } else if ( ycount >= 5000){
-//                        ystride = 50
-//                    }
-//                    if ( tAxis ) {
-//                        int tindex = tcounter + 1
-//
-//                        timeRange.append("l=\""+tindex+"\"")
-//                    }
-//
-//                    if ( zAxis ) {
-//                        // Always do the first level.
-//                        levelRange.append("/k=1")
-//                    }
-//
-//                    def relativeStatsBase = dataset.hash + File.separator + vname
-//                    File base = new File(ferret.tempDir + File.separator + relativeStatsBase)
-//                    if ( !base.exists() ) {
-//                        base.mkdirs()
-//                    }
-//                    def relativeStatsPath = relativeStatsBase + File.separator + "stats.txt"
-//                    def relativeColorBar = relativeStatsBase
-//                    jnl.append("DEFINE SYMBOL DATA = ${url}\n")
-//                    if ( vname.contains("-") ) {
-//                        jnl.append("DEFINE SYMBOL PARAMETER = '$vname'\n")
-//                    } else {
-//                        jnl.append("DEFINE SYMBOL PARAMETER = $vname\n")
-//                    }
-//                    if ( timeRange.length() > 0 || levelRange.length() > 0 ) {
-//                        jnl.append("DEFINE SYMBOL RANGES=${timeRange.toString()}${levelRange.toString()}\n")
-//                    }
-//                    jnl.append("DEFINE SYMBOL OUTPUT = ${relativeStatsPath}\n")
-//                    jnl.append("LET XSTRIDE = ${xstride}\n")
-//                    jnl.append("LET YSTRIDE = ${ystride}\n")
-//
-//                    jnl.append("go stats\n")
-//
-//                    File statsFile = new File(ferret.tempDir + File.separator + relativeStatsPath)
-//
-//
-//
-//                    def ferretResult = ferretService.runScript(jnl.toString())
-//                    if ( ferretResult["error"] == false ) {
-//                        Stats statsTemp = new Stats(ferret.tempDir + File.separator + relativeStatsPath)
-//                        statsTemp.setPalette(palette)
-//                        if ( !stats ) {
-//                            stats = statsTemp
-//                        } else {
-//                            if ( statsTemp.histogram_lev_min < stats.histogram_lev_min) {
-//                                stats.histogram_lev_min = statsTemp.histogram_lev_min
-//                            }
-//                            if ( statsTemp.histogram_lev_max > stats.histogram_lev_max ) {
-//                                stats.histogram_lev_max = statsTemp.histogram_lev_max
-//                            }
-//                        }
-//
-//                    } else {
-//                        log.error(ferretResult["message"])
-//                        return null
-//                    }
-//                    statsFile.delete()
-//
-//                }
-//
-//
-//                stats.computeDel()
-// End of make stats in-line
-
-                String intervals = ""
-                if (xAxis) {
-                    intervals = intervals + "x"
-                }
-                if (yAxis) {
-                    intervals = intervals + "y"
-                }
-                if (zAxis) {
-                    intervals = intervals + "z"
-                }
-                if (tAxis) {
-                    intervals = intervals + "t"
-                }
-
-                Variable variable = new Variable()
-                variable.setUrl(url)
-                variable.setName(vname)
-                variable.setHash(vhash)
-                variable.setTitle(vtitle)
-                variable.setGeometry(GeometryType.GRID)
-                variable.setIntervals(intervals)
-                variable.setUnits(units)
-
-                variable.setGeoAxisX(xAxis)
-                xAxis.setVariable(variable)
-
-                variable.setGeoAxisY(yAxis)
-                yAxis.setVariable(variable)
-
-                if (zAxis) {
-                    variable.setVerticalAxis(zAxis)
-                    zAxis.setVariable(variable)
-                }
-                if (tAxis) {
-                    variable.setTimeAxis(tAxis)
-                    tAxis.setVariable(variable)
-                }
-
-//                if ( variable.validate() ) {
-//                    variable.save(failOnError: true)
-//                } else {
-//                    variable.errors.allErrors.each {
-//                        print it
-//                    }
-//                }
-
-                log.debug("Adding " + variable.getTitle() + " to data set")
-                dataset.addToVariables(variable)
-                dataset.variableChildren = true;
-                dataset.geometry = GeometryType.GRID
-
-                int done = i + 1;
-                String m2 = done + "variables out of a total of " + grids.size() + " have been processed."
-                ingestStatusService.saveProgress(parentHash, m2)
-
-            }
-
-            if ( !dataset.validate() ) {
-                dataset.errors.each {
-                    log.debug(it.toString())
-                }
-            }
-
-        } else {
-            // Is it a THREDDS catalog?
-        }
-        dataset
-        // Is it an ESGF catalog or data set?
-    }
     // Sometimes hierarchies from THREDDS servers end up with several levels
     // of children with only one child at each level. This makes for a bunch
     // of miserable clicking.
@@ -2245,11 +2261,18 @@ class IngestService {
             isEmpty("variables")
         }
 
+        log.debug("STARTED adding variables to all THREDDS catalogs with OPeNDAP endpoints.")
+
         for (int i = 0; i < needIngest.size(); i++) {
             Dataset d = needIngest.get(i)
             log.debug("Adding variables to " + d.getUrl() + " which has variableChildren = " + d.variableChildren)
-            addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
+            Dataset.withNewTransaction {
+                addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
+            }
         }
+
+        log.debug("FINISHED adding variables to all THREDDS catalogs with OPeNDAP endpoints.")
+
     }
     private static Period getPeriod(CalendarDateUnit cdu, double t0, double t1) {
         CalendarDate cdt0 = cdu.makeCalendarDate(t0)

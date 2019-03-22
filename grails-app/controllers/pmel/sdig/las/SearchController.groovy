@@ -15,6 +15,7 @@ class SearchController {
         if ( results.total == 0 ) {
             dataset.setMessage("No results found matching search.")
         }
+
         results.getSearchResults().each {Dataset result ->
             dataset.addToDatasets(result)
         }

@@ -2,7 +2,6 @@ package pmel.sdig.las
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.visualization.datasource.base.DataSourceException
 import com.google.visualization.datasource.base.ReasonType
@@ -27,6 +26,134 @@ class ProductController {
     def ProductService productService
     LASProxy lasProxy = new LASProxy()
     JsonParser jsonParser = new JsonParser()
+    ResultsService resultsService
+    DateTimeService dateTimeService
+    def thumbnail(String dhash, String vhash) {
+        Dataset dataset = Dataset.findByHash(dhash)
+        Variable variable = dataset.variables.find{it.hash == vhash}
+        if ( variable ) {
+
+
+            def webAppDirectory = request.getSession().getServletContext().getRealPath("")
+            // Until such time as "-" file names are allowed, deal with it with a link named without the "-"
+            // i.e. webapp instead of web-app
+            webAppDirectory = webAppDirectory.replaceAll("-", "");
+
+            if (!webAppDirectory.endsWith(File.separator)) {
+                webAppDirectory = webAppDirectory + File.separator;
+            }
+
+
+            String variable_url = variable.getUrl()
+            String variable_name = variable.getName()
+            String variable_title = variable.getTitle()
+
+            def x = variable.getGeoAxisX()
+            def y = variable.getGeoAxisY()
+            def z = variable.getVerticalAxis()
+            def t = variable.getTimeAxis()
+            def hash = "${dhash}-${vhash}"
+
+            StringBuffer jnl = new StringBuffer()
+
+            jnl.append("DEFINE SYMBOL data_0_dataset_name = ${dataset.title}\n")
+            jnl.append("DEFINE SYMBOL data_0_dataset_url = ${variable_url}\n")
+            jnl.append("DEFINE SYMBOL data_0_grid_type = regular\n")
+            jnl.append("DEFINE SYMBOL data_0_name = ${variable_name}\n")
+            jnl.append("DEFINE SYMBOL data_0_ID = ${variable_name}\n")
+            jnl.append("DEFINE SYMBOL data_0_region = region_0\n")
+            jnl.append("DEFINE SYMBOL data_0_title = ${variable_title}\n")
+            if (variable.units) jnl.append("DEFINE SYMBOL data_0_units = ${variable.units}\n")
+            jnl.append("DEFINE SYMBOL data_0_url = ${variable_url}\n")
+            jnl.append("DEFINE SYMBOL data_0_var = ${variable_name}\n")
+
+
+            if (t) {
+                String fd = dateTimeService.ferretFromIso(t.getEnd(), t.getCalendar())
+                jnl.append("DEFINE SYMBOL region_0_t_hi = ${fd}\n")
+                jnl.append("DEFINE SYMBOL region_0_t_lo = ${fd}\n")
+            }
+            if (x) {
+                jnl.append("DEFINE SYMBOL region_0_x_hi = ${x.getMax()}\n")
+                jnl.append("DEFINE SYMBOL region_0_x_lo = ${x.getMin()}\n")
+            }
+            if (y) {
+                jnl.append("DEFINE SYMBOL region_0_y_hi = ${y.getMax()}\n")
+                jnl.append("DEFINE SYMBOL region_0_y_lo = ${y.getMin()}\n")
+            }
+            if (z) {
+                jnl.append("DEFINE SYMBOL region_0_z_lo = ${z.getMin()}\n")
+                jnl.append("DEFINE SYMBOL region_0_z_hi = ${z.getMin()}\n")
+            }
+
+
+            jnl.append("DEFINE SYMBOL data_count = 1\n")
+            jnl.append("DEFINE SYMBOL ferret_annotations = file\n")
+            jnl.append("DEFINE SYMBOL ferret_service_action = Plot_2D_XY\n")
+            jnl.append("DEFINE SYMBOL ferret_size = .456\n")
+            jnl.append("DEFINE SYMBOL ferret_view = xy\n")
+            jnl.append("DEFINE SYMBOL las_debug = false\n")
+            jnl.append("DEFINE SYMBOL las_output_type = xml\n")
+            jnl.append("DEFINE SYMBOL operation_ID = Plot_2D_XY\n")
+            jnl.append("DEFINE SYMBOL operation_key = ${dhash}/${vhash}\n")
+            jnl.append("DEFINE SYMBOL operation_name = Plot_2D_XY\n")
+            jnl.append("DEFINE SYMBOL operation_service = ferret\n")
+            jnl.append("DEFINE SYMBOL operation_service_action = Plot_2D_XY\n")
+
+            // TODO this has to come from the config
+            jnl.append("DEFINE SYMBOL product_server_ps_timeout = 3600\n")
+            jnl.append("DEFINE SYMBOL product_server_ui_timeout = 10\n")
+            jnl.append("DEFINE SYMBOL product_server_use_cache = true\n")
+            //ha ha jnl.append("DEFINE SYMBOL product_server_version = 7.3")
+            //TODO one for each variable
+            // TODO check the value for null before applying
+
+            ResultSet resultSet = resultsService.getThumbnailResults()
+            def cache = true
+            resultSet.results.each { Result result ->
+                // All we care about is the plot
+                result.url = "output${File.separator}${hash}_${result.name}${result.suffix}"
+                result.filename = "${webAppDirectory}output${File.separator}${hash}_${result.name}${result.suffix}"
+                // The plot file is the only cache result we care about
+                if ( result.name == "plot_image") {
+                    File file = new File(result.filename)
+                    cache = cache && file.exists()
+                    if ( cache ) {
+                        render file: result.getFilename(), contentType: 'image/png'
+                    }
+                }
+            }
+
+            for (int i = 0; i < resultSet.getResults().size(); i++) {
+
+                def result = resultSet.getResults().get(i)
+
+                jnl.append("DEFINE SYMBOL result_${result.name}_ID = ${result.name}\n")
+                jnl.append("DEFINE SYMBOL result_${result.name}_filename = ${webAppDirectory}output${File.separator}${hash}_${result.name}${result.suffix}\n")
+                jnl.append("DEFINE SYMBOL result_${result.name}_type = ${result.type}\n")
+
+            }
+            jnl.append("go Plot_2D_XY\n")
+
+            def ferretResult = ferretService.runScript(jnl)
+            def error = ferretResult["error"];
+            // TODO error image???
+            if (error) {
+                log.error(ferretResult["message"]);
+                render file: "/tmp/error.png", contentType: 'image/png'
+            } else {
+                ResultSet allResults = new ResultSet()
+                addResults(resultSet, allResults, "Plot_2D_XY")
+                Result r = allResults.results.find{it.name=="plot_image"}
+                render file: r.getFilename(), contentType: 'image/png'
+            }
+
+        } else {
+            render file: "/tmp/error.png", contentType: 'image/png'
+        }
+
+
+    }
     def make() {
 
         Ferret ferret = Ferret.first();
@@ -298,7 +425,7 @@ class ProductController {
 
                     List<String> datasetHashes = lasRequest.getDatasetHashes()
                     List<String> variableHashes = lasRequest.getVariableHashes()
-                    List<Constraint> constraints = lasRequest.getConstraints();
+                    List<DataConstraint> constraints = lasRequest.getConstraints();
                     // There is one data set has entry and one variable hash entry for each variable in the request
                     // even if the variables are from the same data set.
                     for (int h = 0; h < datasetHashes.size(); h++) {
@@ -371,7 +498,7 @@ class ProductController {
 
                         if ( constraints ) {
                             for (int cidx = 0; cidx < constraints.size(); cidx++) {
-                                Constraint c = constraints.get(cidx);
+                                DataConstraint c = constraints.get(cidx);
                                 jnl.append("DEFINE SYMBOL constraint_${cidx}_lhs = ${c.lhs}\n")
                                 jnl.append("DEFINE SYMBOL constraint_${cidx}_type = ${c.type}\n")
                                 jnl.append("DEFINE SYMBOL constraint_${cidx}_op = ${c.op}\n")
@@ -693,5 +820,6 @@ class ProductController {
             throw new DataSourceException(ReasonType.INVALID_REQUEST, "url parameter not provided");
         }
     }
+
 
 }

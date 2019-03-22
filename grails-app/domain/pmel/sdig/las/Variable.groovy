@@ -19,6 +19,7 @@ class Variable {
     static mapping = {
         sort "title"
         url type: "text"
+        title type: "text"
     }
 
 

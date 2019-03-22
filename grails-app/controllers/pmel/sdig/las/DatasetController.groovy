@@ -62,14 +62,30 @@ class DatasetController {
         withFormat {
             html { respond dataset }
             json {
-                if ( dataset && dataset.variableChildren ) {
-                    JSON.use("deep") {
-                        render dataset as JSON
-                    }
-                } else if ( dataset ) {
-                    respond dataset
-                }
+                log.debug("Starting response for dataset " + dataset.id)
+                respond dataset // uses the custom templates in views/dataset
             }
         }
+    }
+    def browse() {
+        def dataset
+        def offset = params.offset
+        // If no offset is specified send only the first
+        if ( !offset ) {
+            offset = 0
+            def datasets = Dataset.findAllByVariableChildren(true, [offset: offset, max: 1])
+            dataset = datasets.get(0)
+
+
+        } else {
+            dataset = new Dataset([title: "Container for LAS Browse", variableChildren: false])
+            // Send back the next 10
+            def datasets = Dataset.findAllByVariableChildren(true, [offset: offset, max: 10])
+            datasets.each{
+                dataset.addToDatasets(it)
+            }
+        }
+        log.debug("Starting response for dataset " + dataset.id)
+        respond (dataset, [formats: ['json']]) // uses the custom templates in views/dataset
     }
 }

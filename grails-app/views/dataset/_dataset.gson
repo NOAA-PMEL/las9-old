@@ -6,17 +6,16 @@ model {
 }
 
 if (dataset.variableChildren) {
-    json g.render(dataset, [excludes: ["parent", "datasets", "variables", "vectors"]]) {
+    json g.render(dataset, [excludes: ["parent", "datasets", "variables", "vectors", "datasetProperites"]]) {
         datasets g.render(dataset.datasets, [excludes: ["variables", "vectors", "datasets", "parent"]])
+        datasetProperties g.render(dataset.datasetProperties)
         variables g.render(template: "variables", model: [variables: dataset.variables], excludes: ["dataset"])
         vectors g.render(dataset.vectors, [excludes: ["dataset"]])
-        renderedWith "variableChildren is true"
     }
 } else {
     json g.render(dataset, [excludes: ["datasets", "variables", "vectors", "parent"]]) {
         datasets g.render(dataset.datasets, [excludes: ["variables", "vectors", "datasets", "parent"]])
         variables g.render(dataset.variables, [excludes: ["dataset", "geoAxisX", "geoAxisY", "timeAxis", "verticalAxis"]])
         vectors g.render(dataset.vectors, [excludes: ["dataset"]])
-        renderedWith "_dataset NOT variableChildren"
     }
 }

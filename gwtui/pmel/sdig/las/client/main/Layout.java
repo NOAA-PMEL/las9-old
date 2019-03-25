@@ -1076,12 +1076,8 @@ public class Layout extends Composite {
 
     @UiHandler("correlationLink")
     public void onCorrelation(ClickEvent event) {
-        correlationWindow.setLeft(30);
-        correlationWindow.setTop(30);
-        int w = Window.getClientWidth() - 60;
-        int h = Window.getClientHeight() - 60;
-        correlationWindow.setWidth(w+"px");
-        correlationWindow.setHeight(h+"px");
+        correlationWindow.setLeft(0);
+        correlationWindow.setTop(0);
         xVariableListBox.clear();
         yVariableListBox.clear();
         cVariableListBox.clear();
@@ -1139,6 +1135,8 @@ public class Layout extends Composite {
         downloadLink.setDisplay(Display.NONE);
         downloadError.setDisplay(Display.NONE);
         downloadLink.setHref("");
+        downloadWindow.setLeft(0.0);
+        downloadWindow.setTop(0.0);
         downloadWindow.open();
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem d = (DataItem) datasets.getWidget(i);
@@ -1172,13 +1170,9 @@ public class Layout extends Composite {
     @UiHandler("animate")
     public void onAnimate(ClickEvent event) {
 
-        animateWindow.setLayoutPosition(Style.Position.ABSOLUTE);
-        animateWindow.setLeft(60);
-        animateWindow.setTop(60);
-        int w = Window.getClientWidth() - 120;
-        int h = Window.getClientHeight() - 120;
-        animateWindow.setWidth(w+"px");
-        animateWindow.setHeight(h+"px");
+//        animateWindow.setLayoutPosition(Style.Position.ABSOLUTE);
+        animateWindow.setLeft(0);
+        animateWindow.setTop(0);
         animationControls.setDisplay(Display.NONE);
         submitPanel.setDisplay(Display.BLOCK);
         panel5.setImage("images/animation_arrow.png");
@@ -1189,12 +1183,8 @@ public class Layout extends Composite {
     @UiHandler("showValuesButton")
     public void onShowValues(ClickEvent event) {
         showValuesWindow.setLayoutPosition(Style.Position.ABSOLUTE);
-        showValuesWindow.setLeft(60);
-        showValuesWindow.setTop(60);
-        int w = Window.getClientWidth() - 120;
-        int h = Window.getClientHeight() - 120;
-        showValuesWindow.setWidth(w+"px");
-        showValuesWindow.setHeight(h+"px");
+        showValuesWindow.setLeft(0);
+        showValuesWindow.setTop(0);
         showValuesWindow.open();
         eventBus.fireEventFromSource(new ShowValues(), showValuesButton);
     }

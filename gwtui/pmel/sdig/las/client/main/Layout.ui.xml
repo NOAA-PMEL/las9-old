@@ -256,7 +256,7 @@
                 </m:MaterialColumn>
             </m:MaterialRow>
         </m:MaterialContainer>
-        <ma:window.MaterialWindow ui:field="animateWindow" title="Animate">
+        <ma:window.MaterialWindow ui:field="animateWindow" title="Animate" height="100%" width="100%" maximize="false">
             <m:MaterialRow>
                 <m:MaterialProgress ui:field="animateProgress" type="INDETERMINATE" display="NONE"></m:MaterialProgress>
             </m:MaterialRow>
@@ -294,9 +294,9 @@
                 </m:MaterialColumn>
             </m:MaterialRow>
         </ma:window.MaterialWindow>
-        <ma:window.MaterialWindow ui:field="showValuesWindow" title="Values">
+        <ma:window.MaterialWindow ui:field="showValuesWindow" title="Values" maximize="false" height="100%" width="100%">
         </ma:window.MaterialWindow>
-        <ma:window.MaterialWindow ui:field="downloadWindow" title="Data Download">
+        <ma:window.MaterialWindow ui:field="downloadWindow" title="Data Download" maximize="false" height="100%" width="100%">
             <m:MaterialPanel paddingTop="16">
                 <m:MaterialRow>
                     <m:MaterialColumn grid="s4">
@@ -337,7 +337,7 @@
                 </m:MaterialRow>
             </m:MaterialPanel>
         </ma:window.MaterialWindow>
-        <ma:window.MaterialWindow ui:field="correlationWindow" title="Property-Property Plots">
+        <ma:window.MaterialWindow ui:field="correlationWindow" title="Property-Property Plots" maximize="false" height="100%" width="100%">
             <m:MaterialRow>
                 <m:MaterialProgress ui:field="correlationProgress" type="INDETERMINATE"
                                     display="NONE"></m:MaterialProgress>

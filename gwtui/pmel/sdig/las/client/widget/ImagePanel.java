@@ -159,4 +159,22 @@ public class ImagePanel extends Composite {
         return image;
     }
 
+    /**
+     * Put a label object in the breadcrumb header (removing any existing one). Used in the animator.
+     */
+    public void setLabel(String text) {
+        List<Widget> bclist = breadcrumbs.getChildrenList();
+        MaterialLabel remove = null;
+        for (int i = 0; i < bclist.size(); i++) {
+            Widget w = bclist.get(i);
+            if ( w instanceof MaterialLabel) {
+                remove = (MaterialLabel) w;
+            }
+        }
+        if ( remove != null ) {
+            breadcrumbs.remove(remove);
+        }
+        MaterialLabel l = new MaterialLabel(text);
+        breadcrumbs.add(l);
+    }
 }

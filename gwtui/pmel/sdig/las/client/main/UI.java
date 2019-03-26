@@ -416,6 +416,8 @@ public class UI implements EntryPoint {
 
                     layout.animateSubmit.setText("Submit");
                     layout.panel5.setImage("images/animation_arrow.png");
+                    String l = "Animating " + dataset.getTitle() + " " + variables.get(0).getTitle();
+                    layout.panel5.setLabel(l);
                 }
             }
         });

@@ -69,6 +69,9 @@ public class OutputPanel extends AbsolutePanel {
     int y_offset_from_top;
     double y_per_pixel;
     int y_plot_size;
+    String time_origin;
+    String time_units;
+    String calendar;
 
     double dataMin;
     double dataMax;
@@ -263,6 +266,10 @@ public class OutputPanel extends AbsolutePanel {
 
         levels = mapScale.getLevels_string();
 
+        time_origin = mapScale.getTime_origin();
+        time_units = mapScale.getTime_units();
+        calendar = mapScale.getCalendar();
+
     }
 
     MouseMoveHandler mouseMoveHandler = new MouseMoveHandler() {
@@ -373,13 +380,13 @@ public class OutputPanel extends AbsolutePanel {
             if ( axisVertical.equals("t") ) {
                 for (Iterator<UI.Mouse> mouseIt = mouseMoves.iterator(); mouseIt.hasNext();) {
                     UI.Mouse mouse = mouseIt.next();
-                    // TODO mouse.updateTime(miny, maxy, time_origin, time_units, calendar);
+                    mouse.updateTime(miny, maxy, time_origin, time_units, calendar);
                 }
             }
             if ( axisHorizontal.equals("t") ) {
                 for (Iterator<UI.Mouse> mouseIt = mouseMoves.iterator(); mouseIt.hasNext();) {
                     UI.Mouse mouse = mouseIt.next();
-                    // TODO mouse.updateTime(minx, maxx, time_origin, time_units, calendar);
+                    mouse.updateTime(minx, maxx, time_origin, time_units, calendar);
                 }
             }
 

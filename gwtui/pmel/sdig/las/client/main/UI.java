@@ -1594,7 +1594,10 @@ public class UI implements EntryPoint {
                     }
                 }
 
-                if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_FINISHED)) {
+                if ( dataset.getStatus() == null ) {
+                    Window.alert("Data set ingested with known status. May not display correctly.");
+                }
+                if (dataset.hasVariableChildren() && dataset.getStatus() != null && dataset.getStatus().equals(Dataset.INGEST_FINISHED)) {
                     if (layout.loadDialog.isOpen())
                         layout.loadDialog.close();
                     configService.getConfig(dataset.getId(), configCallback);

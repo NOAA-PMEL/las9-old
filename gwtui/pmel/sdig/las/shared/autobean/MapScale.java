@@ -29,6 +29,52 @@ public class MapScale {
     String yyyStride;
     String levels_string;
 
+    String time_min;
+    String time_max;
+    String time_units;
+    String time_origin;
+    String calendar;
+
+    public String getTime_min() {
+        return time_min;
+    }
+
+    public void setTime_min(String time_min) {
+        this.time_min = time_min;
+    }
+
+    public String getTime_max() {
+        return time_max;
+    }
+
+    public void setTime_max(String time_max) {
+        this.time_max = time_max;
+    }
+
+    public String getTime_units() {
+        return time_units;
+    }
+
+    public void setTime_units(String time_units) {
+        this.time_units = time_units;
+    }
+
+    public String getTime_origin() {
+        return time_origin;
+    }
+
+    public void setTime_origin(String time_origin) {
+        this.time_origin = time_origin;
+    }
+
+    public String getCalendar() {
+        return calendar;
+    }
+
+    public void setCalendar(String calendar) {
+        this.calendar = calendar;
+    }
+
     public double getXxxPixelsPerInch() {
         return xxxPixelsPerInch;
     }

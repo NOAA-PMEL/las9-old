@@ -514,10 +514,10 @@ class IngestService {
 // End of make stats in-line
 
                 String intervals = ""
-                if (xAxis) {
+                if (xAxis && xAxis.size > 1) {
                     intervals = intervals + "x"
                 }
-                if (yAxis) {
+                if (yAxis && yAxis.size > 1) {
                     intervals = intervals + "y"
                 }
                 if (zAxis) {

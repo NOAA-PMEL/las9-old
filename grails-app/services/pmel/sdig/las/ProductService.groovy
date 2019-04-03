@@ -357,21 +357,21 @@ class ProductService {
         // The autobean mechanism on the client requires an ID.
         mapScaleInstance.id = 99l;
 
-//        if (time_min != null) {
-//            mapScaleInstance.setTime_min("time_min", time_min);
-//        }
-//        if (time_max != null) {
-//            mapScaleInstance.addContent(makeElement("time_max", time_max));
-//        }
-//        if (time_units != null) {
-//            mapScaleInstance.addContent(makeElement("time_step_units", time_units));
-//        }
-//        if (time_origin != null) {
-//            mapScaleInstance.addContent(makeElement("time_origin", time_origin));
-//        }
-//        if ( calendar != null ) {
-//            mapScaleInstance.addContent(makeElement("calendar", calendar));
-//        }
+        if (time_min != null) {
+            mapScaleInstance.setTime_min(time_min);
+        }
+        if (time_max != null) {
+            mapScaleInstance.setTime_max(time_max);
+        }
+        if (time_units != null) {
+            mapScaleInstance.setTime_units(time_units);
+        }
+        if (time_origin != null) {
+            mapScaleInstance.setTime_origin(time_origin);
+        }
+        if ( calendar != null ) {
+            mapScaleInstance.setCalendar(calendar);
+        }
 
         mapScaleInstance
 

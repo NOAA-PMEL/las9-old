@@ -27,6 +27,13 @@ class MapScale {
     String yyyStride
     String levels_string
 
+    String time_min
+    String time_max
+    String time_units
+    String time_origin
+    String calendar
+
+
 
     static constraints = {
     }

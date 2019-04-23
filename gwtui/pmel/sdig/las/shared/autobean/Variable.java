@@ -21,6 +21,7 @@ public class Variable implements Comparable {
 	VerticalAxis verticalAxis;
 	Stats stats;
 	Set<VariableProperty> variableProperties;
+	String thumbnail;
 
 	public long getId() {
 		return id;
@@ -145,6 +146,15 @@ public class Variable implements Comparable {
 	public String getUnits() {
 		return this.units;
 	}
+
+	public String getThumbnail() {
+		return thumbnail;
+	}
+
+	public void setThumbnail(String thumbnail) {
+		this.thumbnail = thumbnail;
+	}
+
 	public String getProperty(String type, String name) {
 	    if ( variableProperties != null ) {
             for(Iterator vit = variableProperties.iterator(); vit.hasNext(); ) {
@@ -156,6 +166,7 @@ public class Variable implements Comparable {
         }
         return null;
     }
+
 	@Override
 	public int compareTo(Object o) {
 		if ( o instanceof Variable ) {

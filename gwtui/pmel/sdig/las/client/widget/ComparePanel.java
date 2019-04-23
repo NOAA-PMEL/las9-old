@@ -5,8 +5,11 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
+import com.google.gwt.event.logical.shared.OpenEvent;
+import com.google.gwt.event.logical.shared.OpenHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
@@ -23,6 +26,7 @@ import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.IconPosition;
 import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.constants.ProgressType;
+import gwt.material.design.client.events.SearchFinishEvent;
 import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
@@ -32,7 +36,10 @@ import gwt.material.design.client.ui.MaterialCollection;
 import gwt.material.design.client.ui.MaterialColumn;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
+import gwt.material.design.client.ui.MaterialLink;
+import gwt.material.design.client.ui.MaterialNavBar;
 import gwt.material.design.client.ui.MaterialPanel;
+import gwt.material.design.client.ui.MaterialSearch;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
 import gwt.material.design.client.ui.html.Div;
@@ -42,6 +49,7 @@ import pmel.sdig.las.client.event.AutoColors;
 import pmel.sdig.las.client.event.NavSelect;
 import pmel.sdig.las.client.event.PanelControlOpen;
 import pmel.sdig.las.client.event.PlotOptionChange;
+import pmel.sdig.las.client.event.Search;
 import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
@@ -100,6 +108,15 @@ public class ComparePanel extends Composite {
     @UiField
     MaterialCheckBox useAutoColors;
 
+    @UiField
+    MaterialLink btnSearch;
+    @UiField
+    MaterialSearch txtSearch;
+    @UiField
+    MaterialNavBar navBar;
+    @UiField
+    MaterialNavBar navBarSearch;
+
 
     Dataset dataset;
     Variable variable; // ?? do we need the list?
@@ -150,6 +167,42 @@ public class ComparePanel extends Composite {
 
     public ComparePanel() {
         initWidget(ourUiBinder.createAndBindUi(this));
+
+        txtSearch.addOpenHandler(new OpenHandler<String>() {
+            @Override
+            public void onOpen(OpenEvent<String> openEvent) {
+
+                navBar.setVisible(false);
+                navBarSearch.setVisible(true);
+
+            }
+        });
+        txtSearch.getLabel().addClickHandler(event -> {
+            String search = txtSearch.getText();
+            startSearch(search);
+        });
+
+        txtSearch.addKeyPressHandler(event -> {
+            if ( event.getCharCode() == KeyCodes.KEY_ENTER ) {
+                String search = txtSearch.getText();
+                startSearch(search);
+            }
+        });
+        txtSearch.addCloseHandler(new CloseHandler<String>() {
+            @Override
+            public void onClose(CloseEvent<String> closeEvent) {
+                navBar.setVisible(true);
+                navBarSearch.setVisible(false);
+            }
+        });
+
+        txtSearch.addSearchFinishHandler(new SearchFinishEvent.SearchFinishHandler() {
+            @Override
+            public void onSearchFinish(SearchFinishEvent searchFinishEvent) {
+                navBar.setVisible(true);
+                navBarSearch.setVisible(false);
+            }
+        });
 
         // Initialize the local axes widgets for to set axes orthogonal to the view...
         Element wmsserver = DOM.getElementById("wms-server");
@@ -596,5 +649,14 @@ public class ComparePanel extends Composite {
     @UiHandler("useAutoColors")
     void onUseAutoColors(ClickEvent event) {
         eventBus.fireEventFromSource(new AutoColors(useAutoColors.getValue()), useAutoColors);
+    }
+    @UiHandler("btnSearch")
+    void onSearch(ClickEvent click) {
+        txtSearch.open();
+    }
+    private void startSearch(String search) {
+        navBar.setVisible(true);
+        navBarSearch.setVisible(false);
+        eventBus.fireEventFromSource(new Search(search), ComparePanel.this);
     }
 }

@@ -17,6 +17,7 @@ public class Dataset implements Comparable {
     Set<DatasetProperty> datasetProperties;
     String status;
     boolean variableChildren;
+    Dataset parent;
 
     String message;
 
@@ -109,6 +110,14 @@ public class Dataset implements Comparable {
 
     public void setVectors(List<Vector> vectors) {
         this.vectors = vectors;
+    }
+
+    public Dataset getParent() {
+        return parent;
+    }
+
+    public void setParent(Dataset parent) {
+        this.parent = parent;
     }
 
     public String getProperty(String type, String name) {

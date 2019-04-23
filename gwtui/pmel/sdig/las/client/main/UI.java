@@ -137,6 +137,8 @@ public class UI implements EntryPoint {
 
     int loop = 0;
 
+    boolean toast = false;
+
     NumberFormat dFormat = NumberFormat.getFormat("########.##");
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
@@ -300,20 +302,16 @@ public class UI implements EntryPoint {
         eventBus.addHandler(Search.TYPE, new SearchHandler() {
             @Override
             public void onSearch(Search event) {
+                Object source = event.getSource();
                 String query = event.getQuery();
                 if ( query.isEmpty()) {
                     MaterialToast.fireToast("Please specify at least one search term.");
                 } else {
-                    searchService.getSearchResults(event.getQuery(), datasetCallback);
-                }
-            }
-        });
-        eventBus.addHandler(LoadCancel.TYPE, new LoadCancelHandler() {
-            @Override
-            public void onLoadCancel(LoadCancel event) {
-                timer.cancel();
-                if ( layout.getBreadcrumbCount(1) == 0 ) {
-                    layout.goBack();
+                    if ( source instanceof ComparePanel) {
+                        searchService.getSearchResults(query, layout.panel2.datasetCallback);
+                    } else {
+                        searchService.getSearchResults(query, datasetCallback);
+                    }
                 }
             }
         });
@@ -541,9 +539,12 @@ public class UI implements EntryPoint {
                 int index = event.getTargetPanel();
                 Object source = event.getSource();
                 if ( source instanceof VariableInfo ) {
+                    VariableInfo vi = (VariableInfo) source;
+                    dataset = vi.getDataset();
                     layout.clearDatasets();
                     layout.showProgress();
                     Variable infoVariable = (Variable) selected;
+                    // TODO, we're only getting the variable and we need the data set. Should be able to have both in this instance.
                     final Breadcrumb bc = new Breadcrumb(dataset, layout.getBreadcrumbCount(index) > 0);
                     bc.addClickHandler(new ClickHandler() {
                         @Override
@@ -600,6 +601,8 @@ public class UI implements EntryPoint {
                 if ( index == 1 ) {
 
                     layout.infoPanel.setDisplay(Display.NONE);
+                    layout.infoHeader.setDisplay(Display.NONE);
+                    layout.summary.setDisplay(Display.NONE);
                     layout.panel1.setVisible(true);
                     layout.panel1.clearAnnotations();
                     layout.panel1.clearPlot();
@@ -607,7 +610,8 @@ public class UI implements EntryPoint {
                         Dataset dataset = (Dataset) selected;
                         layout.clearDatasets();
                         layout.showDataProgress();
-                        MaterialToast.fireToast("Getting information for " + dataset.getTitle());
+                        if ( toast )
+                            MaterialToast.fireToast("Getting information for " + dataset.getTitle());
                         datasetService.getDataset(dataset.getId() + ".json", datasetCallback);
                     } else if (selected instanceof Variable) {
 
@@ -648,8 +652,10 @@ public class UI implements EntryPoint {
         eventBus.addHandler(Browse.TYPE, new BrowseHandler() {
             @Override
             public void onBrowse(Browse event) {
-                offset = event.getOffset();
+                int change = event.getOffset();
                 layout.showProgress();
+                offset = offset + change;
+                if ( offset < 0 ) offset = 0;
                 infoService.getInfo(String.valueOf(offset), browseCallback);
             }
         });
@@ -830,9 +836,13 @@ public class UI implements EntryPoint {
             public void onInfo(Info event) {
                 layout.showProgress();
                 layout.infoPanel.setDisplay(Display.NONE);
+                layout.infoHeader.setDisplay(Display.NONE);
+                layout.summary.setDisplay(Display.NONE);
                 long id = event.getId();
                 layout.setInfoSelect(id);
                 String rid = id + ".json";
+                browse = false;
+                info = true;
                 datasetService.getDataset(rid, infoCallback);
             }
         });
@@ -912,7 +922,8 @@ public class UI implements EntryPoint {
         // Call for the site now
 
         if ( initialHistory == null || initialHistory.isEmpty() ) {
-            MaterialToast.fireToast("Getting initial site information.");
+            if ( toast )
+                MaterialToast.fireToast("Getting initial site information.");
             siteService.getSite("1.json", siteCallback);
             layout.showDataProgress();
         } else {
@@ -1016,7 +1027,7 @@ public class UI implements EntryPoint {
     }
     public interface InfoService extends RestService {
         @GET
-        public void getInfo(@QueryParam("offset") String offset, MethodCallback<Dataset> datasetCallback);
+        public void getInfo(@QueryParam("offset") String offset, MethodCallback<List<Dataset>> browseCallback);
     }
     public interface SiteService extends RestService {
         @GET
@@ -1163,6 +1174,8 @@ public class UI implements EntryPoint {
 
             if ( tp < 5 ) {
                 layout.infoPanel.setDisplay(Display.NONE);
+                layout.infoHeader.setDisplay(Display.NONE);
+                layout.summary.setDisplay(Display.NONE);
                 layout.panel1.setVisible(true);
                 state.getPanelState(tp).setResultSet(results);
                 layout.setState(tp, state);
@@ -1513,17 +1526,15 @@ public class UI implements EntryPoint {
             layout.hideProgress();
             layout.panel1.setVisible(false);
             layout.infoPanel.setDisplay(Display.BLOCK);
+            layout.summary.setDisplay(Display.NONE);
             layout.animate.setEnabled(false);
             layout.topMenuEnabled(false);
-            layout.infoPanel.clear();
-            dataset = infoDataset;
-            DatasetInfo di = new DatasetInfo(infoDataset);
-            info = false;
-            if ( browse ) {
-                long next = layout.getNextDataset(infoDataset);
-                long prev = layout.getPrevDataset(infoDataset);
-                di.showNav(offset, next, prev);
+            if ( !browse ) {
+                layout.infoPanel.clear();
+                dataset = infoDataset;
             }
+            DatasetInfo di = new DatasetInfo(infoDataset, browse);
+            info = false;
             if ( infoDataset != null ) {
                 List<Variable> returnedVariables = infoDataset.getVariables();
                 Collections.sort(returnedVariables);
@@ -1533,33 +1544,40 @@ public class UI implements EntryPoint {
                 }
                 layout.infoPanel.add(di);
             }
+            if ( browse ) {
+                long next = layout.getNextDataset(infoDataset);
+                if ( next > 0 ) {
+                    datasetService.getDataset(next + ".json", infoCallback);
+                }
+            }
         }
     };
-    MethodCallback<Dataset> browseCallback = new MethodCallback<Dataset>() {
+    MethodCallback <List<Dataset>> browseCallback = new MethodCallback<List<Dataset>>() {
         @Override
         public void onFailure(Method method, Throwable throwable) {
             layout.hideProgress();
         }
 
         @Override
-        public void onSuccess(Method method, Dataset containerDataset) {
+        public void onSuccess(Method method, List<Dataset> browseDatasets) {
             layout.hideProgress();
             layout.panel1.setVisible(false);
             layout.infoPanel.setDisplay(Display.BLOCK);
+            layout.infoHeader.setDisplay(Display.BLOCK);
+            layout.summary.setDisplay(Display.NONE);
             layout.infoPanel.clear();
             browse = true;
-            List<Dataset> browseDatasets = containerDataset.getDatasets();
             if (browseDatasets != null && browseDatasets.size() > 0) {
                 Collections.sort(browseDatasets);
+                // Grab the first to kick of the initialization of the carousels
                 Dataset infoDataset = browseDatasets.get(0);
-                dataset = infoDataset;
+//                dataset = infoDataset;
                 layout.clearDatasets();
                 layout.hideDataProgress();
 
                 for (int i = 0; i < browseDatasets.size(); i++) {
                     layout.addSelection(browseDatasets.get(i));
                 }
-                layout.setInfoSelect(infoDataset.getId());
                 datasetService.getDataset(infoDataset.getId()+".json", infoCallback);
             } else {
                 MaterialToast.fireToast("No more datasets to browse.");
@@ -1573,7 +1591,6 @@ public class UI implements EntryPoint {
         @Override
         public void onFailure(Method method, Throwable exception) {
             layout.hideDataProgress();
-            delay.cancel();
             if ( layout.loadDialog.isOpen() )
                 layout.loadDialog.close();
             Window.alert("Failed to download data set information for this dataset." + exception.getMessage());
@@ -1594,8 +1611,8 @@ public class UI implements EntryPoint {
                     }
                 }
 
-                if ( dataset.getStatus() == null ) {
-                    Window.alert("Data set ingested with known status. May not display correctly.");
+                if ( dataset.hasVariableChildren() && dataset.getStatus() == null ) {
+                    Window.alert("Data set ingested with unknown status. May not display correctly.");
                 }
                 if (dataset.hasVariableChildren() && dataset.getStatus() != null && dataset.getStatus().equals(Dataset.INGEST_FINISHED)) {
                     if (layout.loadDialog.isOpen())
@@ -1611,14 +1628,11 @@ public class UI implements EntryPoint {
                         Vector v = returnedVectors.get(i);
                         layout.addSelection(v);
                     }
-
-                    MaterialToast.fireToast("Getting products for these variables.");
-                } else if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED)) {
-                    layout.setDatasetsMessage(Constants.STARTING_INGEST);
-                    delay.schedule(2500);
-                } else if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_STARTED)) {
+                    if ( toast )
+                        MaterialToast.fireToast("Getting products for these variables.");
+                } else if (dataset.hasVariableChildren() && ( dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) || dataset.getStatus().equals(Dataset.INGEST_STARTED) ) ) {
                     layout.setDatasetsMessage(dataset.getMessage());
-                    delay.schedule(2500);
+                    layout.goBack();
                 } else if (dataset.hasVariableChildren() && dataset.getStatus().equals(Dataset.INGEST_FAILED)) {
                     layout.setDatasetsMessage(Constants.INGEST_FAILED);
                     layout.goBack();
@@ -1629,16 +1643,10 @@ public class UI implements EntryPoint {
             layout.dataItem.expand();
         }
     };
-    Timer delay = new Timer() {
-        @Override
-        public void run() {
-            datasetService.getDataset(dataset.getId()+".json", datasetCallback);
-            MaterialToast.fireToast("Checking status again in 2.5 seconds...", 2500);
-        }
-    };
     MethodCallback<Site> siteCallback = new MethodCallback<Site>() {
 
         public void onSuccess(Method method, Site site) {
+            layout.summary.setDisplay(Display.BLOCK);
             layout.hideDataProgress();
             layout.clearDatasets();
             layout.setBrand(site.getTitle());
@@ -1648,40 +1656,23 @@ public class UI implements EntryPoint {
             }
             layout.setBrandWidth(w);
 
-//
-//            String t = site.getTotal() + " data sets";
-//            layout.total.setText(t);
-//
-//            String g = site.getGrids() + " grids";
-//            layout.grids.setText(g);
-//
-//            String d = site.getDiscrete() + " discrete";
-//            layout.discrete.setText(d);
 
-            long infoID = -1l;
+            String t = site.getTotal() + " data sets in total.";
+            layout.total.setText(t);
+
+            String g = site.getGrids() + " data sets on grids.";
+            layout.grids.setText(g);
+
+            String d = site.getDiscrete() + " data sets on discrete geometries.";
+            layout.discrete.setText(d);
+
+            toast = site.isToast();
             if ( site.getDatasets().size() > 0 ) {
                 List<Dataset> datasets = site.getDatasets();
                 Collections.sort(datasets);
                 for (int i = 0; i < datasets.size(); i++) {
                     Dataset iterDataset = datasets.get(i);
-                    // Take the first one...
-                    if ( iterDataset.hasVariableChildren() && infoID == -1l ) {
-                        infoID = iterDataset.getId();
-                    }
                     layout.addSelection(iterDataset);
-                }
-                // Only show the first data set info page if
-                // info set set which is only set on the initial load...
-                if ( info ) {
-                    if (infoID == -1l) {
-                        layout.showProgress();
-                        infoService.getInfo(null, infoCallback);
-                    } else {
-                        layout.showProgress();
-                        String infoJson = infoID + ".json";
-                        layout.setInfoSelect(infoID);
-                        datasetService.getDataset(infoJson, infoCallback);
-                    }
                 }
             }
             layout.navcollapsible.setActive(1, true);
@@ -2417,7 +2408,8 @@ public class UI implements EntryPoint {
             state.getPanelState(lasRequest.getTargetPanel()).setLasRequest(lasRequest);
             pushHistory();
             productService.getProduct(lasRequest, productRequestCallback);
-            MaterialToast.fireToast("Requesting "+ lasRequest.getOperation() + " ...");
+            if ( toast )
+                MaterialToast.fireToast("Requesting "+ lasRequest.getOperation() + " ...");
         }
     }
     private void pushHistory() {

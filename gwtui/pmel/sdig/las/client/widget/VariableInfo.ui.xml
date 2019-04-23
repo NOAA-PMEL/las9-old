@@ -3,8 +3,9 @@
              xmlns:g='urn:import:com.google.gwt.user.client.ui'>
     <m:MaterialColumn grid="s3">
         <m:MaterialCard backgroundColor="WHITE">
+            <m:MaterialProgress ui:field="loader" display="NONE"></m:MaterialProgress>
             <m:MaterialCardImage>
-              <m:MaterialImage ui:field="thumbnail" waves="LIGHT" url="http://bilbo.weathertopconsulting.com:8282/las/product/thumbnail/697a9886eb84056594a7d317f7aadfa3/915aa27f0a0aceb2ced807e16578c37f"/>
+              <m:MaterialImage ui:field="thumbnail" waves="LIGHT" display="NONE"/>
             </m:MaterialCardImage>
             <m:MaterialPanel addStyleNames="valign-wrapper">
                 <m:MaterialIcon ui:field="titleIcon" iconType="LAUNCH" iconSize="SMALL" marginLeft="12"/>

@@ -8,8 +8,12 @@ import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.Widget;
+import gwt.material.design.addins.client.carousel.MaterialCarousel;
 import gwt.material.design.client.constants.Display;
+import gwt.material.design.client.ui.MaterialCard;
 import gwt.material.design.client.ui.MaterialCardTitle;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLink;
@@ -34,20 +38,12 @@ public class DatasetInfo extends Composite {
     @UiField
     MaterialIcon titleIcon;
 
-    @UiField
-    MaterialLink prev10;
-    @UiField
-    MaterialLink prev;
-    @UiField
-    MaterialLink next;
-    @UiField
-    MaterialLink next10;
-    @UiField
-    MaterialRow navRow;
-
     MaterialRow currentRow;
+    MaterialCarousel carousel = new MaterialCarousel();
 
-    String dhash;
+    Dataset dataset;
+
+    boolean horizontal = true;
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
@@ -60,85 +56,69 @@ public class DatasetInfo extends Composite {
     private void init() {
         MaterialPanel rootElement = ourUiBinder.createAndBindUi(this);
         initWidget(rootElement);
+        carousel.setSlidesToShow(4);
+        carousel.setSlidesToScroll(5);
     }
     public DatasetInfo() {
         init();
     }
-    public DatasetInfo(Dataset dataset) {
+    public DatasetInfo(Dataset dataset, boolean horizontal) {
+        this.dataset = dataset;
+        this.horizontal = horizontal;
         init();
-        dhash = dataset.getHash();
-        title.setText(dataset.getTitle());
+        configure(dataset);
+    }
+    public DatasetInfo(Dataset dataset) {
+        this.dataset = dataset;
+        horizontal = false;
+        init();
+        configure(dataset);
+    }
+
+    public void configure(Dataset dataset) {
+
+        Dataset parent = dataset.getParent();
+        String parentTitle = "";
+        if ( parent != null ) {
+            parentTitle = parent.getTitle() + " - ";
+        }
+        title.setText(parentTitle + dataset.getTitle());
         title.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent clickEvent) {
-                eventBus.fireEventFromSource(new NavSelect(dataset, 1), title);
+                eventBus.fireEventFromSource(new Info(dataset.getId()), title);
             }
         });
         titleIcon.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent clickEvent) {
-                eventBus.fireEventFromSource(new NavSelect(dataset, 1), title);
+                eventBus.fireEventFromSource(new Info(dataset.getId()), title);
             }
         });
     }
-
     public void clear() {
         count = 0;
         rows.clear();
     }
 
     public void addVariable(Variable variable) {
-        int position = count%4;
-        if ( position == 0 ) {
-            MaterialRow row = new MaterialRow();
-            currentRow = row;
-            rows.add(row);
-        }
-        VariableInfo info = new VariableInfo(dhash, variable);
-        currentRow.add(info);
-        count++;
-    }
-    public void showNav(int offset, long nextID, long prevID) {
-        navRow.setDisplay(Display.INLINE_BLOCK);
-        int offset_prev = offset - 10;
-        int offset_next = offset + 10;
-        next.setVisible(false);
-        next10.setVisible(false);
-        prev.setVisible(false);
-        prev10.setVisible(false);
-        if (offset >= 10) {
-            prev10.setVisible(true);
-            prev10.addClickHandler(new ClickHandler() {
-                @Override
-                public void onClick(ClickEvent clickEvent) {
-                    eventBus.fireEventFromSource(new Browse(offset_prev), prev10);
-                }
-            });
-        }
-        if (nextID > 0) {
-            next.setVisible(true);
-            next.addClickHandler(new ClickHandler() {
-                @Override
-                public void onClick(ClickEvent clickEvent) {
-                    eventBus.fireEventFromSource(new Info(nextID), next);
-                }
-            });
-        }
-        if ( prevID > 0 ) {
-            prev.setVisible(true);
-            prev.addClickHandler(new ClickHandler() {
-                @Override
-                public void onClick(ClickEvent clickEvent) {
-                    eventBus.fireEventFromSource(new Info(prevID), prev);
-                }
-            });
-        }
-        next10.addClickHandler(new ClickHandler() {
-            @Override
-            public void onClick(ClickEvent clickEvent) {
-                eventBus.fireEventFromSource(new Browse(offset_next), next10);
+
+        final VariableInfo info = new VariableInfo(dataset, variable);
+
+        if ( horizontal ) {
+            carousel.add(info);
+            rows.add(carousel);
+        } else {
+            int position = count % 3;
+            if (position == 0) {
+                MaterialRow row = new MaterialRow();
+                currentRow = row;
+                rows.add(row);
             }
-        });
-        next10.setVisible(true);
+            currentRow.add(info);
+        }
+
+        count++;
+
     }
 }

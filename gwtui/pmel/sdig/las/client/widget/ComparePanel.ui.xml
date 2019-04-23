@@ -26,8 +26,19 @@
         <m:html.Div visible="false" ui:field="chart"/>
 
 
-        <ma:window.MaterialWindow ui:field="window" title="Data Set and Axes Controls" toolbarColor="BLUE_LIGHTEN_2">
+        <ma:window.MaterialWindow ui:field="window" title="Panel Controls" toolbarColor="BLUE_LIGHTEN_2">
             <m:MaterialColumn grid="s12">
+                <m:MaterialRow marginBottom="2">
+                    <m:MaterialNavBar ui:field="navBar" paddingTop="10" paddingLeft="20" paddingBottom="2" width="100%" textColor="BLACK">
+                        <m:MaterialNavBrand ui:field="navBrand" text="Data Search" fontSize="1.2em" fontWeight="BOLD" textColor="BLACK"/>
+                        <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="BLACK" float="RIGHT"/>
+                    </m:MaterialNavBar>
+
+                    <!-- NavBar Search -->
+                    <m:MaterialNavBar ui:field="navBarSearch" width="100%" visible="false">
+                        <m:MaterialSearch fontSize="1em" ui:field="txtSearch" placeholder="data search terms" backgroundColor="WHITE" iconColor="BLACK"  active="true" shadow="1"/>
+                    </m:MaterialNavBar>
+                </m:MaterialRow>
                 <m:MaterialCollapsible ui:field="navcollapsible" addStyleNames="LAS-collapse-headers">
                     <m:MaterialCollapsibleItem ui:field="dataItem">
                         <!--
@@ -54,7 +65,7 @@
                     </m:MaterialCollapsibleItem>
                     <m:MaterialCollapsibleItem>
                         <m:MaterialCollapsibleHeader debugId="panelHeaderAxes">
-                            <m:MaterialLink addStyleNames="panelHeader" fontSize="1.4em" fontWeight="BOLDER" text="Axes and Differences"></m:MaterialLink>
+                            <m:MaterialLink addStyleNames="panelHeader" fontSize="1.4em" fontWeight="BOLDER" text="Axes Selections"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
                             <m:MaterialPanel m:id="timeRegion" padding="2" overflow="HIDDEN" width="375px">
@@ -62,59 +73,34 @@
                                 <m:MaterialPanel padding="8" ui:field="dateTimePanel" width="375px" grid="s12"></m:MaterialPanel>
                                 <m:MaterialPanel padding="8" ui:field="zaxisPanel" grid="s12"/>
                             </m:MaterialPanel>
-                            <m:MaterialPanel lineHeight="32" marginBottom="8" textAlign="LEFT" overflow="AUTO">
-
-                                <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" text="Make contour levels match."></m:MaterialLabel>
-                                <m:MaterialPanel paddingLeft="8" ui:field="autoColorsPanel" addStyleNames="valign-wrapper">
-                                    <m:MaterialCheckBox ui:field="useAutoColors"></m:MaterialCheckBox>
-                                    <m:MaterialTextBox ui:field="autocolors" placeholder="(min, max, levels)" ></m:MaterialTextBox>
-                                </m:MaterialPanel>
-
-                                <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" text="Compute Difference"></m:MaterialLabel>
-                                <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="difference" display="INLINE" paddingBottom="8" paddingLeft="8" paddingRight="8" title="Turn on difference calculation when viewing multiple plots." onLabel="Difference On" offLabel="Difference Off" enabled="false" value="false" />
-
-                                <!--
-
-                                For now, make the switcing on of the difference computation specific to each panel
-                                In the future, perhaps computations can be done for each panel
-
-                                <m:MaterialLabel paddingBottom="16" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Apply Same Analysis as First Panel"></m:MaterialLabel>
-                                <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="difference" display="INLINE" paddingBottom="8" paddingLeft="8" paddingRight="8" title="Apply the same analysis transformation to this panel as the first panel." onLabel="Apply On" offLabel="Apply Off" enabled="true" value="false" />
-
-
-                                <m:MaterialLabel paddingBottom="16" paddingLeft="8" fontSize="1.4em" fontWeight="BOLDER" textColor="BLUE" text="Do Analysis"></m:MaterialLabel>
-                                <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="analysisSwitch" display="INLINE" paddingLeft="8" paddingRight="8" title="Apply an analysis transformation to this panel." onLabel="Analysis On" offLabel="Analysis Off" enabled="true" value="false" />
-
-                                <m:MaterialButton paddingBottom="8" ui:field="analysisButton" text="Compute" activates="analysis" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="BLUE" textColor="WHITE"></m:MaterialButton>
-                                <m:MaterialDropDown ui:field="analysis" activator="analysis" backgroundColor="WHITE">
-                                    <m:MaterialLink text="Average" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Minimum" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Maximum" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Sum" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Variance" backgroundColor="BLUE" textColor="WHITE"/>
-                                </m:MaterialDropDown>
-                                <m:MaterialButton ui:field="overButton" text="Over" activates="over" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" backgroundColor="BLUE" textColor="WHITE"></m:MaterialButton>
-                                <m:MaterialDropDown ui:field="over" activator="over" backgroundColor="WHITE">
-                                    <m:MaterialLink text="Area" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Longitude" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Latitude" backgroundColor="BLUE" textColor="WHITE"/>
-                                    <m:MaterialLink text="Time" backgroundColor="BLUE" textColor="WHITE"/>
-                                </m:MaterialDropDown>
-                             En of future panel specific analysis controls
-                            -->
-                            </m:MaterialPanel>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
-                    <!--
                     <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
-                            <m:MaterialLink fontSize="1.4em" fontWeight="BOLDER" text="Analysis"></m:MaterialLink>
+                    <m:MaterialCollapsibleHeader debugId="panelHeaderAxes">
+                        <m:MaterialLink addStyleNames="panelHeader" fontSize="1.4em" fontWeight="BOLDER" text="Normalize Contours Between Panels"></m:MaterialLink>
+                    </m:MaterialCollapsibleHeader>
+                    <m:MaterialCollapsibleBody padding="0">
+                        <m:MaterialPanel lineHeight="32" marginBottom="8" textAlign="LEFT" overflow="AUTO">
+
+                        <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" text="Make contour levels match."></m:MaterialLabel>
+                        <m:MaterialPanel paddingLeft="8" ui:field="autoColorsPanel" addStyleNames="valign-wrapper">
+                            <m:MaterialCheckBox ui:field="useAutoColors"></m:MaterialCheckBox>
+                            <m:MaterialTextBox ui:field="autocolors" placeholder="(min, max, levels)" ></m:MaterialTextBox>
+                        </m:MaterialPanel>
+                        </m:MaterialPanel>
+                    </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem>
+                        <m:MaterialCollapsibleHeader debugId="panelHeaderAxes">
+                            <m:MaterialLink addStyleNames="panelHeader" fontSize="1.4em" fontWeight="BOLDER" text="Differences"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
 
+                            <m:MaterialLabel paddingBottom="8" paddingLeft="8" paddingTop="8" fontSize="1.4em" fontWeight="BOLDER" text="Compute Difference"></m:MaterialLabel>
+                            <m:MaterialSwitch verticalAlign="MIDDLE" ui:field="difference" display="INLINE" paddingBottom="8" paddingLeft="8" paddingRight="8" title="Turn on difference calculation when viewing multiple plots." onLabel="Difference On" offLabel="Difference Off" enabled="false" value="false" />
+
                         </m:MaterialCollapsibleBody>
-                    </m:MaterialCollapsibleItem>]
-                    -->
+                    </m:MaterialCollapsibleItem>
                 </m:MaterialCollapsible>
             </m:MaterialColumn>
         </ma:window.MaterialWindow>

@@ -41,7 +41,7 @@
             <m:MaterialDialogHeader></m:MaterialDialogHeader>
             <m:MaterialDialogContent ui:field="loadMessage"></m:MaterialDialogContent>
             <m:MaterialDialogFooter>
-                <m:MaterialButton text="Cancel" ui:field="loadCancel"></m:MaterialButton>
+                <m:MaterialButton text="Close" ui:field="loadClose"></m:MaterialButton>
             </m:MaterialDialogFooter>
         </m:MaterialDialog>
         <m:MaterialHeader ui:field="header">
@@ -94,8 +94,11 @@
                             <m:MaterialPanel addStyleNames="valign-wrapper">
                                 <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
                                 <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data" display="FLEX"></m:MaterialLink>
-                                <m:MaterialLink ui:field="browse" fontSize="1.2em" text="(Browse)" display="FLEX"></m:MaterialLink>
+                                <m:MaterialButton ui:field="browse" text="Browse" display="FLEX" float="RIGHT" marginRight="16"></m:MaterialButton>
+                                <!--
+                                Doesn't quite work right, seems counter intuitive, just use the breadcrumbs for now.
                                 <m:MaterialIcon ui:field="back" iconType="ARROW_BACK" iconPosition="RIGHT"/>
+                                -->
                             </m:MaterialPanel>
                             <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE"
                                                 display="NONE"></m:MaterialProgress>
@@ -214,11 +217,40 @@
         <m:MaterialContainer ui:field="main">
             <m:MaterialRow paddingTop="60" ui:field="outputRow01">
 
-                <m:MaterialPanel ui:field="infoPanel" paddingTop="20">
+                    <m:MaterialCard ui:field="summary">
+                        <m:MaterialCardContent>
 
-                </m:MaterialPanel>
+                            <m:MaterialRow>
+                                <m:MaterialColumn grid="s3">
+                                    <m:MaterialLabel textAlign="CENTER" text="This LAS contains:" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
+                                </m:MaterialColumn>
+                                <m:MaterialColumn grid="s3">
+                                    <m:MaterialLabel ui:field="total" text="" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
+                                </m:MaterialColumn>
+                                <m:MaterialColumn grid="s3">
+                                    <m:MaterialLabel ui:field="discrete" text="" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
+                                </m:MaterialColumn>
+                                <m:MaterialColumn grid="s3">
+                                    <m:MaterialLabel ui:field="grids" text="" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
+                                </m:MaterialColumn>
+                            </m:MaterialRow>
+                        </m:MaterialCardContent>
+                        <m:MaterialCardImage>
+                            <m:MaterialImage url="product/summary"></m:MaterialImage>
+                        </m:MaterialCardImage>
+                    </m:MaterialCard>
 
-                <las:ResultsPanel ui:field="panel1" title="panel01"></las:ResultsPanel>
+                    <m:MaterialRow paddingTop="32" ui:field="infoHeader" flexAlignContent="CENTER" display="NONE">
+                        <m:MaterialColumn grid="s6"><m:MaterialButton ui:field="prev10" text="Prev 10" iconPosition="LEFT" iconType="ARROW_BACK" float="LEFT"></m:MaterialButton></m:MaterialColumn>
+                        <m:MaterialColumn grid="s6"><m:MaterialButton ui:field="next10" text="Next 10" iconPosition="RIGHT" iconType="ARROW_FORWARD" float="RIGHT"></m:MaterialButton></m:MaterialColumn>
+                    </m:MaterialRow>
+                    <m:MaterialRow>
+                        <m:MaterialColumn grid="s12">
+                            <m:MaterialPanel ui:field="infoPanel" paddingTop="20"></m:MaterialPanel>
+                        </m:MaterialColumn>
+                    </m:MaterialRow>
+
+                <las:ResultsPanel ui:field="panel1" title="panel01" visible="false"></las:ResultsPanel>
                 <las:ComparePanel ui:field="panel2" title="panel02" grid="s6" visible="false"></las:ComparePanel>
 
             </m:MaterialRow>

@@ -13,7 +13,27 @@ public class Site {
     int grids;
     int discrete;
 
+    boolean toast;
+
+    String infoUrl;
+
     List<Dataset> datasets;
+
+    public boolean isToast() {
+        return toast;
+    }
+
+    public void setToast(boolean toast) {
+        this.toast = toast;
+    }
+
+    public String getInfoUrl() {
+        return infoUrl;
+    }
+
+    public void setInfoUrl(String infoUrl) {
+        this.infoUrl = infoUrl;
+    }
 
     public String getTitle() {
         return title;

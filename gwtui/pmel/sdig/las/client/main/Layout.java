@@ -27,6 +27,7 @@ import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.SideNavClosedEvent;
 import gwt.material.design.client.events.SideNavOpenedEvent;
 import gwt.material.design.client.ui.MaterialButton;
+import gwt.material.design.client.ui.MaterialCard;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
@@ -240,7 +241,7 @@ public class Layout extends Composite {
     @UiField
     MaterialDialog loadDialog;
     @UiField
-    MaterialButton loadCancel;
+    MaterialButton loadClose;
 
     @UiField
     MaterialPanel dateTimePanel;
@@ -250,10 +251,10 @@ public class Layout extends Composite {
     @UiField
     MaterialIcon home;
     @UiField
-    MaterialLink browse;
+    MaterialButton browse;
 
-    @UiField
-    MaterialIcon back;
+//    @UiField
+//    MaterialIcon back;
 
     @UiField
     MaterialPanel products;
@@ -277,14 +278,14 @@ public class Layout extends Composite {
     @UiField
     MaterialRow outputRow02;
 
-//    @UiField
-//    MaterialLink total;
-//
-//    @UiField
-//    MaterialLink discrete;
-//
-//    @UiField
-//    MaterialLink grids;
+    @UiField
+    MaterialLabel total;
+
+    @UiField
+    MaterialLabel discrete;
+
+    @UiField
+    MaterialLabel grids;
 
     @UiField
     MaterialLink btnSearch;
@@ -297,6 +298,16 @@ public class Layout extends Composite {
 
     @UiField
     MaterialPanel infoPanel;
+    @UiField
+    MaterialRow infoHeader;
+    @UiField
+    MaterialCard summary;
+
+    @UiField
+    MaterialButton next10;
+
+    @UiField
+    MaterialButton prev10;
 
     Widget root;
 
@@ -561,11 +572,17 @@ public class Layout extends Composite {
     }
     public long getNextDataset(Dataset dataset) {
         int index = getDatasetIndex(dataset.getHash());
-        if ( index < 9 ) {
+
+        if ( index >= 0 && index < 10 ) {
             int wi = index + 1;
-            DataItem di = (DataItem) datasets.getWidget(wi);
-            Dataset nextDS = (Dataset) di.getSelection();
-            return nextDS.getId();
+            // check to see if it's the last one
+            if (wi < datasets.getWidgetCount()) {
+                DataItem di = (DataItem) datasets.getWidget(wi);
+                Dataset nextDS = (Dataset) di.getSelection();
+                return nextDS.getId();
+            } else {
+                return -1l;
+            }
         } else {
             return -1l;
         }
@@ -1196,11 +1213,11 @@ public class Layout extends Composite {
         eventBus.fireEventFromSource(bcse, home);
         event.stopPropagation();
     }
-    @UiHandler("back")
-    public void onBack(ClickEvent event) {
-        goBack();
-        event.stopPropagation();
-    }
+    //    @UiHandler("back")
+//    public void onBack(ClickEvent event) {
+//        goBack();
+//        event.stopPropagation();
+//    }
     public void goBack(){
         if ( getBreadcrumbCount(1) > 0 ) {
             panel1.getBreadcrumbContainer().remove(panel1.getBreadcrumbContainer().getWidgetCount()-1);
@@ -1239,12 +1256,11 @@ public class Layout extends Composite {
         eventBus.fireEventFromSource(new AnimationSpeed(flipSpeed.getValue()), flipSpeed);
     }
 
-    @UiHandler("loadCancel")
+    @UiHandler("loadClose")
     public void onLoadCancel(ClickEvent event) {
         if (loadDialog.isOpen()) {
             loadDialog.close();
         }
-        eventBus.fireEventFromSource(new LoadCancel(), loadCancel);
     }
     @UiHandler("btnSearch")
     void onSearch(ClickEvent e){
@@ -1254,5 +1270,13 @@ public class Layout extends Composite {
     void onBrowse(ClickEvent event) {
         eventBus.fireEventFromSource(new Browse(0), browse);
         event.stopPropagation();
+    }
+    @UiHandler("next10")
+    void onNext10(ClickEvent click) {
+        eventBus.fireEventFromSource(new Browse(10), next10);
+    }
+    @UiHandler("prev10")
+    void onPrev10(ClickEvent click) {
+        eventBus.fireEventFromSource(new Browse(-10), next10);
     }
 }

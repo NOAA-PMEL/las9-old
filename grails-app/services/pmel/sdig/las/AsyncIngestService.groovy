@@ -1,7 +1,7 @@
 package pmel.sdig.las
 
 import grails.async.DelegateAsync
-import grails.transaction.Transactional
+import grails.gorm.transactions.Transactional
 
 
 /**

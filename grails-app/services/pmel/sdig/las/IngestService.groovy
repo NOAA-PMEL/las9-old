@@ -218,9 +218,8 @@ class IngestService {
                         CalendarDateUnit cdu = CalendarDateUnit.of(calendar, timeunits)
                         Period p0 = null
                         String position0 = getPosition(times[0], tb1[0], tb2[0])
-                        boolean regular = true
                         boolean constant_position = true
-                        regular = time.isRegular()
+                        boolean regular = time.isRegular()
                         tAxis = new TimeAxis()
 
                         TimeUnit tu = time.getTimeResolution()
@@ -254,6 +253,9 @@ class IngestService {
                                 }
                             } else {
                                 p0 = getPeriod(cdu, times[0], times[1])
+                                if ( !isMonotonic(times) ) {
+                                    log.debug("Time axis is not monotonic... quitting.")
+                                }
                                 int hours = p0.getHours()
                                 int days = p0.getDays()
                                 int months = p0.getMonths()
@@ -294,7 +296,7 @@ class IngestService {
                             tAxis.setClimatology(false)
                         }
                         tAxis.setSize(size)
-                        tAxis.setUnits(units)
+                        tAxis.setUnits(time.getUnitsString())
                         tAxis.setCalendar(calendar)
                         tAxis.setTitle(title)
                         tAxis.setName(shortname)
@@ -520,7 +522,7 @@ class IngestService {
                 if (yAxis && yAxis.size > 1) {
                     intervals = intervals + "y"
                 }
-                if (zAxis) {
+                if (zAxis && zAxis.size > 1 ) {
                     intervals = intervals + "z"
                 }
                 if (tAxis) {
@@ -2323,5 +2325,14 @@ class IngestService {
 
     }
 
+    boolean isMonotonic(double[] times) {
+        for (int i = 0; i < times.length - 1; i++) {
+            if ( times[i+1] <= times[i] ) {
+                log.debug("Time axis is not monotonic at " + i + " time[" + i + "] = " + times[i] + " time[" + i + 1 + "] = " + times[i+1])
+                return false;
+            }
+        }
+        return true;
+    }
 
 }

@@ -22,137 +22,161 @@ import java.nio.charset.StandardCharsets
 
 class ProductController {
     static scaffold = Product
-    def FerretService ferretService
-    def ProductService productService
+    AsyncFerretService asyncFerretService
+    FerretService ferretService
+    ProductService productService
     LASProxy lasProxy = new LASProxy()
     JsonParser jsonParser = new JsonParser()
     ResultsService resultsService
     DateTimeService dateTimeService
-    def thumbnail(String dhash, String vhash) {
-        Dataset dataset = Dataset.findByHash(dhash)
-        Variable variable = dataset.variables.find{it.hash == vhash}
-        if ( variable ) {
+    def summary () {
+        def webAppDirectory = request.getSession().getServletContext().getRealPath("")
+        // Until such time as "-" file names are allowed, deal with it with a link named without the "-"
+        // i.e. webapp instead of web-app
+        webAppDirectory = webAppDirectory.replaceAll("-", "");
 
-
-            def webAppDirectory = request.getSession().getServletContext().getRealPath("")
-            // Until such time as "-" file names are allowed, deal with it with a link named without the "-"
-            // i.e. webapp instead of web-app
-            webAppDirectory = webAppDirectory.replaceAll("-", "");
-
-            if (!webAppDirectory.endsWith(File.separator)) {
-                webAppDirectory = webAppDirectory + File.separator;
-            }
-
-
-            String variable_url = variable.getUrl()
-            String variable_name = variable.getName()
-            String variable_title = variable.getTitle()
-
-            def x = variable.getGeoAxisX()
-            def y = variable.getGeoAxisY()
-            def z = variable.getVerticalAxis()
-            def t = variable.getTimeAxis()
-            def hash = "${dhash}-${vhash}"
+        if (!webAppDirectory.endsWith(File.separator)) {
+            webAppDirectory = webAppDirectory + File.separator;
+        }
+        FerretEnvironment fe = FerretEnvironment.first()
+        String variable_url
+        def data = fe.getFer_data().tokenize().each{
+            String testpath = it+File.separator+"etopo20.cdf"
+            File f = new File(testpath)
+            if ( f.exists() ) variable_url = f.getPath()
+        }
+        if ( variable_url ) {
+            String variable_name = "ROSE"
+            String variable_title = "Relief of the Surface of the Earth"
+            String variable_units = "M"
+            String hash = "rose20_full"
 
             StringBuffer jnl = new StringBuffer()
 
-            jnl.append("DEFINE SYMBOL data_0_dataset_name = ${dataset.title}\n")
+            jnl.append("DEFINE SYMBOL data_0_dataset_name = World Map\n")
             jnl.append("DEFINE SYMBOL data_0_dataset_url = ${variable_url}\n")
             jnl.append("DEFINE SYMBOL data_0_grid_type = regular\n")
             jnl.append("DEFINE SYMBOL data_0_name = ${variable_name}\n")
             jnl.append("DEFINE SYMBOL data_0_ID = ${variable_name}\n")
             jnl.append("DEFINE SYMBOL data_0_region = region_0\n")
             jnl.append("DEFINE SYMBOL data_0_title = ${variable_title}\n")
-            if (variable.units) jnl.append("DEFINE SYMBOL data_0_units = ${variable.units}\n")
+            jnl.append("DEFINE SYMBOL data_0_units = ${variable_units}\n")
             jnl.append("DEFINE SYMBOL data_0_url = ${variable_url}\n")
             jnl.append("DEFINE SYMBOL data_0_var = ${variable_name}\n")
 
+            jnl.append("DEFINE SYMBOL region_0_x_hi = 0\n")
+            jnl.append("DEFINE SYMBOL region_0_x_lo = 360\n")
 
-            if (t) {
-                String fd = dateTimeService.ferretFromIso(t.getEnd(), t.getCalendar())
-                jnl.append("DEFINE SYMBOL region_0_t_hi = ${fd}\n")
-                jnl.append("DEFINE SYMBOL region_0_t_lo = ${fd}\n")
-            }
-            if (x) {
-                jnl.append("DEFINE SYMBOL region_0_x_hi = ${x.getMax()}\n")
-                jnl.append("DEFINE SYMBOL region_0_x_lo = ${x.getMin()}\n")
-            }
-            if (y) {
-                jnl.append("DEFINE SYMBOL region_0_y_hi = ${y.getMax()}\n")
-                jnl.append("DEFINE SYMBOL region_0_y_lo = ${y.getMin()}\n")
-            }
-            if (z) {
-                jnl.append("DEFINE SYMBOL region_0_z_lo = ${z.getMin()}\n")
-                jnl.append("DEFINE SYMBOL region_0_z_hi = ${z.getMin()}\n")
-            }
-
+            jnl.append("DEFINE SYMBOL region_0_y_hi = 90\n")
+            jnl.append("DEFINE SYMBOL region_0_y_lo = -90\n")
 
             jnl.append("DEFINE SYMBOL data_count = 1\n")
             jnl.append("DEFINE SYMBOL ferret_annotations = file\n")
             jnl.append("DEFINE SYMBOL ferret_service_action = Plot_2D_XY\n")
-            jnl.append("DEFINE SYMBOL ferret_size = .456\n")
+            jnl.append("DEFINE SYMBOL operation_name = Plot_2D_XY\n")
+
+            jnl.append("DEFINE SYMBOL ferret_size = .85\n")
             jnl.append("DEFINE SYMBOL ferret_view = xy\n")
             jnl.append("DEFINE SYMBOL las_debug = false\n")
             jnl.append("DEFINE SYMBOL las_output_type = xml\n")
             jnl.append("DEFINE SYMBOL operation_ID = Plot_2D_XY\n")
-            jnl.append("DEFINE SYMBOL operation_key = ${dhash}/${vhash}\n")
-            jnl.append("DEFINE SYMBOL operation_name = Plot_2D_XY\n")
+            jnl.append("DEFINE SYMBOL operation_key = ${hash}\n")
             jnl.append("DEFINE SYMBOL operation_service = ferret\n")
-            jnl.append("DEFINE SYMBOL operation_service_action = Plot_2D_XY\n")
+
+
+            jnl.append("DEFINE SYMBOL ferret_service_action = Plot_2D_XY\n")
+            jnl.append("DEFINE SYMBOL operation_name = Plot_2D_XY\n")
 
             // TODO this has to come from the config
             jnl.append("DEFINE SYMBOL product_server_ps_timeout = 3600\n")
             jnl.append("DEFINE SYMBOL product_server_ui_timeout = 10\n")
             jnl.append("DEFINE SYMBOL product_server_use_cache = true\n")
-            //ha ha jnl.append("DEFINE SYMBOL product_server_version = 7.3")
+            //ha ha jnl.append("DEFINE SYMBOL product_server_version = 7.3")]
+
+            jnl.append("DEFINE SYMBOL ferret_fill_levels = 60c\n")
+            jnl.append("DEFINE SYMBOL ferret_memsize = 128\n")
+            jnl.append("DEFINE SYMBOL ferret_contour_levels = vc\n")
+            jnl.append("DEFINE SYMBOL ferret_palette = topo_osmc_blue_brown\n")
+            jnl.append("DEFINE SYMBOL ferret_land_type = none\n")
+
+
             //TODO one for each variable
             // TODO check the value for null before applying
 
             ResultSet resultSet = resultsService.getThumbnailResults()
             def cache = true
+            def cache_filename
             resultSet.results.each { Result result ->
                 // All we care about is the plot
                 result.url = "output${File.separator}${hash}_${result.name}${result.suffix}"
                 result.filename = "${webAppDirectory}output${File.separator}${hash}_${result.name}${result.suffix}"
                 // The plot file is the only cache result we care about
-                if ( result.name == "plot_image") {
+                if (result.name == "plot_image") {
                     File file = new File(result.filename)
                     cache = cache && file.exists()
-                    if ( cache ) {
-                        render file: result.getFilename(), contentType: 'image/png'
+                    if (cache) {
+                        cache_filename = result.getFilename()
                     }
                 }
             }
 
-            for (int i = 0; i < resultSet.getResults().size(); i++) {
-
-                def result = resultSet.getResults().get(i)
-
-                jnl.append("DEFINE SYMBOL result_${result.name}_ID = ${result.name}\n")
-                jnl.append("DEFINE SYMBOL result_${result.name}_filename = ${webAppDirectory}output${File.separator}${hash}_${result.name}${result.suffix}\n")
-                jnl.append("DEFINE SYMBOL result_${result.name}_type = ${result.type}\n")
-
-            }
-            jnl.append("go Plot_2D_XY\n")
-
-            def ferretResult = ferretService.runScript(jnl)
-            def error = ferretResult["error"];
-            // TODO error image???
-            if (error) {
-                log.error(ferretResult["message"]);
-                render file: "/tmp/error.png", contentType: 'image/png'
+            if (cache) {
+                render file: cache_filename, contentType: 'image/png'
             } else {
-                ResultSet allResults = new ResultSet()
-                addResults(resultSet, allResults, "Plot_2D_XY")
-                Result r = allResults.results.find{it.name=="plot_image"}
-                render file: r.getFilename(), contentType: 'image/png'
-            }
+                for (int i = 0; i < resultSet.getResults().size(); i++) {
 
+                    def result = resultSet.getResults().get(i)
+
+                    jnl.append("DEFINE SYMBOL result_${result.name}_ID = ${result.name}\n")
+                    if (result.type == "image") {
+                        jnl.append("DEFINE SYMBOL result_${result.name}_filename = ${webAppDirectory}output${File.separator}${hash}_${result.name}_base_${result.suffix}\n")
+                    } else {
+                        jnl.append("DEFINE SYMBOL result_${result.name}_filename = ${webAppDirectory}output${File.separator}${hash}_${result.name}${result.suffix}\n")
+                    }
+                    jnl.append("DEFINE SYMBOL result_${result.name}_type = ${result.type}\n")
+
+
+                }
+                jnl.append("go Plot_2D_XY\n")
+
+                def datasets = Dataset.findAllByVariableChildren(true)
+                for (int i = 0; i < datasets.size(); i++) {
+                    def dataset = datasets.get(i)
+                    if (dataset.getVariables() && dataset.getVariables().size() > 0) {
+                        def variable = dataset.getVariables().get(0)
+                        def xaxis = variable.getGeoAxisX()
+                        def yaxis = variable.getGeoAxisY()
+
+
+                        def x = xaxis.getMin() + "," + xaxis.getMin() + "," + xaxis.getMax() + "," + xaxis.getMax()
+                        def y = yaxis.getMin() + "," + yaxis.getMax() + "," + yaxis.getMax() + "," + yaxis.getMin()
+                        jnl.append("LET xoutline = YSEQUENCE({${x}})\n")
+                        jnl.append("LET youtline = YSEQUENCE({${y}})\n")
+                        jnl.append("POLYGON/OVER/MODULO/LINE/COLOR=${ferretService.getFerretColorValue(i)}/THICK=2/TITLE=\"${dataset.title}\" xoutline, youtline\n")
+
+                    }
+                }
+
+                jnl.append("FRAME/FORMAT=PNG/FILE=\"${webAppDirectory}output${File.separator}${hash}_plot_image.png\"\n");
+
+                def ferretResult = ferretService.runScript(jnl)
+                def error = ferretResult["error"];
+                // TODO error image???
+                if (error) {
+                    log.error(ferretResult["message"]);
+                    render file: "/tmp/error.png", contentType: 'image/png'
+                } else {
+                    ResultSet allResults = new ResultSet()
+                    ferretService.addResults(resultSet, allResults, "Plot_2D_XY")
+                    Result r = allResults.results.find { it.name == "plot_image" }
+                    render file: r.getFilename(), contentType: 'image/png'
+                }
+
+
+            }
         } else {
             render file: "/tmp/error.png", contentType: 'image/png'
         }
-
-
     }
     def make() {
 
@@ -215,7 +239,7 @@ class ProductController {
                 Operation operation = operations.get(i)
                 if ( operation.getType() == "ferret") {
                     def resultSet = product.operations.get(i).resultSet
-                    addResults(resultSet, allResults, product.getName())
+                    ferretService.addResults(resultSet, allResults, product.getName())
                 }
             }
         } else {
@@ -524,7 +548,7 @@ class ProductController {
                         // TODO stop sending nulls maybe
                         // Is there an axesset?
                         if ( lasRequest.getAxesSets().size() > h ) {
-                                                                // Does it have non-null values?
+                            // Does it have non-null values?
                             if (!analysis_axes.contains("t") && lasRequest.getAxesSets().get(h).getThi() && lasRequest.getAxesSets().get(h).getTlo()) {
                                 jnl.append("DEFINE SYMBOL region_${h}_t_hi = ${lasRequest.getAxesSets().get(h).getThi()}\n")
                                 jnl.append("DEFINE SYMBOL region_${h}_t_lo = ${lasRequest.getAxesSets().get(h).getTlo()}\n")
@@ -627,7 +651,7 @@ class ProductController {
                         render errorMessage as JSON
                     }
 
-                    addResults(resultSet, allResults, product.getName())
+                    ferretService.addResults(resultSet, allResults, product.getName())
 
 
                 } else if (operation.type == "erddap") {
@@ -645,27 +669,7 @@ class ProductController {
 
     }
 
-    def addResults(ResultSet resultSet, ResultSet allResults, String product) {
-        // Loop through the results and treat them according to their name and type
-        // Only some results require post-processing special treatment
-        def results = resultSet.results
-        for (int i = 0; i < results.size(); i++) {
-            def result = results[i]
-            def name = result.name
-            if (name == "map_scale") {
-                def mapScale = productService.makeMapScale(result.filename)
-                allResults.setMapScale(mapScale)
-            } else if (name == "annotations") {
-                def annotationGroups = productService.makeAnnotations(result.filename);
-                allResults.setAnnotationGroups(annotationGroups)
-                // TODO this name has to be more specific to the animation product
-            } else if (name == "ferret_listing" && (product == "Animation_2D_XY" || product == "Animation_2D_XY_vector") ) {
-                def animation = productService.makeAnimationList(result.filename)
-                allResults.setAnimation(animation)
-            }
-            allResults.addToResults(result)
-        }
-    }
+
 
     def erddapDataRequest() {
 

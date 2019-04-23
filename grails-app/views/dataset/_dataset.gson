@@ -1,5 +1,4 @@
 import pmel.sdig.las.Dataset
-import pmel.sdig.las.Variable
 
 model {
     Dataset dataset
@@ -7,15 +6,15 @@ model {
 
 if (dataset.variableChildren) {
     json g.render(dataset, [excludes: ["parent", "datasets", "variables", "vectors", "datasetProperites"]]) {
-        datasets g.render(dataset.datasets, [excludes: ["variables", "vectors", "datasets", "parent"]])
+        parent g.render(dataset.parent, [excludes: ["datasets","variables","datasetProperties","parent"]])
+        datasets g.render(template: 'shallow', collection: dataset.datasets, var: 'dataset')
         datasetProperties g.render(dataset.datasetProperties)
         variables g.render(template: "variables", model: [variables: dataset.variables], excludes: ["dataset"])
         vectors g.render(dataset.vectors, [excludes: ["dataset"]])
     }
 } else {
     json g.render(dataset, [excludes: ["datasets", "variables", "vectors", "parent"]]) {
-        datasets g.render(dataset.datasets, [excludes: ["variables", "vectors", "datasets", "parent"]])
-        variables g.render(dataset.variables, [excludes: ["dataset", "geoAxisX", "geoAxisY", "timeAxis", "verticalAxis"]])
-        vectors g.render(dataset.vectors, [excludes: ["dataset"]])
+        parent g.render(dataset.parent, [excludes: ["datasets","variables","datasetProperties","parent"]])
+        datasets g.render(template: 'shallow', collection: dataset.datasets, var: 'dataset')
     }
 }

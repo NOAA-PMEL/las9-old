@@ -187,31 +187,31 @@ class InitializationService {
         Element environment = new Element("environment")
         root.addContent(environment)
         if ( ferretEnvironment.getFer_data())
-          environment.addContent(makeEnvVariable("FER_DATA", ferretEnvironment.getFer_data()))
+            environment.addContent(makeEnvVariable("FER_DATA", ferretEnvironment.getFer_data()))
         if ( ferretEnvironment.getFer_descr() )
-          environment.addContent(makeEnvVariable("FER_DESCRS", ferretEnvironment.getFer_descr()))
+            environment.addContent(makeEnvVariable("FER_DESCRS", ferretEnvironment.getFer_descr()))
         if ( ferretEnvironment.getFer_dir() )
-          environment.addContent(makeEnvVariable("FER_DIR", ferretEnvironment.getFer_dir()))
+            environment.addContent(makeEnvVariable("FER_DIR", ferretEnvironment.getFer_dir()))
         if ( ferretEnvironment.getFer_dsets() )
-          environment.addContent(makeEnvVariable("FER_DSETS", ferretEnvironment.getFer_dsets()))
+            environment.addContent(makeEnvVariable("FER_DSETS", ferretEnvironment.getFer_dsets()))
         if ( ferretEnvironment.getFer_external_functions() )
-          environment.addContent(makeEnvVariable("FER_EXTERNAL_FUNCTIONS", ferretEnvironment.getFer_external_functions()))
+            environment.addContent(makeEnvVariable("FER_EXTERNAL_FUNCTIONS", ferretEnvironment.getFer_external_functions()))
         if ( ferretEnvironment.getFer_fonts() )
-           environment.addContent(makeEnvVariable("FER_FONTS", ferretEnvironment.getFer_fonts()))
+            environment.addContent(makeEnvVariable("FER_FONTS", ferretEnvironment.getFer_fonts()))
         if ( ferretEnvironment.getFer_go() )
-          environment.addContent(makeEnvVariable("FER_GO", ferretEnvironment.getFer_go()))
+            environment.addContent(makeEnvVariable("FER_GO", ferretEnvironment.getFer_go()))
         if ( ferretEnvironment.getFer_grids() )
-          environment.addContent(makeEnvVariable("FER_GRIDS", ferretEnvironment.getFer_grids()))
+            environment.addContent(makeEnvVariable("FER_GRIDS", ferretEnvironment.getFer_grids()))
         if ( ferretEnvironment.getFer_libs() )
-          environment.addContent(makeEnvVariable("FER_LIBS", ferretEnvironment.getFer_libs()))
+            environment.addContent(makeEnvVariable("FER_LIBS", ferretEnvironment.getFer_libs()))
         if ( ferretEnvironment.getFer_palette() )
-          environment.addContent(makeEnvVariable("FER_PALETTE", ferretEnvironment.getFer_palette()))
+            environment.addContent(makeEnvVariable("FER_PALETTE", ferretEnvironment.getFer_palette()))
         if ( ferretEnvironment.getLd_library_path() )
-          environment.addContent(makeEnvVariable("LD_LIBRARY_PATH", ferretEnvironment.getLd_library_path()))
+            environment.addContent(makeEnvVariable("LD_LIBRARY_PATH", ferretEnvironment.getLd_library_path()))
         if ( ferretEnvironment.getPythonpath() )
-          environment.addContent(makeEnvVariable("PYTHONPATH", ferretEnvironment.getPythonpath()))
+            environment.addContent(makeEnvVariable("PYTHONPATH", ferretEnvironment.getPythonpath()))
         if ( ferretEnvironment.getPlotfonts() )
-          environment.addContent(makeEnvVariable("PLOTFONTS", ferretEnvironment.getPlotfonts()))
+            environment.addContent(makeEnvVariable("PLOTFONTS", ferretEnvironment.getPlotfonts()))
         // Write
         XMLOutputter out = new XMLOutputter(Format.getPrettyFormat())
         FileWriter configFileWriter
@@ -315,7 +315,7 @@ class InitializationService {
         This are all the line plots, xyzt
 
          */
-        
+
         // Sort order set by the product_order string. I use first three digits to sort the groups, and the next three digits for the operation within the group.
         Product t_line_plot = Product.findByName("Time")
         if (!t_line_plot) {
@@ -385,7 +385,7 @@ class InitializationService {
             y_line_plot.addToOperations(operation_y_line_plot)
             y_line_plot.save(failOnError: true)
         }
-        
+
         Product x_line_plot = Product.findByName("Longitude")
         if (!x_line_plot) {
 
@@ -444,22 +444,22 @@ class InitializationService {
         if (!compare_plot_t) {
 
             // #expression,#interpolate_data,#image_format,#size,#use_ref_map,#use_graticules,#margins,#deg_min_sec"
-        // #palette
-        // #contour_style,#fill_levels,#contour_levels,#mark_grid"
-        // #set_aspect,#land_type
+            // #palette
+            // #contour_style,#fill_levels,#contour_levels,#mark_grid"
+            // #set_aspect,#land_type
 
-        compare_plot_t = new Product([name: "Compare_Plot_T", title: "Time", view: "t", data_view: "t", ui_group: "Line Plots", geometry: GeometryType.GRID, hidden: true, product_order: "999999"]) // Not in ui, order unnecessary
-        Operation operation_comparePlot_t = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot", type: "ferret"])
+            compare_plot_t = new Product([name: "Compare_Plot_T", title: "Time", view: "t", data_view: "t", ui_group: "Line Plots", geometry: GeometryType.GRID, hidden: true, product_order: "999999"]) // Not in ui, order unnecessary
+            Operation operation_comparePlot_t = new Operation([output_template: "xy_zoom", service_action: "Compare_Plot", type: "ferret"])
 
-        operation_comparePlot_t.setResultSet(resultsService.getPlotResults())
+            operation_comparePlot_t.setResultSet(resultsService.getPlotResults())
 
-        operation_comparePlot_t.addToMenuOptions(optionsService.getPalettes())
-        operation_comparePlot_t.addToYesNoOptions(optionsService.getInterpolate_data())
-        operation_comparePlot_t.addToTextOptions(optionsService.getFill_levels())
+            operation_comparePlot_t.addToMenuOptions(optionsService.getPalettes())
+            operation_comparePlot_t.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_comparePlot_t.addToTextOptions(optionsService.getFill_levels())
 
-        compare_plot_t.addToOperations(operation_comparePlot_t)
-        compare_plot_t.save(failOnError: true)
-    }
+            compare_plot_t.addToOperations(operation_comparePlot_t)
+            compare_plot_t.save(failOnError: true)
+        }
         /*
         Difference plot, this is "hidden" from the UI and called when an XY grid is to be differenced.
                 All the decorations about the title and ui_group are superfluous
@@ -849,8 +849,14 @@ class InitializationService {
             Site site = Site.first();
             if (!site) {
 
-                site = new Site([title: "Default LAS Site"])
+                site = new Site([title: "Example LAS Site from Initial Installation"])
                 // No site configured, so build the default site.
+
+                // Turn off toast message by default.
+                site.setToast(false)
+
+                // Default link to to LAS documentation
+                site.setInfoUrl("https://ferret.pmel.noaa.gov/LAS/")
 
                 FerretEnvironment ferretEnvironment = FerretEnvironment.first()
                 if (!ferretEnvironment) {
@@ -942,6 +948,9 @@ class InitializationService {
                     }
                 }
 
+
+
+
 //                log.debug("Ingesting carbon tracker THREDDS catalog.")
 //                def carbonThredds = "http://ferret.pmel.noaa.gov/pmel/thredds/carbontracker.xml"
 //                def carbon = Dataset.findByHash(IngestService.getDigest(carbonThredds))
@@ -984,11 +993,11 @@ class InitializationService {
 
 //                ingestService.cleanup(site)
 
-            def n = "https://oceanwatch.pfeg.noaa.gov/thredds/dodsC/satellite/QA/vekm/3day"
-            Dataset wind = ingestService.ingest(null, n)
+                def n = "https://oceanwatch.pfeg.noaa.gov/thredds/dodsC/satellite/QA/vekm/3day"
+                Dataset wind = ingestService.ingest(null, n)
                 wind.setStatus(Dataset.INGEST_FINISHED)
                 wind.save()
-            site.addToDatasets(wind)
+                site.addToDatasets(wind)
 
                 site.save(failOnError: true)
             }

@@ -24,6 +24,8 @@ class SiteController {
         def sid = params.id
         Site site = Site.get(sid)
 
+        // Don't bother to compute now as we're not going to display them.
+
         def g = Dataset.createCriteria()
         def grids = g.get {
             eq("variableChildren", true)

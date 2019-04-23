@@ -11,6 +11,7 @@ class Variable {
     String intervals
     String geometry;
     String units;
+    String thumbnail;
     Map<String, String> attributes
 
     static belongsTo = [dataset: Dataset]
@@ -35,6 +36,7 @@ class Variable {
         variableProperties(nullable: true)
         units(nullable:true)
         dataset (nullable: true)
+        thumbnail (nullable: true)
     }
 
     @Override

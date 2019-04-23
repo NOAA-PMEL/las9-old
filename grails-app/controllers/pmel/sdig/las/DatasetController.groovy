@@ -7,8 +7,8 @@ class DatasetController {
     static scaffold = Dataset
     IngestService ingestService
     AsyncIngestService asyncIngestService
+    AsyncFerretService asyncFerretService
     //MakeStatsService makeStatsService
-
     def add() {
         String url = params.url
         if ( url ) {
@@ -44,7 +44,7 @@ class DatasetController {
 
             if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) ) {
                 dataset.setStatus(Dataset.INGEST_STARTED)
-                dataset.setMessage("Ingest of data from remote server started... This may take a while. This message will update progress.")
+                dataset.setMessage("This data set has not been ingested by LAS. That process has been started. This may take a while, but you can check back anytime to see if it's finished.")
                 dataset.save(flush: true)
 
                 asyncIngestService.addVariablesAndSaveFromThredds(dataset.getUrl(), dataset.getHash(), null, true)
@@ -52,7 +52,7 @@ class DatasetController {
 
             } else if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_STARTED) ) ) {
                 IngestStatus ingestStatus = IngestStatus.findByHash(dataset.getHash())
-                String message = "Loading data set."
+                String message = "This the process of ingesting this data set has been started. This may take a while, but you can check back anytime to see if it's finished."
                 if (ingestStatus) {
                     message = ingestStatus.getMessage()
                 }
@@ -68,24 +68,21 @@ class DatasetController {
         }
     }
     def browse() {
-        def dataset
+        def dsWithVars = []
+
         def offset = params.offset
         // If no offset is specified send only the first
         if ( !offset ) {
             offset = 0
-            def datasets = Dataset.findAllByVariableChildren(true, [offset: offset, max: 1])
-            dataset = datasets.get(0)
+            def dlist = Dataset.findAllByVariableChildren(true, [offset: offset, max: 1])
+            dsWithVars.add(dlist.get(0))
 
 
         } else {
-            dataset = new Dataset([title: "Container for LAS Browse", variableChildren: false])
             // Send back the next 10
-            def datasets = Dataset.findAllByVariableChildren(true, [offset: offset, max: 10])
-            datasets.each{
-                dataset.addToDatasets(it)
-            }
+            dsWithVars = Dataset.findAllByVariableChildren(true, [offset: offset, max: 10])
         }
-        log.debug("Starting response for dataset " + dataset.id)
-        respond (dataset, [formats: ['json']]) // uses the custom templates in views/dataset
+        log.debug("Starting response for dataset list with " + dsWithVars.size() + " members.")
+        render(template: "browse",  model: [datasetList: dsWithVars])
     }
 }

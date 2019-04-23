@@ -29,7 +29,9 @@ apply plugin:"com.energizedwork.webdriver-binaries"
 apply plugin:"com.energizedwork.idea-project-components"
 apply plugin:"asset-pipeline"
 apply plugin:"org.grails.grails-gsp"
-apply plugin:"org.grails.plugins.views-json"
+// For json views
+apply plugin: "org.grails.grails-web"
+apply plugin: "org.grails.plugins.views-json"
 // Add the GWT plug-in RHS
 apply plugin: 'gwt'
 
@@ -75,7 +77,7 @@ dependencies {
     testRuntime "org.seleniumhq.selenium:selenium-remote-driver:3.6.0"
     testRuntime "org.seleniumhq.selenium:selenium-api:3.6.0"
     // Grails needed to make JSON views for custom renderings
-    compile "org.grails.plugins:views-json:1.2.7"
+    compile "org.grails.plugins:views-json-templates:2.0.0.RC2"
 
     // Mine
     // https://mvnrepository.com/artifact/com.google.code.gson/gson

@@ -1,4 +1,36 @@
 /*
+Keep chips from wrapping
+ */
+.LAS-chip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/*
+Underline for links
+ */
+.LAS-under {
+  text-decoration: underline;
+}
+/*
+Very close height for constraints panel
+ */
+.constraintHeight {
+  line-height: 18px !important;
+  height: 16px !important;
+}
+/* try to reproduce close spacing from old ui. */
+.radioHeight {
+  line-height: 14px !important;
+  height: 12px !important;
+}
+/* Float textbos to top
+
+ */
+.LAS-top {
+    z-index: 990;
+}
+/*
 Don't hover the LI in the help text.
  */
 .LAS-helplist-hover li:hover {
@@ -13,6 +45,7 @@ Don't hover the LI in the help text.
 .LAS-accordian li:hover, .side-nav li.active {
   background-color: #64b5f6  !important;
 }
+
 .panelHeader {
   color: #444 !important;
 }

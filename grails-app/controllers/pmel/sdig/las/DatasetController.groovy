@@ -4,7 +4,7 @@ import grails.converters.JSON
 
 class DatasetController {
 
-    static scaffold = Dataset
+//    static scaffold = Dataset
     IngestService ingestService
     AsyncIngestService asyncIngestService
     AsyncFerretService asyncFerretService
@@ -68,21 +68,21 @@ class DatasetController {
         }
     }
     def browse() {
-        def dsWithVars = []
+        def browseDatasets = []
 
         def offset = params.offset
         // If no offset is specified send only the first
         if ( !offset ) {
             offset = 0
             def dlist = Dataset.findAllByVariableChildren(true, [offset: offset, max: 1])
-            dsWithVars.add(dlist.get(0))
+            browseDatasets.add(dlist.get(0))
 
 
         } else {
             // Send back the next 10
-            dsWithVars = Dataset.findAllByVariableChildren(true, [offset: offset, max: 10])
+            browseDatasets = Dataset.findAllByVariableChildren(true, [offset: offset, max: 10])
         }
-        log.debug("Starting response for dataset list with " + dsWithVars.size() + " members.")
-        render(template: "browse",  model: [datasetList: dsWithVars])
+        log.debug("Starting response for dataset list with " + browseDatasets.size() + " members.")
+        render(template: "browse",  model: [datasetList: browseDatasets])
     }
 }

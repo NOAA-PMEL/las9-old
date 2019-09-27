@@ -12,7 +12,9 @@ class UrlMappings {
             controller = "product"
             action = "thumbnail"
         }
-        "/"(view:"/index")
+        "/"(view:"/index")   /* comment out this line and set line from comment below to prevent bare URL from being shown */
+        /* set line below for sending the bare URL to the ui
+        "/"("UI.html") */
         "500"(view:'/error')
         "404"(view:'/notFound')
     }

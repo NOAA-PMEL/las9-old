@@ -32,6 +32,7 @@
     <source path="type" />
 
     <entry-point class="pmel.sdig.las.client.main.UI"/>
+    <entry-point class="pmel.sdig.las.client.admin.Admin"/>
     <replace-with class="pmel.sdig.las.client.main.ClientFactoryImpl">
         <when-type-is class="pmel.sdig.las.client.main.ClientFactory" />
     </replace-with>

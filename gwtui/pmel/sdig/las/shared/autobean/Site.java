@@ -14,10 +14,19 @@ public class Site {
     int discrete;
 
     boolean toast;
+    boolean dashboard;
 
     String infoUrl;
 
     List<Dataset> datasets;
+
+    public boolean isDashboard() {
+        return dashboard;
+    }
+
+    public void setDashboard(boolean dashboard) {
+        this.dashboard = dashboard;
+    }
 
     public boolean isToast() {
         return toast;

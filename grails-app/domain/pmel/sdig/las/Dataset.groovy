@@ -4,6 +4,7 @@ class Dataset {
 
     String status
     String title
+    String history;
     String hash
     String url
     String geometry
@@ -30,10 +31,11 @@ class Dataset {
     static searchable = {
         variables component: true
         vectors component: true
-        only = ['variables', 'vectors', 'title', 'geometry', 'variableChildren']
+        only = ['variables', 'vectors', 'title', 'history', 'geometry', 'variableChildren']
     }
 
     static mapping = {
+        sort "title"
         url type: "text"
         title type: "text"
         datasets cascade: 'all-delete-orphan'
@@ -44,7 +46,7 @@ class Dataset {
         geometry(nullable: true)
         parent(nullable: true)
         url(nullable: true)
-        title(nullable: true)
+//        title(nullable: true)
         variables(nullable: true)
         datasets(nullable: true)
         datasetProperties(nullable: true)
@@ -52,8 +54,17 @@ class Dataset {
         variableChildren (nullable: true)
         vectors (nullable: true)
         message(nullable: true)
+        history(nullable: true)
     }
 
+    String getDatasetPropertyValue(String type, String name) {
+        DatasetProperty dsp = datasetProperties.find{it.type == type && it.name == name}
+        if ( dsp && dsp.value ) {
+            dsp.value.trim()
+        } else {
+            null
+        }
+    }
 
 //    @Override
 //    int compareTo(Object o) {
@@ -70,4 +81,7 @@ class Dataset {
 //    String toString() {
 //        title
 //    }
+    def getDatasetPropertyGroup(String s) {
+        datasetProperties.findAll{it.type == s}
+    }
 }

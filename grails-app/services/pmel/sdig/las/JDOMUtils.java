@@ -16,6 +16,7 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 
@@ -146,5 +147,22 @@ public class JDOMUtils {
         content = content.replaceAll("\\n","");
         return content;
     }
-
+    public static String decode(String encoded) throws UnsupportedEncodingException {
+        String temp = URLDecoder.decode(encoded.toString(), "UTF-8");
+        if ( temp.length() == encoded.length() ) {
+            // Decoding was not necessary since it didn't get smaller to return the original.
+            return encoded;
+        } else {
+            return temp;
+        }
+    }
+    public static String decode(String encoded, String encoding) throws UnsupportedEncodingException {
+        String temp = URLDecoder.decode(encoded.toString(), encoding);
+        if ( temp.length() == encoded.length() ) {
+            // Decoding was not necessary since it didn't get smaller to return the original.
+            return encoded;
+        } else {
+            return temp;
+        }
+    }
 }

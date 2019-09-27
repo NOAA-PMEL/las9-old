@@ -18,7 +18,7 @@ import pmel.sdig.las.type.GeometryType
 
 class SiteController {
 
-    static scaffold = Site
+//    static scaffold = Site
 
     def show() {
         def sid = params.id
@@ -37,7 +37,8 @@ class SiteController {
         def d = Dataset.createCriteria()
         def discrete = d.get {
             eq("variableChildren", true)
-            'in'("geometry", [GeometryType.TRAJECTORY, GeometryType.TIMESERIES, GeometryType.PROFILE])
+            // TODO fix this, but we could just take total - grids
+//            'in'("geometry", [GeometryType.TRAJECTORY, GeometryType.TIMESERIES, GeometryType.PROFILE, GeometryType.POINT])
             projections {
                 count()
             }

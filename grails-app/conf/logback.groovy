@@ -34,7 +34,7 @@ if (Environment.isDevelopmentMode() && targetDir != null) {
     logger("StackTrace", ERROR, ['FULL_STACKTRACE'], false)
 }
 root(ERROR, ['STDOUT'])
-// Always log every where for now...
+// Always log everywhere for now...
 logger("pmel.sdig.las", DEBUG, ['STDOUT'], false)
 logger("grails.app.Bootstrap", DEBUG, ['STDOUT'], false)
 logger("grails.plugins.elasticsearch", DEBUG, ['STDOUT'], false)

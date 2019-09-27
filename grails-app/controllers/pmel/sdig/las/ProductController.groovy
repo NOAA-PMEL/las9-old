@@ -2,6 +2,7 @@ package pmel.sdig.las
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.visualization.datasource.base.DataSourceException
 import com.google.visualization.datasource.base.ReasonType
@@ -10,18 +11,45 @@ import com.google.visualization.datasource.datatable.DataTable
 import com.google.visualization.datasource.datatable.TableRow
 import com.google.visualization.datasource.datatable.value.DateTimeValue
 import com.google.visualization.datasource.datatable.value.NumberValue
+import com.google.visualization.datasource.datatable.value.Value
 import com.google.visualization.datasource.datatable.value.ValueType
 import com.google.visualization.datasource.render.JsonRenderer
 import grails.converters.JSON
+import org.grails.web.json.JSONArray
+import org.grails.web.json.JSONObject
+import org.grails.web.json.JSONElement
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
+import pmel.sdig.las.tabledap.DataRow
+import pmel.sdig.las.tabledap.DataRowComparator
+import pmel.sdig.las.type.GeometryType
+import ucar.ma2.Array
+import ucar.ma2.ArrayBoolean
+import ucar.ma2.ArrayByte
+import ucar.ma2.ArrayChar
+import ucar.ma2.ArrayDouble
+import ucar.ma2.ArrayFloat
+import ucar.ma2.ArrayInt
+import ucar.ma2.ArrayLong
+import ucar.ma2.ArrayShort
+import ucar.ma2.ArrayString
+import ucar.ma2.InvalidRangeException
+import ucar.nc2.dataset.NetcdfDataset
+import ucar.nc2.Attribute
+import ucar.nc2.Dimension
+import ucar.nc2.NetcdfFile
+import ucar.nc2.NetcdfFileWriter
+import ucar.nc2.time.CalendarDate
+import ucar.nc2.time.CalendarDateUnit
+import ucar.unidata.geoloc.LatLonPoint
+import ucar.unidata.geoloc.LatLonPointImpl
 
 import java.nio.charset.StandardCharsets
 
 class ProductController {
-    static scaffold = Product
+//    static scaffold = Product
     AsyncFerretService asyncFerretService
     FerretService ferretService
     ProductService productService
@@ -29,6 +57,7 @@ class ProductController {
     JsonParser jsonParser = new JsonParser()
     ResultsService resultsService
     DateTimeService dateTimeService
+    ErddapService erddapService
     def summary () {
         def webAppDirectory = request.getSession().getServletContext().getRealPath("")
         // Until such time as "-" file names are allowed, deal with it with a link named without the "-"
@@ -191,6 +220,8 @@ class ProductController {
 
         def requestJSON = request.JSON
 
+        def reason;
+
         def hash = IngestService.getDigest(requestJSON.toString());
 
         log.debug(requestJSON.toString())
@@ -199,12 +230,13 @@ class ProductController {
 
 
         Product product = Product.findByName(lasRequest.operation)
+        def productName = product.getName()
         String view = product.getView()
         List<RequestProperty> properties = lasRequest.getRequestProperties();
         List<Analysis> analysis = lasRequest.getAnalysis()
 
         /*
-        Loop through all of the operaions. Accumulate the results from each operation into a global ResultsSet
+        Loop through all of the operations. Accumulate the results from each operation into a global ResultsSet
          */
 
         ResultSet allResults = new ResultSet()
@@ -244,8 +276,16 @@ class ProductController {
             }
         } else {
 
+
+            List<String> chainedUrls = new ArrayList<String>();
+            List<String> datasetHashes = lasRequest.getDatasetHashes()
+            List<String> variableHashes = lasRequest.getVariableHashes()
+            List<DataConstraint> constraints = lasRequest.getDataConstraints();
+
+
             for (int o = 0; o < operations.size(); o++) {
                 Operation operation = operations.get(o)
+
 
                 if (operation.getType() == "ferret") {
 
@@ -446,18 +486,25 @@ class ProductController {
 
                      */
 
+                    Dataset dataset = null
+                    Variable variable = null
 
-                    List<String> datasetHashes = lasRequest.getDatasetHashes()
-                    List<String> variableHashes = lasRequest.getVariableHashes()
-                    List<DataConstraint> constraints = lasRequest.getConstraints();
                     // There is one data set has entry and one variable hash entry for each variable in the request
                     // even if the variables are from the same data set.
                     for (int h = 0; h < datasetHashes.size(); h++) {
-
                         // Apply the analysis to the variable URL
-                        Dataset dataset = Dataset.findByHash(datasetHashes.get(h))
-                        Variable variable = dataset.variables.find { Variable v -> v.hash == variableHashes.get(h) }
-                        String variable_url = variable.getUrl()
+                        dataset = Dataset.findByHash(datasetHashes.get(h))
+                        variable = dataset.variables.find { Variable v -> v.hash == variableHashes.get(h) }
+
+                        String variable_url;
+
+                        // TODO all variables are in one file. This might ought not be an array
+                        if ( chainedUrls.size() > 0 ) {
+                            variable_url = chainedUrls.get(0)
+                        } else {
+                            variable_url = variable.getUrl()
+                        }
+
                         String variable_name = variable.getName()
                         String variable_title = variable.getTitle()
                         String varable_hash = variable.getHash()
@@ -517,7 +564,11 @@ class ProductController {
 
                             variable_url = base + "thredds/dodsC/las/" + dataset_hash + "/" + varable_hash + "/" + sp.getName()
 
+                        }
 
+                        def tabledap = dataset.getDatasetPropertyGroup("tabledap_access")
+                        tabledap.each {
+                            jnl.append("DEFINE SYMBOL " + it.type + "_" + h + "_" + it.name + " = " + it.value + "\n")
                         }
 
                         if ( constraints ) {
@@ -620,8 +671,6 @@ class ProductController {
 
                     def resultSet = product.operations.get(o).resultSet
 
-                    def mapScaleFile
-
                     resultSet.results.each { Result result ->
 
                         /*
@@ -641,13 +690,13 @@ class ProductController {
                     }
 
 
-                    jnl.append("go ${product.operations.get(0).service_action}\n")
+                    jnl.append("go ${operation.service_action}\n")
 
                     def ferretResult = ferretService.runScript(jnl)
                     def error = ferretResult["error"];
                     if (error) {
                         log.error(ferretResult["message"]);
-                        def errorMessage = [error: ferretResult["message"], targetPanel: lasRequest.getTargetPanel(),]
+                        def errorMessage = [error: ferretResult["message"], targetPanel: lasRequest.getTargetPanel()]
                         render errorMessage as JSON
                     }
 
@@ -655,6 +704,21 @@ class ProductController {
 
 
                 } else if (operation.type == "erddap") {
+
+                    log.debug("Making erddap product."); // debug
+
+                    // TODO for now assume there is only one data set on an ERDDAP operation
+                    Dataset dataset = Dataset.findByHash(datasetHashes.get(0))
+
+                    try {
+                        String chainedURL = erddapService.makeNetcdfFile(lasRequest, productName, operation, dataset)
+                        chainedUrls.add(chainedURL)
+                    } catch (Exception e) {
+                        def errorMessage = [error: e.getMessage(), targetPanel: lasRequest.getTargetPanel()]
+                        render errorMessage as JSON
+                    }
+
+                    // TODO now what? with the file
 
                 } // operation type
 
@@ -670,23 +734,130 @@ class ProductController {
     }
 
 
-
     def erddapDataRequest() {
 
         def requestJSON = request.JSON
-        // This is the cache key. Must make caching aware of data requests.
+        // TODO This is the cache key. Must make caching aware of data requests.
         def hash = IngestService.getDigest(requestJSON.toString());
-
+        def reason = ""
         def lasRequest = new LASRequest(requestJSON);
+        List<RequestProperty> requestProperties = lasRequest.getRequestProperties();
+        if ( requestProperties ) {
+            requestProperties.each {
+                if ( it.type == "dashboard" && it.name == "request_type" ) {
+                    reason = it.value
+                }
+            }
+        }
         Dataset dataset = Dataset.findByHash(lasRequest.getDatasetHashes().get(0))
-        Variable variable = dataset.variables.find {Variable v -> v.hash == lasRequest.getVariableHashes().get(0)}
-        def url = dataset.getUrl()+".json";
-        def data = new URL(url).getText()
+        def url = dataset.getUrl()+".json?";
+        String vars = ""
+        for (int i = 0; i < lasRequest.getVariableHashes().size(); i++) {
+            def vhash = lasRequest.getVariableHashes().get(i);
+            Variable variable = dataset.variables.find {Variable v -> v.hash == vhash}
+            vars = vars + variable.getName();
+            if ( i < lasRequest.getVariableHashes().size() - 1 ) {
+                vars = vars + ","
+            }
+        }
 
-        render data;
+        String constraint = ""
+        String tlo = lasRequest.getAxesSets().get(0).getTlo();
+        String thi = lasRequest.getAxesSets().get(0).getThi();
+
+        if ( tlo ) {
+            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+            constraint = constraint + "time>=" + tlo;
+        }
+        if ( thi ) {
+            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+            constraint = constraint + "time<=" + thi
+        }
+
+
+        // TODO use names from data set in constraints????
+
+        String xlo = lasRequest.getAxesSets().get(0).getXlo();
+        String xhi = lasRequest.getAxesSets().get(0).getXhi();
+
+        if ( xlo ) {
+            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+            constraint = constraint + "longitude>=" + xlo;
+        }
+        if ( xhi ) {
+            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+            constraint = constraint + "longitude<=" + xhi
+        }
+
+        String ylo = lasRequest.getAxesSets().get(0).getYlo();
+        String yhi = lasRequest.getAxesSets().get(0).getYhi();
+
+        if ( ylo ) {
+            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+            constraint = constraint + "latitude>=" + ylo;
+        }
+        if ( yhi ) {
+            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+            constraint = constraint + "latitude<=" + yhi
+        }
+
+        List<DataQualifier> qualifierList = lasRequest.getDataQualifiers();
+        for (int i = 0; i < qualifierList.size(); i++) {
+            DataQualifier dq = qualifierList.get(i);
+            if ( dq.isDistinct() ) {
+                constraint = constraint+ "&distinct()"
+            } else if ( !dq.getType().isEmpty() ) {
+                constraint = constraint + "&" + dq.getType() + "("
+                List<String> vs = dq.getVariables()
+                for (int j = 0; j < vs.size(); j++) {
+                    constraint = constraint + vs.get(j)
+                    if ( j < vs.size() - 1 )
+                        constraint = constraint + ","
+                }
+                constraint = constraint = + ")"
+            }
+
+        }
+
+        url = url + URLEncoder.encode(vars + "&" + constraint, StandardCharsets.UTF_8.name())
+        try {
+            log.info(reason)
+            log.info(url)
+            String data = lasProxy.executeGetMethodAndReturnResult(url);
+            render data;
+        } catch (Exception e) {
+            throw e;
+        }
 
     }
-    def datatable() {
+    def datatable () {
+        /*
+
+
+        Make something that looks like this:
+
+
+
+        {
+          "cols": [
+                   {"id":"","label":"Topping","pattern":"","type":"string"},
+                   {"id":"","label":"Slices","pattern":"","type":"number"}
+                  ],
+          "rows": [
+                   {"c":[{"v":"Mushrooms","f":null},{"v":3,"f":null}]},
+                   {"c":[{"v":"Onions","f":null},{"v":1,"f":null}]},
+                   {"c":[{"v":"Olives","f":null},{"v":1,"f":null}]},
+                   {"c":[{"v":"Zucchini","f":null},{"v":1,"f":null}]},
+                   {"c":[{"v":"Pepperoni","f":null},{"v":2,"f":null}]}
+                  ]
+        }
+
+
+       The data table code below is not working. When rendering rows with null values it mak
+
+
+         */
+
 
         DateTimeFormatter iso = ISODateTimeFormat.dateTimeNoMillis();
         def requestJSON = request.JSON
@@ -696,15 +867,30 @@ class ProductController {
         // A request is either an LAS request for which the ERDDAP URL must be formed, or
         // it is a request that contains the ERDDAP URL as a query parameter called "url"
         def url = null
+        def reason = ""
         if (requestJSON) {
             def lasRequest = new LASRequest(requestJSON);
+
+            List<RequestProperty> requestProperties = lasRequest.getRequestProperties();
+            if ( requestProperties ) {
+                requestProperties.each {
+                    if ( it.type == "dashboard" && it.name == "request_type" ) {
+                        reason = it.value
+                    }
+                }
+            }
 
             Dataset dataset = Dataset.findByHash(lasRequest.getDatasetHashes().get(0))
             def varNames = ""
             lasRequest.getVariableHashes().each { String vhash ->
                 Variable variable = dataset.variables.find { Variable v -> v.hash == vhash }
-                varNames = varNames + "," + variable.name
+                if ( !varNames.isEmpty() ) varNames = varNames + ",";
+                varNames = varNames + variable.name
             }
+
+            def latname = dataset.getDatasetPropertyValue("tabledap_access","latitude");
+            def lonname = dataset.getDatasetPropertyValue("tabledap_access","longitude");
+            def zname = dataset.getDatasetPropertyValue("tabledap_access","altitude")
 
             String constraint = ""
             String tlo = lasRequest.getAxesSets().get(0).getTlo();
@@ -724,11 +910,11 @@ class ProductController {
 
             if ( xlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "longitude>=" + xlo;
+                constraint = constraint + lonname + ">=" + xlo;
             }
             if ( xhi ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "longitude<=" + xhi
+                constraint = constraint + lonname + "<=" + xhi
             }
 
             String ylo = lasRequest.getAxesSets().get(0).getYlo()
@@ -736,11 +922,11 @@ class ProductController {
 
             if ( ylo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "latitude>=" + ylo;
+                constraint = constraint + latname + ">=" + ylo;
             }
             if ( yhi ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "latitude<=" + yhi
+                constraint = constraint + latname + "<=" + yhi
             }
 
             String zlo = lasRequest.getAxesSets().get(0).getZlo()
@@ -748,81 +934,161 @@ class ProductController {
 
             if ( zlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "depth>=" + zlo;
+                constraint = constraint + zname + ">=" + zlo;
             }
             if ( zhi ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "latitude<=" + zhi
+                constraint = constraint + zname + "<=" + zhi
             }
 
             if ( !constraint.isEmpty() ) constraint = "&" + constraint
 
-            url = dataset.getUrl() + ".json?" + URLEncoder.encode("time" + varNames + constraint, StandardCharsets.UTF_8.name());
+
+
+            List constraintElements = lasRequest.getDataConstraints()
+
+            // For now we will not use the decimated data set when there is any constraint applied to the request.
+            // In the future we may need to distinguish between a sub-set variable constraint and a variable constraint.
+            // The two types below should be enough to tell the difference.
+
+            if ( constraintElements && constraintElements.size() > 0 ) {
+
+                Iterator cIt = constraintElements.iterator();
+                while (cIt.hasNext()) {
+                    def dc = (DataConstraint) cIt.next();
+                    String lhsString = dc.getLhs()
+                    String opString = dc.getOp()
+                    String rhsString = dc.getRhs()
+                    String tType = dc.getType()
+                    if (tType.equals("variable")) {
+                        constraint = constraint + "&" + dc.getAsString();  //op is now <, <=, ...
+                        // Gather lt and gt constraint so see if modulo variable treatment is required.
+//
+//                        TODO what to do about this
+//
+//                        if (modulo_vars.contains(lhsString) && (opString.equals("lt") || opString.equals("le"))) {
+//                            constrained_modulo_vars_lt.put(lhsString, constraint);
+//                        }
+//                        if (modulo_vars.contains(lhsString) && (opString.equals("gt") || opString.equals("ge"))) {
+//                            constrained_modulo_vars_gt.put(lhsString, constraint);
+//                        }
+
+                    } else if (tType.equals("text")) {
+                        constraint = constraint + "&" + dc.getAsERDDAPString()  //op is now <, <=, ...
+                    }
+                }
+            }
+
+            // TODO Add data qualifiers (distinct and orderByMax in this case).
+            List<DataQualifier> qualifierList = lasRequest.getDataQualifiers();
+            if ( qualifierList ) {
+                for (int i = 0; i < qualifierList.size(); i++) {
+                    DataQualifier dq = qualifierList.get(i)
+                    if (dq.isDistinct()) {
+                        constraint = constraint + "&distinct()"
+                    } else if (!dq.getType().isEmpty()) {
+                        constraint = constraint + "&" + dq.getType() + "(\""
+                        List<String> vs = dq.getVariables()
+                        for (int j = 0; j < vs.size(); j++) {
+                            constraint = constraint + vs.get(j)
+                            if (j < vs.size() - 1)
+                                constraint = constraint + ","
+                        }
+                        constraint = constraint + "\")"
+                    }
+
+                }
+            }
+
+            url = dataset.getUrl() + ".json?" + URLEncoder.encode(varNames + constraint, StandardCharsets.UTF_8.name());
         } else {
             url = params.url
         }
         if (url) {
+
+            log.info(reason);
+            log.info(url);
 
             String jsonText = lasProxy.executeGetMethodAndReturnResult(url)
             JsonElement json = jsonParser.parse(jsonText)
             def table = json.getAsJsonObject().get("table")
             JsonArray names = table.get("columnNames").asJsonArray
             JsonArray types = table.get("columnTypes").asJsonArray
-
-            DataTable dataTable = new DataTable();
+            JSONObject datatable = new JSONObject();
+            JSONArray cols = new JSONArray();
+            datatable.accumulate("cols", cols)
             for (int i = 0; i < names.size(); i++) {
+                JSONObject col = new JSONObject();
+                col.accumulate("id", "");
+                col.accumulate("pattern", "")
                 String name = names.get(i).asString
+                col.accumulate("label", name)
                 String type = types.get(i).asString
                 ValueType chartColumnType = null;
                 if (type.equals("String") && !name.toLowerCase().equals("time")) {
-                    chartColumnType = ValueType.TEXT
+                    col.accumulate("type", "string")
                 } else if (type.equals("String") && name.toLowerCase().equals("time")) {
-                    chartColumnType = ValueType.DATETIME
+                    col.accumulate("type", "datetime")
                 } else if (type.equals("float")) {
-                    chartColumnType = ValueType.NUMBER
+                    col.accumulate("type", "number")
                 } else if (type.equals("double")) {
-                    chartColumnType = ValueType.NUMBER
+                    col.accumulate("type", "number")
                 }
-                ColumnDescription columnDescription = new ColumnDescription(name, chartColumnType, name)
-                dataTable.addColumn(columnDescription)
+                cols.add(col)
             }
 
 
             def rows = table.get("rows")
+            JSONArray jsonRows = new JSONArray();
+            datatable.accumulate("rows", jsonRows)
             rows.each { JsonArray row ->
-                TableRow tableRow = new TableRow()
+                JSONObject tableRow = new JSONObject()
+                jsonRows.add(tableRow)
                 for (int i = 0; i < row.size(); i++) {
+                    JSONObject rowValues = new JSONObject()
+                    tableRow.accumulate("c", rowValues)
                     String name = names.get(i).asString
                     String type = types.get(i).asString
                     if (type.equals("String") && !name.toLowerCase().equals("time")) {
-                        tableRow.addCell(row.get(i).asString)
+                        rowValues.accumulate("v", row.get(i).asString)
+                        rowValues.accumulate("f", null)
                     } else if (type.equals("String") && name.toLowerCase().equals("time")) {
-                        DateTime dt = iso.parseDateTime(row.get(i).asString).withZone(DateTimeZone.UTC);
-                        tableRow.addCell(new DateTimeValue(dt.getYear(), dt.getMonthOfYear()-1, dt.getDayOfMonth(), dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(), dt.getMillisOfSecond()))
+                        String dtstring = row.get(i).asString
+                        DateTime dt = dateTimeService.dateTimeFromIso(dtstring);
+                        int year = dt.getYear()
+                        int month = dt.getMonthOfYear() - 1
+                        int day = dt.getDayOfMonth()
+                        rowValues.accumulate("v", "Date("+ year + "," +  month + "," + day + "," + dt.getHourOfDay() + "," + dt.getMinuteOfHour() + "," + dt.getSecondOfMinute() + "," + dt.getMillisOfSecond() +")")
+                        rowValues.accumulate("f", null)
                     } else if (type.equals("float")) {
                         if (row.get(i).isJsonNull()) {
-                            tableRow.addCell(NumberValue.getNullValue())
+                            rowValues.accumulate("v", null)
+                            rowValues.accumulate("f", null)
                         } else {
-                            tableRow.addCell(row.get(i).asDouble)
+                            rowValues.accumulate("v", row.get(i).asDouble)
+                            rowValues.accumulate("f", null)
                         }
                     } else if (type.equals("double")) {
-                        if (row.get(i).isJsonNull()) {
-                            tableRow.addCell(NumberValue.getNullValue())
+                        JsonElement je = row.get(i);
+                        if (je == null || je.isJsonNull()) {
+                            rowValues.accumulate("v", null)
+                            rowValues.accumulate("f", null)
                         } else {
-                            tableRow.addCell(row.get(i).asFloat)
+                            rowValues.accumulate("v", je.asFloat)
+                            rowValues.accumulate("f", null)
                         }
+                    } else {
+                        log.info("Cell value of unknown type encountered: " + type)
                     }
                 }
-
-                dataTable.addRow(tableRow)
-
             }
 
-
-            render JsonRenderer.renderDataTable(dataTable, true, false, false)
+            render datatable
         } else {
             throw new DataSourceException(ReasonType.INVALID_REQUEST, "url parameter not provided");
         }
+
+
     }
 
 

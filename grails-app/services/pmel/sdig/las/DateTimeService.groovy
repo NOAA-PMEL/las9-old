@@ -26,29 +26,33 @@ class DateTimeService {
 	private DateTimeFormatter mediumFerretForm;
 	private DateTimeFormatter longFerretForm;
 
-	def DateTime dateTimeFromIso(String iso) {
+	DateTime dateTimeFromIso(String iso) {
 		return isoForm.parseDateTime(iso)
+	}
+	DateTime dateTimeFromFerret(String ferret, String calendar) {
+		init(calendar)
+		DateTime ferretDT = null;
+		try {
+			ferretDT = shortFerretForm.parseDateTime(ferret);
+		} catch (Exception e) {
+			try {
+				ferretDT = mediumFerretForm.parseDateTime(ferret);
+			} catch ( Exception e2 ) {
+				try {
+					ferretDT = longFerretForm.parseDateTime(ferret);
+				} catch (Exception e3) {
+					// punt
+				}
+			}
+		}
+		ferretDT
 	}
 	def String isoFromFerret(String ferret, String calendar) {
 
 		init(calendar)
 
-		DateTime isoDT;
-		
-		try {
-			isoDT = shortFerretForm.parseDateTime(ferret);
-		} catch (Exception e) {
-			try {
-				isoDT = mediumFerretForm.parseDateTime(ferret);
-			} catch ( Exception e2 ) {
-				try {
-					isoDT = longFerretForm.parseDateTime(ferret);
-				} catch (Exception e3) {
-					// punt
-					return "";
-				}
-			}
-		}
+		DateTime isoDT = dateTimeFromFerret(ferret, calendar)
+
 		try {
 			return isoFormPrinter.print(isoDT.getMillis());
 		} catch (Exception e) {
@@ -67,6 +71,10 @@ class DateTimeService {
 			return ""
 		}
 
+	}
+	def String isoFromDateTime(DateTime dateTime, String calendar) {
+		init(calendar)
+		isoFormPrinter.print(dateTime)
 	}
 	// Make a map of chrono, parsers and printers (most will be the same).
 	// Run the init at bootstrap time.
@@ -91,7 +99,7 @@ class DateTimeService {
 		shortFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy").withChronology(chrono).withZone(DateTimeZone.UTC);
 		mediumFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy HH:mm").withChronology(chrono).withZone(DateTimeZone.UTC);
 		longFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy HH:mm:ss").withChronology(chrono).withZone(DateTimeZone.UTC);
-		isoForm = ISODateTimeFormat.dateTimeParser().withChronology(chrono).withZone(DateTimeZone.UTC);;
+		isoForm = ISODateTimeFormat.dateTimeParser().withChronology(chrono).withZone(DateTimeZone.UTC);
 		isoFormPrinter = ISODateTimeFormat.dateTime().withChronology(chrono).withZone(DateTimeZone.UTC);
 	}
 }

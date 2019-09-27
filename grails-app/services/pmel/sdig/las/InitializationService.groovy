@@ -236,13 +236,255 @@ class InitializationService {
         fer_variable
     }
 
+    def createDefaultRegions() {
 
+        // These are s, n, w, e
 
+        // For the OSMC Dashboard, don't care about land masses
+//        Region africa = new Region([name: "africa", title: "Africa", southLat: -40.0d, northLat: 40.0d, westLon: -20.0d, eastLon: 60.0d])
+//        africa.save(failOnError: true)
+//
+//        Region asia = new Region([name: "asia", title: "Asian", southLat: 0.0d, northLat: 80.0d, westLon: 40.0d, eastLon: 180.0d])
+//        asia.save(failOnError: true)
+//
+//        Region australia = new Region([title: "Australia",name: "australia", southLat: -50.0d, northLat:  0.0d, westLon:  110.0d, eastLon:  180.0d])
+//        australia.save(failOnError: true)
+//
+//        Region europe = new Region ([title: "Europe", name:  "europe", southLat: 30.0d, northLat:  75.0d, westLon: -10.0d, eastLon:  40.0d])
+//        europe.save(failOnError: true)
+//
+//        Region north_america = new Region([title: "North America", name: "north america", southLat:  10.0d, northLat:  75.0d, westLon: -170.0d, eastLon: -50.0d])
+//        north_america.save(failOnError: true)
+//
+//        Region south_america = new Region([title: "South America", name: "south america", southLat: -60.0d, northLat: 15.0d, westLon: -90.0d, eastLon:-30.0d])
+//        south_america.save(failOnError: true)
+
+        Region global_0 = new Region([title: "Global (0)", name: "global 0", southLat: -90.0d, northLat: 90.0d, westLon: -180.0d, eastLon: 180.0d])
+        global_0.save(failOnError: true)
+
+        Region global_180 = new Region([title: "Global (180)", name: "global 180", southLat: -90.0d, northLat: 90.0d, westLon: 0.0d, eastLon: 180.0d])
+        global_180.save(failOnError: true)
+
+        Region indian_ocean = new Region ([title: "Indian Ocean", name: "indian ocean", southLat: -75.0d, northLat:  30.0d, westLon:  20.0d, eastLon:  120.0d])
+        indian_ocean.save(failOnError: true)
+
+        Region north_atlantic = new Region([title: "North Atlantic",name: "north atlantic", southLat: 0.0d, northLat:  70.0d, westLon: -80.0d, eastLon: 20.0])
+        north_atlantic.save(failOnError: true)
+
+        Region equatorial_atlantic = new Region([title: "Equatorial Atlantic", name: "equatorial atlantic", southLat: -30.0d, northLat: 30.0d, westLon: -80.0, eastLon: 20.0])
+        equatorial_atlantic.save(failOnError: true)
+
+        Region south_atlantic = new Region([title: "South Atlantic", name: "south atlantic", southLat: -75.0d, northLat:  10.0d, westLon: -70.0d, eastLon:  25.0d])
+        south_atlantic.save(failOnError: true)
+
+        Region north_pacific = new Region([title: "North Pacific",name: "north pacific", southLat:  0.0d, northLat:  70.0d, westLon:  110.0d,eastLon:  260.0d])
+        north_pacific.save(failOnError: true)
+
+        Region equatorial_pacific = new Region([title: "Equatorial Pacific", name: "equatorial pacific", southLat: -30.0d, northLat: 30.0d, westLon:  135.0d, eastLon:  285.0d])
+        equatorial_pacific.save(failOnError: true)
+
+        Region south_pacific = new Region([title: "South Pacific", name: "south pacific", southLat: -75.0d, northLat:  0.0d, westLon:  150.0d, eastLon:  290.0])
+        south_pacific.save(failOnError: true)
+
+        Region gulf_of_mexico = new Region([title: "Gulf of Mexico", name: "gulf of mexico", southLat: 15.0d, northLat: 31.0d, westLon: -100.0d, eastLon: -82.0d])
+        gulf_of_mexico.save(failOnError: true)
+
+        Region gulf_and_caribbean = new Region([title: "Gulf of Mexico and Caribbean", name: "gulf and caribbean", southLat: 6.0d, northLat: 35.0d, westLon: -100.0d, eastLon: -56.0d])
+        gulf_and_caribbean.save(failOnError: true)
+
+        Region eastern_seaboard = new Region([title: "Eastern Seaboard", name: "eastern seaboard", southLat: 22.0d, northLat: 55.0d, westLon: -84.0d, eastLon: -41.0d])
+        eastern_seaboard.save(failOnError: true)
+    }
     /**
      * Create the options and save them...
      */
 
     def createProducts() {
+
+        /*
+
+  <operation name="Point Location value Plot" ID="Point_location_value_plot" output_template="zoom" default="true" category="visualization">
+    <operation name="Database Extraction" ID="DBExtract" output_template="" service_action="Timeseries_interactive_plot">
+      <response ID="DBExtractResponse">
+        <result type="debug" ID="db_debug" file_suffix=".txt"/>
+        <result type="netCDF" ID="netcdf" file_suffix=".nc"/>
+        <result type="cancel" ID="cancel"/>
+      </response>
+      <service>tabledap</service>
+    </operation>
+    <operation chained="true" name="In-situ location and value plot" ID="Plot_insitu_XY_locations_and_values" output_template="zoom" service_action="Plot_insitu_XY_locations_and_values">
+      <args>
+        <arg chained="true" type="variable" index="1" operation="DBExtract" result="netcdf" file_suffix=".nc"/>
+        <arg type="region" index="1" ID="in-situ-Region"/>
+      </args>
+      <response ID="PlotResp" type="HTML" index="1">
+        <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+        <result type="svg" ID="plot_svg" file_suffix=".svg"/>
+        <result type="ps" ID="plot_ps" file_suffix=".ps"/>
+        <result type="pdf" ID="plot_pdf" file_suffix=".pdf"/>
+        <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+        <result type="js_total" ID="js_total" file_suffix=".js"/>
+        <result type="map_data" ID="map_data" file_suffix=".txt"/>
+        <result type="image" ID="ref_map" file_suffix=".png"/>
+        <result type="debug" ID="debug" file_suffix=".txt"/>
+        <result type="cancel" ID="cancel"/>
+        <result type="xml" ID="webrowset" file_suffix=".xml"/>
+      </response>
+      <service>ferret</service>
+    </operation>
+    <optiondef IDREF="Timeseries_Options"/>
+    <region>
+      <intervals name="xyt" type="Maps" title="Latitude-Longitude"/>
+    </region>
+  </operation>
+
+         */
+
+        Product point_location = Product.findByName("Point_location_value_plot")
+        if ( !point_location ) {
+            point_location = new Product([name:"Point_location_value_plot", title: "Location Plot", view: "xy", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.POINT, product_order: "100001"])
+
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_location_plot = new Operation([name: "Location_plot", service_action: "Plot_insitu_XY_locations_and_values", type: "ferret", output_template: "zoom"])
+            operation_location_plot.setResultSet(resultsService.getPlotResults())
+            // #Timeseries_palette,#size,#fill_levels,#deg_min_sec,#set_aspect,#use_graticules,#full_data,#bathymetry_style
+            operation_location_plot.addToMenuOptions(optionsService.getPalettes())
+            operation_location_plot.addToTextOptions(optionsService.getFill_levels())
+            operation_location_plot.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_location_plot.addToYesNoOptions(optionsService.getSet_aspect())
+            operation_location_plot.addToMenuOptions(optionsService.getUse_graticules())
+
+            point_location.addToOperations(operation_extract_data)
+            point_location.addToOperations(operation_location_plot)
+
+            point_location.save(failOnError: true)
+        }
+
+        /*
+
+ <operation chained="true" ID="Profile_Plot_2D" service_action="Plot_2D_Profile" order="0101" category="visualization">
+    <args>
+        <arg chained="true" type="variable" index="1" operation="DBExtract" result="netcdf" file_suffix=".nc"/>
+        <arg type="region" index="1" ID="in-situ-Region"/>
+    </args>
+    <service>ferret</service>
+    <response ID="PlotResp">
+      <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+      <!-- <result type="ps" ID="plot_postscript" streamable="true" mime_type="application/postscript"
+                                /> -->
+      <result type="image" ID="ref_map" file_suffix=".png"/>
+      <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+      <result type="debug" ID="debug" file_suffix=".txt"/>
+      <result type="cancel" ID="cancel" file_suffix=".txt"/>
+    </response>
+    </operation>
+     <region>
+      <intervals name="xzt" type="Depth Profiles" title="Longitude-Depth"/>
+      <intervals name="yzt" type="Depth Profiles" title="Latitude-Depth"/>
+      <intervals name="zt" type="Hovmoller Plots" title="Latitude-Depth"/>
+    </region>
+    <grid_types>
+      <grid_type name="profile"/>
+    </grid_types>
+    <optiondef IDREF="Options_2D_image_contour_7"/>
+  </operation>
+
+
+         */
+        Product profile = Product.findByName("Profile_Plot_2D")
+        if ( !profile ) {
+            profile = new Product([name:"Plot_2D_Profile", title: "Profile Plot", view: "zt", data_view: "xyzt", ui_group: "Profile Plots", geometry: GeometryType.PROFILE, product_order: "100001"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_profile = new Operation([name: "Proflie_plot", service_action: "Plot_2D_Profile", type: "ferret", output_template: "zoom"])
+            operation_plot_profile.setResultSet(resultsService.getPlotResults())
+
+            //
+            operation_plot_profile.addToTextOptions(optionsService.getExpression())
+            operation_plot_profile.addToTextOptions(optionsService.getDep_axis_scale())
+            operation_plot_profile.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_plot_profile.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_profile.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_plot_profile.addToMenuOptions(optionsService.getLine_or_sym())
+            operation_plot_profile.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_profile.addToMenuOptions(optionsService.getLine_thickness())
+
+            profile.addToOperations(operation_extract_data)
+            profile.addToOperations(operation_plot_profile)
+
+            profile.save(failOnError: true)
+        }
+        /*
+
+  <!-- This is the default XY plot. -->
+  <operation name="Trajectory Plot" ID="Trajectory_interactive_plot" output_template="zoom" default="true" category="visualization">
+    <operation name="Database Extraction" ID="DBExtract" output_template="" service_action="Trajectory_interactive_plot">
+      <response ID="DBExtractResponse">
+        <result type="debug" ID="db_debug" file_suffix=".txt"/>
+        <result type="netCDF" ID="netcdf" file_suffix=".nc"/>
+        <result type="cancel" ID="cancel"/>
+      </response>
+      <service>tabledap</service>
+    </operation>
+    <operation chained="true" name="Trajectory Map" ID="Trajectory_2D_poly" output_template="output" service_action="Trajectory_2D_poly">
+      <args>
+        <arg chained="true" type="variable" index="1" operation="DBExtract" result="netcdf" file_suffix=".nc"/>
+        <arg type="region" index="1" ID="in-situ-Region"/>
+      </args>
+      <response ID="PlotResp" type="HTML" index="1">
+        <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+        <result type="svg" ID="plot_svg" file_suffix=".svg"/>
+        <result type="ps" ID="plot_ps" file_suffix=".ps"/>
+        <result type="pdf" ID="plot_pdf" file_suffix=".pdf"/>
+        <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+        <result type="js_total" ID="js_total" file_suffix=".js"/>
+        <result type="map_data" ID="map_data" file_suffix=".txt"/>
+        <result type="image" ID="ref_map" file_suffix=".png"/>
+        <result type="debug" ID="debug" file_suffix=".txt"/>
+        <result type="cancel" ID="cancel"/>
+        <result type="xml" ID="webrowset" file_suffix=".xml"/>
+      </response>
+      <service>ferret</service>
+    </operation>
+    <optiondef IDREF="Trajectory_Options"/>
+    <region>
+      <intervals name="xyt" type="Maps" title="Latitude-Longitude"/>
+    </region>
+  </operation>
+
+
+         */
+
+        Product trajectory = Product.findByName("Trajectory_interactive_plot")
+        if ( !trajectory ) {
+            trajectory = new Product([name:"Trajectory_interactive_plot", title: "Trajectory Plot", view: "xy", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.TRAJECTORY, product_order: "100001"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_traj = new Operation([name: "Trajectory_plot", service_action: "Trajectory_2D_poly", type: "ferret", output_template: "zoom"])
+            operation_plot_traj.setResultSet(resultsService.getPlotResults())
+
+            //
+            operation_plot_traj.addToTextOptions(optionsService.getExpression())
+            operation_plot_traj.addToTextOptions(optionsService.getDep_axis_scale())
+            operation_plot_traj.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_plot_traj.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_traj.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_plot_traj.addToMenuOptions(optionsService.getLine_or_sym())
+            operation_plot_traj.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_traj.addToMenuOptions(optionsService.getLine_thickness())
+
+            trajectory.addToOperations(operation_extract_data)
+            trajectory.addToOperations(operation_plot_traj)
+
+            trajectory.save(failOnError: true)
+        }
+
+
+
 /*
     <response ID="PlotResp" type="HTML" index="1">
       <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
@@ -341,7 +583,60 @@ class InitializationService {
             t_line_plot.save(failOnError: true)
         }
 
+        // DSG time series plot
 
+        /*
+
+  <operation chained="true" name="Timeseries Plot" ID="Timeseries_station_plot" output_template="output" service_action="Timeseries_station_plot">
+      <args>
+        <arg chained="true" type="variable" index="1" operation="DBExtract" result="netcdf" file_suffix=".nc"/>
+        <arg type="region" index="1" ID="in-situ-Region"/>
+      </args>
+      <response ID="PlotResp" type="HTML" index="1">
+        <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+        <result type="svg" ID="plot_svg" file_suffix=".svg"/>
+        <result type="ps" ID="plot_ps" file_suffix=".ps"/>
+        <result type="pdf" ID="plot_pdf" file_suffix=".pdf"/>
+        <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+        <result type="js_total" ID="js_total" file_suffix=".js"/>
+        <result type="map_data" ID="map_data" file_suffix=".txt"/>
+        <result type="image" ID="ref_map" file_suffix=".png"/>
+        <result type="debug" ID="debug" file_suffix=".txt"/>
+        <result type="cancel" ID="cancel"/>
+        <result type="xml" ID="webrowset" file_suffix=".xml"/>
+      </response>
+      <service>ferret</service>
+    </operation>
+    <optiondef IDREF="Options_1D_7"/>
+    <region>
+      <intervals name="xyt" type="Line Plots" title="Time Series"/>
+    </region>
+  </operation>
+
+         */
+
+        Product dsg_time_series = Product.findByName("Timeseries_station_plot")
+        if ( !dsg_time_series ) {
+            dsg_time_series = new Product([name:"Timeseries_station_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TIMESERIES, product_order: "100001"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_ts = new Operation([name: "Timeseries_station_plot", service_action: "Timeseries_station_plot", type: "ferret", output_template: "zoom"])
+            operation_plot_ts.setResultSet(resultsService.getPlotResults())
+            operation_plot_ts.addToTextOptions(optionsService.getExpression())
+            operation_plot_ts.addToTextOptions(optionsService.getDep_axis_scale())
+            operation_plot_ts.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_plot_ts.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_ts.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_plot_ts.addToMenuOptions(optionsService.getLine_or_sym())
+            operation_plot_ts.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_ts.addToMenuOptions(optionsService.getLine_thickness())
+
+            dsg_time_series.addToOperations(operation_extract_data)
+            dsg_time_series.addToOperations(operation_plot_ts)
+
+            dsg_time_series.save(failOnError: true)
+        }
         Product z_line_plot = Product.findByName("Longitude")
         if (!z_line_plot) {
 
@@ -662,7 +957,7 @@ class InitializationService {
 
         Product charts_timeseries_plot = Product.findByNameAndTitle("Charts Timeseries Plot", "Timeseries Plot");
         if ( !charts_timeseries_plot ) {
-            charts_timeseries_plot = new Product([name: "Timeseries Plot", title: "Timeseries Plot", ui_group: "Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "dontknowyet"])
+            charts_timeseries_plot = new Product([name: "Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "100001"])
             Operation operation_timeseries_plot = new Operation([service_action: "client_plot", type: "client"])
             charts_timeseries_plot.addToOperations(operation_timeseries_plot)
             charts_timeseries_plot.save(failOnError: true)
@@ -961,22 +1256,59 @@ class InitializationService {
 //                    site.addToDatasets(carbon)
 //                }
 
-//                TODO removed for gov't shutdown... log.debug("Ingesting example Timeseries DSG from ERDDAP")
-//                def ts = "http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060"
-//                List<AddProperty> properties = new ArrayList<>()
-//                AddProperty hours = new AddProperty([name: "hours", value: ".25"])
-//                properties.add(hours)
-//                AddProperty display_hi = new AddProperty([name: "display_hi", value: "2018-02-20T00:00:00.000Z"])
-//                properties.add(display_hi)
-//                AddProperty display_lo = new AddProperty(([name: "display_lo", value: "2018-02-05T00:00:00.000Z"]))
-//                properties.add(display_lo)
-//                def dsgDataset = Dataset.findByHash(IngestService.getDigest(ts))
-//                if ( !dsgDataset ) {
-//                    dsgDataset = ingestService.ingestFromErddap(ts, properties)
-//                    dsgDataset.setStatus(Dataset.INGEST_FINISHED)
-//                    dsgDataset.save(flush: true)
-//                    site.addToDatasets(dsgDataset)
-//                }
+
+                // TODO GOOD EXMAPLES OF DSG DATA SETS FOR RELEASE??
+                log.debug("Ingesting example Timeseries DSG from ERDDAP")
+                def ts = "http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060"
+                List<AddProperty> properties = new ArrayList<>()
+                AddProperty hours = new AddProperty([name: "hours", value: ".25"])
+                properties.add(hours)
+                AddProperty display_hi = new AddProperty([name: "display_hi", value: "2018-02-20T00:00:00.000Z"])
+                properties.add(display_hi)
+                AddProperty display_lo = new AddProperty(([name: "display_lo", value: "2018-02-05T00:00:00.000Z"]))
+                properties.add(display_lo)
+                def dsgDataset = Dataset.findByHash(IngestService.getDigest(ts))
+                if ( !dsgDataset ) {
+                    dsgDataset = ingestService.ingestFromErddap(ts, properties)
+                    dsgDataset.setStatus(Dataset.INGEST_FINISHED)
+                    dsgDataset.save(flush: true)
+                    site.addToDatasets(dsgDataset)
+                }
+
+                log.debug("Ingesting example trajectory")
+                def traj = "https://upwell.pfeg.noaa.gov/erddap/tabledap/LiquidR_HBG3_2015_weather"
+                def trajDataset = Dataset.findByHash(IngestService.getDigest(traj))
+                if ( !trajDataset ) {
+                    trajDataset = ingestService.ingestFromErddap(traj, null)
+                    trajDataset.setStatus(Dataset.INGEST_FINISHED)
+                    trajDataset.save(flush: true)
+                    site.addToDatasets(trajDataset)
+                }
+
+                log.debug("Ingesting example points")
+                def ais = "https://upwell.pfeg.noaa.gov/erddap/tabledap/hawaii_soest_01af_e372_5bb6"
+                def aisDataset = Dataset.findByHash(IngestService.getDigest(ais))
+                if ( !aisDataset ) {
+                    aisDataset = ingestService.ingestFromErddap(ais, null)
+                    aisDataset.setStatus(Dataset.INGEST_FINISHED)
+                    aisDataset.save(flush: true)
+                    site.addToDatasets(aisDataset)
+                }
+                // TODO END OF --- GOOD EXMAPLES OF DSG DATA SETS FOR RELEASE??
+
+
+                log.debug("Ingesting example profile dataset")
+                def prof = "https://ferret.pmel.noaa.gov/alamo/erddap/tabledap/arctic_heat_alamo_profiles_9076"
+                def profDataset = Dataset.findByHash(IngestService.getDigest(prof))
+                if ( !profDataset ) {
+                    List<AddProperty> profileProps = new ArrayList<>()
+                    AddProperty add1 = new AddProperty([name: "hours", value: ".25"])
+                    profileProps.add(add1)
+                    profDataset = ingestService.ingestFromErddap(prof, profileProps)
+                    profDataset.setStatus(Dataset.INGEST_FINISHED)
+                    profDataset.save(flush: true)
+                    site.addToDatasets(profDataset)
+                }
 
 //                log.debug("Ingesting UAF THREDDS server")
 //                //def uaf = "http://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml"
@@ -1000,6 +1332,7 @@ class InitializationService {
                 site.addToDatasets(wind)
 
                 site.save(failOnError: true)
+
             }
         }
     }

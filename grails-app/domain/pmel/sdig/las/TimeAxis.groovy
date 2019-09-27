@@ -18,6 +18,7 @@ class TimeAxis {
     String delta
     String position
     boolean climatology
+    // The number of individual time points in the time axis
     long size
 
     String display_lo;

@@ -38,7 +38,7 @@ public class MenuOptionsWidget extends Composite {
             MenuOption option = moi.getOption();
             String value = moi.getSelectedValue();
             String defaultValue = option.getDefaultValue();
-            if ( !value.equals(defaultValue) ) {
+            if ( value != null && !value.equals(defaultValue) ) {
                 RequestProperty rp = new RequestProperty();
                 rp.setType("ferret");
                 rp.setName(option.getName());

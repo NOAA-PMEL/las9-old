@@ -1,5 +1,5 @@
 package pmel.sdig.las
 
 class VerticalAxisController {
-    static scaffold = VerticalAxis
+//    static scaffold = VerticalAxis
 }

@@ -1,5 +1,5 @@
 package pmel.sdig.las
 
 class GeoAxisYController {
-    static scaffold = GeoAxisY
+//    static scaffold = GeoAxisY
 }

@@ -47,7 +47,7 @@ public class ResultsPanel extends Composite {
     Div chart;
 
     @UiField
-    MaterialCollapsibleHeader breadcrumbs;
+    MaterialPanel breadcrumbs;
 
     @UiField
     MaterialCollapsibleBody annotations;
@@ -60,6 +60,8 @@ public class ResultsPanel extends Composite {
     MaterialCollapsible annotationsCollapse;
     @UiField
     MaterialIcon trigger;
+
+    boolean dashboard = false;
 
     int index;
 
@@ -74,12 +76,16 @@ public class ResultsPanel extends Composite {
             @Override
             public void onExpand(ExpandEvent<MaterialCollapsibleItem> expandEvent) {
                 trigger.setIconType(IconType.EXPAND_LESS);
+                outputPanel.setVisible(true);
             }
         });
         annotationsCollapse.addCollapseHandler(new CollapseEvent.CollapseHandler<MaterialCollapsibleItem>() {
             @Override
             public void onCollapse(CollapseEvent<MaterialCollapsibleItem> collapseEvent) {
                 trigger.setIconType(IconType.EXPAND_MORE);
+                if ( dashboard ) {
+                    outputPanel.setVisible(false);
+                }
             }
         });
     }
@@ -110,6 +116,9 @@ public class ResultsPanel extends Composite {
             }
         }
         annotationsCollapse.open(1);
+        // for some reason the collapse handler fire in this case
+        // it's now open so make it visible again after the collapse handler fired
+        outputPanel.setVisible(true);
     }
     public void openAnnotations() {
         annotationsCollapse.open(1);
@@ -157,7 +166,7 @@ public class ResultsPanel extends Composite {
 
         return crumbs;
     }
-    public MaterialCollapsibleHeader getBreadcrumbContainer() {
+    public MaterialPanel getBreadcrumbContainer() {
         return breadcrumbs;
     }
 
@@ -207,5 +216,8 @@ public class ResultsPanel extends Composite {
             label.getElement().setInnerHTML("&nbsp;");
             annotationPanel.add(label);
         }
+    }
+    public void setDashboard(boolean dashboard) {
+        this.dashboard = dashboard;
     }
 }

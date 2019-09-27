@@ -22,6 +22,24 @@ public class Variable implements Comparable {
 	Stats stats;
 	Set<VariableProperty> variableProperties;
 	String thumbnail;
+	boolean subset;
+	boolean dsgId;
+
+	public boolean isDsgId() {
+		return dsgId;
+	}
+
+	public void setDsgId(boolean dsgId) {
+		this.dsgId = dsgId;
+	}
+
+	public boolean isSubset() {
+		return subset;
+	}
+
+	public void setSubset(boolean subset) {
+		this.subset = subset;
+	}
 
 	public long getId() {
 		return id;
@@ -57,7 +75,9 @@ public class Variable implements Comparable {
 
 	public void setGeometry (String geometry) { this.geometry = geometry; }
 
-	public String getGeometry () { return this.geometry; }
+	public String getGeometry () {
+		return this.geometry;
+	}
 
 	public String getHash() {
 		return hash;

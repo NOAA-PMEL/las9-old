@@ -5,7 +5,12 @@ import grails.gorm.transactions.Transactional
 @Transactional
 class ResultsService {
 
-
+    def getNetcdfFile() {
+        ResultSet results_netcdf = new ResultSet([name: "results_netcdf"])
+        Result ncfile = new Result([name: "netcdf", mime_type: "application/netcdf", type: "file", file_type: "netcdf", suffix: ".nc"])
+        results_netcdf.addToResults(ncfile)
+        results_netcdf
+    }
     def getPlotResults() {
 
         ResultSet results_debug_image_mapscale_annotations = new ResultSet([name: "results_debug_image_mapscale_annotations"])

@@ -3,14 +3,17 @@
              xmlns:ma="urn:import:gwt.material.design.addins.client"
              xmlns:m='urn:import:gwt.material.design.client.ui'
              xmlns:las="urn:import:pmel.sdig.las.client.widget">
-    <m:MaterialColumn ui:field="panel" grid="s10" paddingLeft="2" paddingRight="8">
+    <m:MaterialColumn ui:field="panel" grid="s10" paddingLeft="2" paddingRight="8" shadow="2">
         <m:MaterialCollapsible ui:field="annotationsCollapse">
             <m:MaterialCollapsibleItem>
-                <m:MaterialCollapsibleHeader ui:field="breadcrumbs" paddingLeft="8" paddingBottom="0" marginTop="8" marginBottom="0" lineHeight="20">
-                    <!--
-                        <m:MaterialIcon visibility="HIDDEN" display="INLINE" iconType="SETTINGS" iconColor="BLUE" iconPosition="LEFT"></m:MaterialIcon>
-                    -->
-                        <m:MaterialIcon display="INLINE" iconType="ADD" iconColor="BLUE" iconPosition="RIGHT"></m:MaterialIcon>
+
+                <m:MaterialCollapsibleHeader paddingLeft="8" paddingBottom="0" marginTop="8" marginBottom="0" lineHeight="20" >
+                    <m:MaterialPanel addStyleNames="valign-wrapper">
+                        <m:MaterialPanel ui:field="breadcrumbs" addStyleNames="valign-wrapper" grid="s11">
+
+                        </m:MaterialPanel>
+                        <m:MaterialIcon ui:field="trigger" iconType="EXPAND_MORE" iconSize="LARGE" iconPosition="RIGHT" iconColor="BLUE" float="RIGHT" verticalAlign="MIDDLE" grid="s1"></m:MaterialIcon>
+                    </m:MaterialPanel>
                 </m:MaterialCollapsibleHeader>
                 <m:MaterialCollapsibleBody ui:field="annotations" backgroundColor="WHITE" paddingTop="0" paddingLeft="0" paddingRight="0">
                     <m:MaterialPanel marginTop="8" paddingLeft="8" ui:field="annotationPanel" m:id="annotations"  textAlign="LEFT" overflow="AUTO">

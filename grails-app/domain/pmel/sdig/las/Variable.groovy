@@ -7,12 +7,18 @@ class Variable {
     // This could be a java BreadcrumbType on the rhs, but in the end it's a string
     String type = "variable"
     String title
+    String standard_name
     String hash
     String intervals
     String geometry;
     String units;
     String thumbnail;
     Map<String, String> attributes
+
+    boolean subset = false; // This applies only to DSG data. Whether the collection can be segmented  or "sub-setted" by the value of this variable. E.G. the geometry ID, the platform name, the PI, etc.
+                     // Mostly false, always false for gridded. Only true for some DSG and must be set.
+
+    boolean dsgId = false; // True if the is the ID variable for the data set to which it belongs. Only applies to DSG data sets.
 
     static belongsTo = [dataset: Dataset]
     static hasMany = [variableProperties: VariableProperty, variableAttributes: VariableAttribute]
@@ -26,7 +32,7 @@ class Variable {
 
     static searchable = {
 
-        only = ['title', 'name', 'geometry']
+        only = ['title', 'name', 'geometry', 'standard_name']
 
     }
     static constraints = {
@@ -37,6 +43,7 @@ class Variable {
         units(nullable:true)
         dataset (nullable: true)
         thumbnail (nullable: true)
+        standard_name(nullable: true)
     }
 
     @Override

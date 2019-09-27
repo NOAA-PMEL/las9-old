@@ -26,6 +26,8 @@ import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.IconPosition;
 import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.constants.ProgressType;
+import gwt.material.design.client.events.CollapseEvent;
+import gwt.material.design.client.events.ExpandEvent;
 import gwt.material.design.client.events.SearchFinishEvent;
 import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollapsible;
@@ -42,6 +44,7 @@ import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialSearch;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
+import gwt.material.design.client.ui.MaterialToast;
 import gwt.material.design.client.ui.html.Div;
 import org.fusesource.restygwt.client.Method;
 import org.fusesource.restygwt.client.MethodCallback;
@@ -84,7 +87,7 @@ public class ComparePanel extends Composite {
     Div chart;
 
     @UiField
-    MaterialCollapsibleHeader breadcrumbs;
+    MaterialPanel breadcrumbs;
 
     @UiField
     MaterialCollapsibleBody annotations;
@@ -116,6 +119,9 @@ public class ComparePanel extends Composite {
     MaterialNavBar navBar;
     @UiField
     MaterialNavBar navBarSearch;
+
+    @UiField
+    MaterialIcon trigger;
 
 
     Dataset dataset;
@@ -167,6 +173,19 @@ public class ComparePanel extends Composite {
 
     public ComparePanel() {
         initWidget(ourUiBinder.createAndBindUi(this));
+
+        annotationsCollapse.addExpandHandler(new ExpandEvent.ExpandHandler<MaterialCollapsibleItem>() {
+            @Override
+            public void onExpand(ExpandEvent<MaterialCollapsibleItem> expandEvent) {
+                trigger.setIconType(IconType.EXPAND_LESS);
+            }
+        });
+        annotationsCollapse.addCollapseHandler(new CollapseEvent.CollapseHandler<MaterialCollapsibleItem>() {
+            @Override
+            public void onCollapse(CollapseEvent<MaterialCollapsibleItem> collapseEvent) {
+                trigger.setIconType(IconType.EXPAND_MORE);
+            }
+        });
 
         txtSearch.addOpenHandler(new OpenHandler<String>() {
             @Override
@@ -319,6 +338,29 @@ public class ComparePanel extends Composite {
         }
         return dataItems;
     }
+    public MethodCallback <List<Dataset>> searchCallback = new MethodCallback<List<Dataset>>() {
+        @Override
+        public void onFailure(Method method, Throwable throwable) {
+            Window.alert("Unable to perform search.");
+        }
+
+        @Override
+        public void onSuccess(Method method, List<Dataset> searchDatasets) {
+            if (searchDatasets != null && searchDatasets.size() > 0) {
+                dataItem.hideProgress();
+                panelDatasets.clear();
+                Collections.sort(searchDatasets);
+                for (int i = 0; i < searchDatasets.size(); i++) {
+                    Dataset d = searchDatasets.get(i);
+                    DataItem dataItem = new DataItem(d, index);
+                    dataItem.link.setWidth("319px");
+                    panelDatasets.add(dataItem);
+                }
+            } else {
+                Window.alert("Not matching data sets found for your search terms.");
+            }
+        }
+    };
     public MethodCallback<Dataset> datasetCallback = new MethodCallback<Dataset>() {
         @Override
         public void onFailure(Method method, Throwable exception) {
@@ -445,7 +487,7 @@ public class ComparePanel extends Composite {
 
         return crumbs;
     }
-    public MaterialCollapsibleHeader getBreadcrumbContainer() {
+    public MaterialPanel getBreadcrumbContainer() {
         return breadcrumbs;
     }
 

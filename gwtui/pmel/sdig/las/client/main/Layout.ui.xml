@@ -17,9 +17,12 @@
   limitations under the License.
   #L%
   -->
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
              xmlns:ma="urn:import:gwt.material.design.addins.client"
              xmlns:m='urn:import:gwt.material.design.client.ui'
+             xmlns:m.html="urn:import:gwt.material.design.client.ui.html"
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'
              xmlns:las="urn:import:pmel.sdig.las.client.widget"
 >
     <ui:style gss="true">
@@ -46,15 +49,15 @@
         </m:MaterialDialog>
         <m:MaterialHeader ui:field="header">
             <m:MaterialNavBar activates="sidenav" ui:field="navbar" shadow="1">
-                <m:MaterialNavSection ui:field="navSection" float="LEFT">
+                <m:MaterialNavSection addStyleNames="valign-wrapper" ui:field="navSection" float="LEFT">
+
                     <m:MaterialButton ui:field="update" text="Update"></m:MaterialButton>
 
-                    <m:MaterialButton text="Plot 1" enabled="false" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" textColor="WHITE" activates="plots-3" ui:field="plotsDropdownButton"/>
-                    <m:MaterialDropDown activator="plots-3" constrainWidth="true" ui:field="plotsDropdown">
-                        <m:MaterialLink title="Plot 1" text="Plot 1" separator="true"/>
-                        <m:MaterialLink title="Plot 2" text="Plot 2" separator="true"/>
-                        <m:MaterialLink title="Plot 4" text="Plot 4" separator="true"/>
-                    </m:MaterialDropDown>
+                    <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" enabled="false" ui:field="plotsDropdown" shadow="2">
+                        <m.html:Option title="Plot 1" text="Plot 1" separator="true"/>
+                        <m.html:Option title="Plot 2" text="Plot 2" separator="true"/>
+                        <m.html:Option title="Plot 4" text="Plot 4" separator="true"/>
+                    </m:MaterialListBox>
 
                     <m:MaterialLink ui:field="animate" text="Animate" waves="LIGHT" enabled="false"></m:MaterialLink>
                     <m:MaterialLink ui:field="correlationLink" text="Correlation Viewer" waves="LIGHT"
@@ -63,33 +66,38 @@
                                     enabled="false"></m:MaterialLink>
                     <m:MaterialLink ui:field="saveAsButton" text="Save as..." waves="LIGHT"
                                     enabled="false"></m:MaterialLink>
+
                 </m:MaterialNavSection>
-                <m:MaterialNavBrand ui:field="brand" text="LAS title will go here." overflow="HIDDEN"/>
+                <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." overflow="HIDDEN"/>
                 <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>
             </m:MaterialNavBar>
             <!-- NavBar Search ... replaces entire navbar with a text field when searching. -->
             <m:MaterialNavBar ui:field="navBarSearch" width="100%" visible="false">
-                <m:MaterialSearch ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" grid="s12" shadow="1"/>
+
+                        <m:MaterialSearch height="64" ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1"/>
+
+
             </m:MaterialNavBar>
         </m:MaterialHeader>
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
             <m:MaterialSideNavContent padding="0">
                 <!--<m:MaterialNavBrand>-->
-                    <!---->
+                <!---->
                 <!--</m:MaterialNavBrand>-->
                 <!--<m:MaterialRow marginBottom="0" lineHeight="20">-->
-                    <!--<m:MaterialColumn height="32" grid="s4">-->
-                        <!--<m:MaterialLink ui:field="total" height="32" textColor="BLUE" text="Data Sets"></m:MaterialLink>-->
-                    <!--</m:MaterialColumn>-->
-                    <!--<m:MaterialColumn height="32" grid="s4">-->
-                        <!--<m:MaterialLink ui:field="grids" height="32" textColor="BLUE" text="Grids"></m:MaterialLink>-->
-                    <!--</m:MaterialColumn>-->
-                    <!--<m:MaterialColumn height="32" grid="s4">-->
-                        <!--<m:MaterialLink ui:field="discrete" height="32" textColor="BLUE" text="Discrete"></m:MaterialLink>-->
-                    <!--</m:MaterialColumn>-->
+                <!--<m:MaterialColumn height="32" grid="s4">-->
+                <!--<m:MaterialLink ui:field="total" height="32" textColor="BLUE" text="Data Sets"></m:MaterialLink>-->
+                <!--</m:MaterialColumn>-->
+                <!--<m:MaterialColumn height="32" grid="s4">-->
+                <!--<m:MaterialLink ui:field="grids" height="32" textColor="BLUE" text="Grids"></m:MaterialLink>-->
+                <!--</m:MaterialColumn>-->
+                <!--<m:MaterialColumn height="32" grid="s4">-->
+                <!--<m:MaterialLink ui:field="discrete" height="32" textColor="BLUE" text="Discrete"></m:MaterialLink>-->
+                <!--</m:MaterialColumn>-->
                 <!--</m:MaterialRow>-->
+                <m:MaterialPanel ui:field="dashboardRegions" display="NONE"></m:MaterialPanel>
                 <m:MaterialCollapsible ui:field="navcollapsible" accordion="false">
-                    <m:MaterialCollapsibleItem ui:field="dataItem">
+                    <m:MaterialCollapsibleItem ui:field="dataItem" shadow="1">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialPanel addStyleNames="valign-wrapper">
                                 <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
@@ -131,8 +139,8 @@
                             </m:MaterialCollection>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
+                    <m:MaterialCollapsibleItem marginTop="8" shadow="1">
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Axes Selections"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
@@ -149,8 +157,8 @@
                             </m:MaterialPanel>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
+                    <m:MaterialCollapsibleItem marginTop="8" shadow="1">
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Types"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
@@ -160,8 +168,8 @@
                             </m:MaterialPanel>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
+                    <m:MaterialCollapsibleItem marginTop="8" shadow="1">
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Analysis Transformations"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
@@ -199,8 +207,8 @@
                             </m:MaterialPanel>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleItem>
-                        <m:MaterialCollapsibleHeader>
+                    <m:MaterialCollapsibleItem marginTop="8" shadow="1">
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Plot Options"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
@@ -211,47 +219,207 @@
 
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
+                    <m:MaterialCollapsibleItem marginTop="8" shadow="1" ui:field="constraints" display="NONE">
+                        <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
+                            <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Constraints"></m:MaterialLink>
+                        </m:MaterialCollapsibleHeader>
+                        <m:MaterialCollapsibleBody padding="0">
+                            <m:MaterialPanel padding="2" width="375px">
+                                <m:MaterialRow grid="s12">
+                                    <m:MaterialCard>
+                                        <m:MaterialCardContent paddingLeft="8" paddingRight="4" paddingTop="4" paddingBottom="4" lineHeight="24">
+                                            <m:MaterialCardTitle fontSize="1.05em" lineHeight="24" text="Active Constraints"/>
+                                            <g:ScrollPanel height="120px">
+                                                <m:MaterialPanel ui:field="activeConstraints">
+
+                                                </m:MaterialPanel>
+                                            </g:ScrollPanel>
+                                        </m:MaterialCardContent>
+                                    </m:MaterialCard>
+                                </m:MaterialRow>
+                            </m:MaterialPanel>
+
+                            <m:MaterialCollapsible ui:field="constraintStack" accordion="true">
+                                <m:MaterialCollapsibleItem shadow="1">
+                                    <m:MaterialCollapsibleHeader>
+
+                                        <m:MaterialLink fontWeight="BOLD" fontSize="1.1em" text="by Metadata"></m:MaterialLink>
+
+                                    </m:MaterialCollapsibleHeader>
+                                    <m:MaterialCollapsibleBody>
+                                        <m:MaterialPanel padding="2" width="375px">
+                                            <m:MaterialRow grid="s12" marginBottom="0">
+                                                <m:MaterialPanel padding="8" ui:field="byID" width="375px">
+                                                    <m:MaterialRow>
+                                                        <m:MaterialColumn grid="s3">
+                                                            <g:Label text="Filter: "></g:Label>
+                                                        </m:MaterialColumn>
+                                                        <m:MaterialColumn grid="s9">
+                                                            <g:TextBox ui:field="filter"></g:TextBox>
+                                                        </m:MaterialColumn>
+                                                    </m:MaterialRow>
+                                                    <m:MaterialRow>
+                                                        <m:MaterialColumn ui:field="subsetColumn" grid="s12">
+
+                                                        </m:MaterialColumn>
+                                                    </m:MaterialRow>
+                                                    <m:MaterialRow>
+                                                        <m:MaterialCard>
+                                                            <m:MaterialCardContent paddingLeft="8" paddingRight="4" paddingTop="4" paddingBottom="4" lineHeight="24">
+                                                                <m:MaterialCardTitle fontSize="1.05em" lineHeight="24" text="Choose Values"/>
+                                                                <g:ScrollPanel height="120px">
+                                                                    <m:MaterialPanel ui:field="possibleValues">
+                                                                    </m:MaterialPanel>
+                                                                </g:ScrollPanel>
+                                                            </m:MaterialCardContent>
+                                                        </m:MaterialCard>
+                                                    </m:MaterialRow>
+                                                </m:MaterialPanel>
+                                            </m:MaterialRow>
+                                            <m:MaterialRow grid="s12" marginBottom="0">
+                                            </m:MaterialRow>
+                                        </m:MaterialPanel>
+                                    </m:MaterialCollapsibleBody>
+                                </m:MaterialCollapsibleItem>
+                                <m:MaterialCollapsibleItem shadow="1">
+                                    <m:MaterialCollapsibleHeader>
+
+                                        <m:MaterialLink fontWeight="BOLD" fontSize="1.1em" text="by Variable Value"></m:MaterialLink>
+
+                                    </m:MaterialCollapsibleHeader>
+                                    <m:MaterialCollapsibleBody>
+                                        <m:MaterialPanel padding="2" width="375px">
+
+                                                    <m:MaterialRow>
+                                                        <m:MaterialButton marginTop="8" marginLeft="8" grid="s4" text="Apply" ui:field="byVariableButton"></m:MaterialButton>
+                                                    </m:MaterialRow>
+                                                    <m:MaterialRow>
+                                                        <m:MaterialPanel addStyleNames="valign-vertical">
+                                                            <m:MaterialColumn grid="s3">
+                                                                <m:MaterialTextBox marginTop="0" ui:field="vmin"></m:MaterialTextBox>
+                                                            </m:MaterialColumn>
+                                                            <m:MaterialColumn grid="s1">
+                                                                <m:MaterialLabel text="&le;"></m:MaterialLabel>
+                                                            </m:MaterialColumn>
+                                                            <m:MaterialColumn grid="s4">
+                                                                <m:MaterialListBox old="true" ui:field="byVariable">
+                                                                </m:MaterialListBox>
+                                                            </m:MaterialColumn>
+                                                            <m:MaterialColumn grid="s1">
+                                                                <m:MaterialLabel text="&le;"></m:MaterialLabel>
+                                                            </m:MaterialColumn>
+                                                            <m:MaterialColumn grid="s3">
+                                                                <m:MaterialTextBox marginTop="0" ui:field="vmax"></m:MaterialTextBox>
+                                                            </m:MaterialColumn>
+                                                        </m:MaterialPanel>
+                                                    </m:MaterialRow>
+                                        </m:MaterialPanel>
+                                    </m:MaterialCollapsibleBody>
+                                </m:MaterialCollapsibleItem>
+                            </m:MaterialCollapsible>
+                        </m:MaterialCollapsibleBody>
+                    </m:MaterialCollapsibleItem>
                 </m:MaterialCollapsible>
             </m:MaterialSideNavContent>
         </m:MaterialSideNavPush>
         <m:MaterialContainer ui:field="main">
+            <m:MaterialRow paddingTop="60" ui:field="advancedSearch">
+                <m:MaterialCard backgroundColor="WHITE" grid="s12">
+                    <m:MaterialCardContent>
+                        <m:MaterialCardTitle textColor="BLACK" text="Search by Keyword" />
+                        <m:MaterialTextBox paddingLeft="10" marginLeft="8" ui:field="txtSearch2" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1" />
+                    </m:MaterialCardContent>
+                </m:MaterialCard>
+                <m:MaterialCard backgroundColor="WHITE" grid="s12">
+                    <m:MaterialCardContent>
+                        <m:MaterialCardTitle textColor="BLACK" text="Search by Geometry" />
+                        <m:MaterialRow>
+                            <m:MaterialLabel display="INLINE" float="LEFT" lineHeight="24" textColor="BLACK" text="This LAS contains &nbsp;"></m:MaterialLabel>
+                            <m:MaterialLabel lineHeight="24" textColor="BLACK" ui:field="total" text=""></m:MaterialLabel>
+                        </m:MaterialRow>
+                        <m:MaterialCollection lineHeight="22" border="0" padding="0">
+                            <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink ui:field="discrete" text=""></m:MaterialLink></m:MaterialCollectionItem>
+                               <m:MaterialCollection marginLeft="24" border="0">
+                                   <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink text="N profile data sets"></m:MaterialLink></m:MaterialCollectionItem>
+                                   <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink text="M trajectory data sets"></m:MaterialLink></m:MaterialCollectionItem>
+                                   <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink text="M point data sets"></m:MaterialLink></m:MaterialCollectionItem>
+                               </m:MaterialCollection>
+                            <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink ui:field="grids" text=""></m:MaterialLink></m:MaterialCollectionItem>
+                        </m:MaterialCollection>
+                    </m:MaterialCardContent>
+                </m:MaterialCard>
+                <m:MaterialCard backgroundColor="WHITE" grid="s12">
+                    <m:MaterialCardContent textColor="BLACK">
+                        <m:MaterialCardTitle  textColor="BLACK" text="Search by Attribute" />
+                        <m:MaterialRow>
+                            <m:MaterialColumn grid="s4">
+                                <m:MaterialCard backgroundColor="WHITE">
+                                    <m:MaterialCardContent textColor="BLACK">
+                                        <m:MaterialCardTitle textColor="BLACK" text="By Data Set Title"></m:MaterialCardTitle>
+                                        <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" ui:field="byDatasetTitle" shadow="2">
+                                            <m.html:Option title="Data set title 1" text="Data set title 1" separator="true"/>
+                                            <m.html:Option title="Data set title 2" text="Data set title 2" separator="true"/>
+                                            <m.html:Option title="Data set title 3" text="Data set title 3" separator="true"/>
+                                        </m:MaterialListBox>
+                                    </m:MaterialCardContent>
+                                </m:MaterialCard>
+                            </m:MaterialColumn>
+                            <m:MaterialColumn grid="s4">
+                                <m:MaterialCard backgroundColor="WHITE">
+                                    <m:MaterialCardContent textColor="BLACK">
+                                        <m:MaterialCardTitle textColor="BLACK" text="By Variable Title/Long_name"></m:MaterialCardTitle>
+                                        <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" ui:field="byVariableTitle" shadow="2">
+                                            <m.html:Option title="Data set title 1" text="Data set title 1" separator="true"/>
+                                            <m.html:Option title="Data set title 2" text="Data set title 2" separator="true"/>
+                                            <m.html:Option title="Data set title 3" text="Data set title 3" separator="true"/>
+                                        </m:MaterialListBox>
+                                    </m:MaterialCardContent>
+                                </m:MaterialCard>
+                            </m:MaterialColumn>
+                            <m:MaterialColumn grid="s4">
+                                <m:MaterialCard backgroundColor="WHITE">
+                                    <m:MaterialCardContent textColor="BLACK">
+                                        <m:MaterialCardTitle textColor="BLACK" text="By CF Standard Name"></m:MaterialCardTitle>
+                                        <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" ui:field="byStandardName" shadow="2">
+                                            <m.html:Option title="Data set title 1" text="Data set title 1" separator="true"/>
+                                            <m.html:Option title="Data set title 2" text="Data set title 2" separator="true"/>
+                                            <m.html:Option title="Data set title 3" text="Data set title 3" separator="true"/>
+                                        </m:MaterialListBox>
+                                    </m:MaterialCardContent>
+                                </m:MaterialCard>
+                            </m:MaterialColumn>
+                        </m:MaterialRow>
+                    </m:MaterialCardContent>
+                    <m:MaterialCardAction>
+                        <m:MaterialButton text="Search"/>
+                    </m:MaterialCardAction>
+                </m:MaterialCard>
+            </m:MaterialRow>
             <m:MaterialRow paddingTop="60" ui:field="outputRow01">
 
-                    <m:MaterialCard ui:field="summary">
-                        <m:MaterialCardContent>
 
-                            <m:MaterialRow>
-                                <m:MaterialColumn grid="s3">
-                                    <m:MaterialLabel textAlign="CENTER" text="This LAS contains:" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
-                                </m:MaterialColumn>
-                                <m:MaterialColumn grid="s3">
-                                    <m:MaterialLabel ui:field="total" text="" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
-                                </m:MaterialColumn>
-                                <m:MaterialColumn grid="s3">
-                                    <m:MaterialLabel ui:field="discrete" text="" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
-                                </m:MaterialColumn>
-                                <m:MaterialColumn grid="s3">
-                                    <m:MaterialLabel ui:field="grids" text="" fontSize="1.2em" fontWeight="BOLD"></m:MaterialLabel>
-                                </m:MaterialColumn>
-                            </m:MaterialRow>
-                        </m:MaterialCardContent>
-                        <m:MaterialCardImage>
-                            <m:MaterialImage url="product/summary"></m:MaterialImage>
-                        </m:MaterialCardImage>
-                    </m:MaterialCard>
 
-                    <m:MaterialRow paddingTop="32" ui:field="infoHeader" flexAlignContent="CENTER" display="NONE">
-                        <m:MaterialColumn grid="s6"><m:MaterialButton ui:field="prev10" text="Prev 10" iconPosition="LEFT" iconType="ARROW_BACK" float="LEFT"></m:MaterialButton></m:MaterialColumn>
-                        <m:MaterialColumn grid="s6"><m:MaterialButton ui:field="next10" text="Next 10" iconPosition="RIGHT" iconType="ARROW_FORWARD" float="RIGHT"></m:MaterialButton></m:MaterialColumn>
-                    </m:MaterialRow>
-                    <m:MaterialRow>
-                        <m:MaterialColumn grid="s12">
-                            <m:MaterialPanel ui:field="infoPanel" paddingTop="20"></m:MaterialPanel>
-                        </m:MaterialColumn>
-                    </m:MaterialRow>
+                <m:MaterialRow paddingTop="32" ui:field="infoHeader" flexAlignContent="CENTER" display="NONE">
+                    <m:MaterialColumn grid="s6">
+                        <m:MaterialButton ui:field="prev10" text="Prev 10" iconPosition="LEFT" iconType="ARROW_BACK" float="LEFT"></m:MaterialButton>
+                    </m:MaterialColumn>
+                    <m:MaterialColumn grid="s6">
+                        <m:MaterialButton ui:field="next10" text="Next 10" iconPosition="RIGHT" iconType="ARROW_FORWARD" float="RIGHT"></m:MaterialButton>
+                    </m:MaterialColumn>
+                </m:MaterialRow>
+                <m:MaterialRow>
+                    <m:MaterialColumn grid="s12">
+                        <m:MaterialPanel ui:field="infoPanel" paddingTop="20"></m:MaterialPanel>
+                    </m:MaterialColumn>
+                </m:MaterialRow>
 
                 <las:ResultsPanel ui:field="panel1" title="panel01" visible="false"></las:ResultsPanel>
                 <las:ComparePanel ui:field="panel2" title="panel02" grid="s6" visible="false"></las:ComparePanel>
+
+
+
+            </m:MaterialRow>
+            <m:MaterialRow ui:field="dashboardThumbnails" display="NONE">
 
             </m:MaterialRow>
             <m:MaterialRow ui:field="outputRow02">
@@ -295,8 +463,7 @@
             <m:MaterialRow>
                 <m:MaterialColumn grid="s3">
                     <m:MaterialPanel padding="2" overflow="HIDDEN" width="375px">
-                        <m:MaterialPanel padding="8" ui:field="animationDateTimePanel" width="375px"
-                                         grid="s12"></m:MaterialPanel>
+                        <m:MaterialPanel padding="8" ui:field="animationDateTimePanel" width="375px" grid="s12"></m:MaterialPanel>
                         <m:MaterialPanel padding="8" ui:field="submitPanel" width="375px" grid="s12">
                             <m:MaterialLabel ui:field="frameCount" fontSize="1.8em" text="0 frames downloaded."/>
                             <m:MaterialLabel ui:field="animateHelp" marginTop="16"

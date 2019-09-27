@@ -1,6 +1,5 @@
 package pmel.sdig.las
 
 class MenuItemController {
-
-    static scaffold = MenuItem
+//    static scaffold = MenuItem
 }

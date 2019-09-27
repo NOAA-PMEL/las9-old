@@ -78,6 +78,7 @@ import pmel.sdig.las.client.widget.VariableConstraintWidget;
 import pmel.sdig.las.client.widget.YesNoOptionsWidget;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
+import pmel.sdig.las.shared.autobean.DataConstraint;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 import pmel.sdig.las.shared.autobean.Variable;
@@ -103,14 +104,28 @@ public class Layout extends Composite {
     MaterialCollection datasets;
     @UiField
     MaterialButton update;
+    @UiField
+    MaterialCollapsibleItem constraints;
+    @UiField
+    MaterialColumn subsetColumn;
+    @UiField
+    MaterialPanel possibleValues;
+    @UiField
+    MaterialPanel activeConstraints;
+    @UiField
+    MaterialListBox byVariable;
+    @UiField
+    MaterialButton byVariableButton;
+    @UiField
+    MaterialTextBox vmin;
+    @UiField
+    MaterialTextBox vmax;
 
     @UiField
     MaterialCollapsible navcollapsible;
 
     @UiField
-    MaterialDropDown plotsDropdown;
-    @UiField
-    MaterialButton plotsDropdownButton;
+    MaterialListBox plotsDropdown;
 
     @UiField
     MaterialLink animate;
@@ -282,10 +297,10 @@ public class Layout extends Composite {
     MaterialLabel total;
 
     @UiField
-    MaterialLabel discrete;
+    MaterialLink discrete;
 
     @UiField
-    MaterialLabel grids;
+    MaterialLink grids;
 
     @UiField
     MaterialLink btnSearch;
@@ -300,8 +315,9 @@ public class Layout extends Composite {
     MaterialPanel infoPanel;
     @UiField
     MaterialRow infoHeader;
+
     @UiField
-    MaterialCard summary;
+    MaterialRow advancedSearch;
 
     @UiField
     MaterialButton next10;
@@ -320,7 +336,6 @@ public class Layout extends Composite {
 
     NumberFormat seconds = NumberFormat.getFormat("#.#");
 
-
     interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
     private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
 
@@ -335,6 +350,8 @@ public class Layout extends Composite {
         yVariableListBox.addValueChangeHandler(correlationChangeY);
         cVariableListBox.addValueChangeHandler(correlationChangeC);
         variableConstraintListBox.addValueChangeHandler(addAndDisable);
+
+        plotsDropdown.addValueChangeHandler(onPlotsDropDown);
 
         panel2.setIndex(2);
 
@@ -435,6 +452,43 @@ public class Layout extends Composite {
 //                    panel3.scale(navWidth);
 //                    panel4.scale(navWidth);
         }
+    }
+
+    public void addActiveConstraint(DataConstraintLink c) {
+        int found = findActiveConstraint(c.getText());
+        if ( found < 0 ) {
+            activeConstraints.add(c);
+        }
+    }
+    public void removeActiveConstraint(DataConstraintLink c) {
+        int found = findActiveConstraint(c.getText());
+        if ( found >= 0 ) {
+            activeConstraints.remove(found);
+        }
+    }
+    private int findActiveConstraint(String c) {
+        int found = -1;
+        for (int i = 0; i < activeConstraints.getWidgetCount(); i++) {
+            Widget w = activeConstraints.getWidget(i);
+            if ( w instanceof DataConstraintLink ) {
+                MaterialLink link = (MaterialLink) w;
+                if ( link.getText().contains(c) ) {
+                    found = i;
+                }
+            }
+        }
+        return found;
+    }
+    public List<DataConstraint> getActiveConstraints() {
+        List<DataConstraint> constraints = new ArrayList<>();
+        for (int i = 0; i < activeConstraints.getWidgetCount(); i++) {
+            Widget w = activeConstraints.getWidget(i);
+            if (w instanceof DataConstraintLink) {
+                DataConstraintLink dcl = (DataConstraintLink) w;
+                constraints.add(dcl.getDataConstraint());
+            }
+        }
+        return constraints;
     }
     public boolean isAnalysisActive() {
         return analysisSwitch.getValue();
@@ -972,18 +1026,18 @@ public class Layout extends Composite {
     }
     public void setPlotCount(int count) {
         if ( count == 1 ) {
-            plotsDropdownButton.setText("Plot 1");
+            plotsDropdown.setSelectedIndex(0);
         } else if ( count == 2) {
-            plotsDropdownButton.setText("Plot 2");
+            plotsDropdown.setSelectedIndex(1);
         } else if ( count == 4 ) {
-            plotsDropdownButton.setText("Plot 4");
+            plotsDropdown.setSelectedIndex(2);
         }
     }
     public void topMenuEnabled(boolean enabled) {
         correlationLink.setEnabled(enabled);
         showValuesButton.setEnabled(enabled);
         saveAsButton.setEnabled(enabled);
-        plotsDropdownButton.setEnabled(enabled);
+        plotsDropdown.setEnabled(enabled);
     }
     ValueChangeHandler addAndDisable = new ValueChangeHandler() {
         @Override
@@ -1041,29 +1095,50 @@ public class Layout extends Composite {
             eventBus.fireEventFromSource(new FeatureModifiedEvent(0,0,0,0), colorByOn);
         }
     };
+    @UiHandler("byVariableButton")
+    public void addVariableConstraint(ClickEvent clickEvent) {
+        boolean fire = true;
+        String minvalue = vmin.getText().trim();
+        try {
+            double m = Double.valueOf(minvalue).doubleValue();
+        } catch (Exception e) {
+            fire = false;
+            Window.alert("Did you enter a valid number for the minimum value?");
+        }
+        String maxvalue = vmax.getText().trim();
+        try {
+            double m = Double.valueOf(maxvalue).doubleValue();
+        } catch (Exception e) {
+            fire = false;
+            Window.alert("Did you enter a valid number for the maximum value?");
+        }
+        String varname = byVariable.getSelectedValue();
+        if ( fire ) {
+            eventBus.fireEventFromSource(new ChangeConstraint("add", "variable", varname, "gt", minvalue), byVariable);
+            eventBus.fireEventFromSource(new ChangeConstraint("add", "variable", varname, "le", maxvalue), byVariable);
+        }
+    }
     @UiHandler("update")
     public void update(ClickEvent clickEvent) {
         eventBus.fireEventFromSource(clickEvent, update);
     }
 
-    @UiHandler("plotsDropdown")
-    void onDropDown(SelectionEvent<Widget> event) {
-        MaterialLink selection = (MaterialLink) event.getSelectedItem();
-        String title = selection.getTitle();
-        int count = 1;
-        if ( title.contains("1") ) {
-            count = 1;
-            plotsDropdownButton.setText("Plot 1");
-        } else if ( title.contains("2") ) {
-            count = 2;
-            plotsDropdownButton.setText("Plot 2");
-        } else if ( title.contains("4") ) {
-            count = 4;
-            plotsDropdownButton.setText("Plot 4");
-        }
 
-        eventBus.fireEventFromSource(new PanelCount(count), selection);
-    }
+    ValueChangeHandler onPlotsDropDown = new ValueChangeHandler() {
+        @Override
+        public void onValueChange(ValueChangeEvent event) {
+            String title = (String) event.getValue();
+            int count = 1;
+            if ( title.contains("1") ) {
+                count = 1;
+            } else if ( title.contains("2") ) {
+                count = 2;
+            } else if ( title.contains("4") ) {
+                count = 4;
+            }
+            eventBus.fireEventFromSource(new PanelCount(count), plotsDropdown);
+        }
+    };
 
     @UiHandler("formatsDropDown")
     void onFormatChange(SelectionEvent<Widget> event) {

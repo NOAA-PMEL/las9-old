@@ -6,6 +6,14 @@ class ConfigController {
 
     ProductService productService
     IngestService ingestService
+    def regions() {
+        def regions = new ArrayList<Region>()
+        regions.addAll(Region.findAll())
+        JSON.use("deep") {
+            render regions as JSON
+        }
+    }
+
     /**
      * A config is the set of Products and Regions that apply to a geometry type and set of "intervals" or axes.
      *

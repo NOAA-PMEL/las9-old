@@ -1,11 +1,18 @@
 package pmel.sdig.las.client.widget;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.user.client.ui.Composite;
+import gwt.material.design.client.constants.ChipType;
 import gwt.material.design.client.constants.Display;
+import gwt.material.design.client.constants.FlexWrap;
+import gwt.material.design.client.constants.IconPosition;
 import gwt.material.design.client.constants.IconType;
+import gwt.material.design.client.ui.MaterialChip;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLink;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.html.Div;
 import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.shared.autobean.Dataset;
@@ -14,14 +21,13 @@ import pmel.sdig.las.shared.autobean.Variable;
 /**
  * Created by rhs on 9/15/15.
  */
-public class Breadcrumb extends Div {
+public class Breadcrumb extends MaterialPanel {
 
     String type;  // Should be one of BreadcrumbType
 
     Object selected;
 
-    MaterialLink link = new MaterialLink();
-    MaterialIcon icon = new MaterialIcon();
+    MaterialChip chip = new MaterialChip();
 
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
@@ -29,47 +35,53 @@ public class Breadcrumb extends Div {
 
     public Breadcrumb () {
         super();
-        add(icon);
-        add(link);
-        setDisplay(Display.INLINE);
+        chip.setDisplay(Display.INLINE);
+        chip.setOverflow(Style.Overflow.HIDDEN);
+        chip.addStyleName("LAS-chip");
+        add(chip);
     }
     public Breadcrumb(String text, IconType iconType) {
-        link.setText(text);
-        link.setTitle(text);
-        icon.setIconType(iconType);
-        add(link);
-        add(icon);
-        setDisplay(Display.INLINE);
+        setText(text);
+        setTitle(text);
+        setIconType(iconType);
+        chip.setDisplay(Display.INLINE);
+        chip.setOverflow(Style.Overflow.HIDDEN);
+        chip.addStyleName("LAS-chip");
+        add(chip);
     }
     public Breadcrumb(Object selected, boolean carret) {
         this.selected = selected;
         if ( selected instanceof Dataset ) {
             Dataset dataset = (Dataset) selected;
             if ( carret ) {
-                link.setText(" > " + dataset.getTitle());
+                chip.setText(" > " + dataset.getTitle());
             } else {
-                link.setText(dataset.getTitle());
+                chip.setText(dataset.getTitle());
             }
-            link.setTitle(dataset.getTitle());
+            chip.setTitle(dataset.getTitle());
             type = BreadcrumbType.DATASET;
         } else if ( selected instanceof Variable ) {
             Variable variable = (Variable) selected;
-            link.setText(" > " + variable.getTitle());
-            link.setTitle(variable.getTitle());
+            chip.setText(" > " + variable.getTitle());
+            chip.setTitle(variable.getTitle());
             type = BreadcrumbType.VARIABLE;
         }
-        add(link);
-        add(icon);
-        setDisplay(Display.INLINE);
+        chip.addStyleName("LAS-chip");
+        chip.setDisplay(Display.INLINE);
+        chip.setOverflow(Style.Overflow.HIDDEN);
+        add(chip);
     }
 
+    public void setIconType(IconType type) {
+        chip.setIconType(type);
+    }
+    public void setIconType(String type) {
+        chip.setIconType(IconType.HOME);
+    }
     public void setText(String text) {
-        link.setText(text);
+        chip.setText(text);
     }
 
-    public void setIconType(IconType iconType) {
-        icon.setIconType(iconType);
-    }
     public Object getSelected() {
         return selected;
     }

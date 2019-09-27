@@ -1,8 +1,5 @@
 package pmel.sdig.las
 
-import grails.converters.JSON
-import grails.plugins.elasticsearch.ElasticSearchService
-
 class SearchController {
 
     def search() {
@@ -11,16 +8,19 @@ class SearchController {
 
         def results = Dataset.search(searchQuery)
 
-        Dataset dataset = new Dataset([title: "Search Results"])
-        if ( results.total == 0 ) {
-            dataset.setMessage("No results found matching search.")
+        def datasetList = []
+
+        results.getSearchResults().each { Dataset result ->
+            if (result.id > 0) {
+                Dataset full = Dataset.get(result.id)
+                // In case the indexes contain dataset that are no longer defined
+                if ( full ) {
+                    datasetList.add(full)
+                }
+            }
         }
 
-        results.getSearchResults().each {Dataset result ->
-            dataset.addToDatasets(result)
-        }
-
-        respond dataset, formats: ['json'], view: 'dataset'
+        render(template: "search",  model: [datasetList: datasetList])
 
     }
 }

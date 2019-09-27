@@ -17,8 +17,11 @@ public class LASRequest {
     List<String> datasetHashes;
     List<Analysis> analysis;
     List<AxesSet> axesSets = new ArrayList<>();
+    List<DataQualifier> dataQualifiers;
 
-    List<Constraint> constraints;
+    List<DataConstraint> dataConstraints;
+
+    List<RequestProperty> requestProperties;
 
     public List<Analysis> getAnalysis() {
         return analysis;
@@ -27,8 +30,6 @@ public class LASRequest {
     public void setAnalysis(List<Analysis> analysis) {
         this.analysis = analysis;
     }
-
-    List<RequestProperty> requestProperties;
 
     public long getId() {
         return id;
@@ -74,6 +75,12 @@ public class LASRequest {
         return requestProperties;
     }
 
+    public void addRequestProperty(RequestProperty requestProperty) {
+        if ( this.requestProperties == null ) {
+            this.requestProperties = new ArrayList<>();
+        }
+        this.requestProperties.add(requestProperty);
+    }
     public void setRequestProperties(List<RequestProperty> requestProperties) {
         this.requestProperties = requestProperties;
     }
@@ -92,18 +99,31 @@ public class LASRequest {
         }
         requestProperties.add(requestProperty);
     }
-    public List<Constraint> getConstraints() {
-        return constraints;
+    public List<DataConstraint> getDataConstraints() {
+        return dataConstraints;
     }
-    public void setConstraints(List<Constraint> constraints) {
-        this.constraints = constraints;
+    public void setDataConstraints(List<DataConstraint> constraints) {
+        this.dataConstraints = constraints;
     }
 
-    public void addConstraint(Constraint constraint) {
-        if ( constraints == null ) {
-            constraints = new ArrayList<>();
+    public void addDataConstraint(DataConstraint constraint) {
+        if ( dataConstraints == null ) {
+            dataConstraints = new ArrayList<>();
         }
-        constraints.add(constraint);
+        dataConstraints.add(constraint);
+    }
+    public List<DataQualifier> getDataQualifiers() {
+        return dataQualifiers;
+    }
+
+    public void setDataQualifiers(List<DataQualifier> dataQualifiers) {
+        this.dataQualifiers = dataQualifiers;
+    }
+    public void addDataQualifier(DataQualifier dataQualifier) {
+        if ( dataQualifiers == null ) {
+            dataQualifiers = new ArrayList<>();
+        }
+        this.dataQualifiers.add(dataQualifier);
     }
 }
 

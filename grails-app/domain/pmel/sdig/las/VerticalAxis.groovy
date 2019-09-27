@@ -25,5 +25,6 @@ class VerticalAxis {
 		zvalues cascade:'all-delete-orphan'
 	}
     static constraints = {
+		units (nullable: true)
     }
 }

@@ -1,5 +1,8 @@
 package pmel.sdig.las
 
+/**
+ *
+ */
 class Site {
     List datasets
     String title
@@ -7,7 +10,8 @@ class Site {
     long grids
     long discrete
 
-    boolean toast;
+    boolean toast // show the toast message (mostly for debugging)
+    boolean dashboard // limit the map interaction to region and point selection and show "unrolled" graphs of selected points
 
     String infoUrl;
 

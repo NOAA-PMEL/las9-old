@@ -19,6 +19,7 @@ public class Constants {
     public static final String datatable = base + "product/datatable";
     public static final String productsByInterval = base + "config/productsByInterval";
     public static final String search = base + "search";
+    public static final String regions = base + "config/regions";
 
     public final static int navWidth = 400;
     public final static int imageBorderFactor = 200;

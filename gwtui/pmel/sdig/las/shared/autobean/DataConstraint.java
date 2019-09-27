@@ -1,10 +1,53 @@
-package pmel.sdig.las
+package pmel.sdig.las.shared.autobean;
 
-class DataConstraint {
-    String type;
+public class DataConstraint {
+    String type;  // type="variable" is for numeric values; type="text" is for exact matches on the value as a string
     String lhs;
     String op;
     String rhs;
+
+    public DataConstraint() {
+    }
+
+    public DataConstraint(String type, String lhs, String op, String rhs) {
+        this.type = type;
+        this.lhs = lhs;
+        this.op = op;
+        this.rhs = rhs;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getLhs() {
+        return lhs;
+    }
+
+    public void setLhs(String lhs) {
+        this.lhs = lhs;
+    }
+
+    public String getOp() {
+        return op;
+    }
+
+    public void setOp(String op) {
+        this.op = op;
+    }
+
+    public String getRhs() {
+        return rhs;
+    }
+
+    public void setRhs(String rhs) {
+        this.rhs = rhs;
+    }
+
     public String getOpAsSymbol() {
         String opString = "";
         if ( op.equals("lt")) {
@@ -26,10 +69,10 @@ class DataConstraint {
         }
         return opString;
     }
-/**
- *
- * @return constraint -- the SQL ready string to go in the WHERE clause
- */
+    /**
+     *
+     * @return constraint -- the SQL ready string to go in the WHERE clause
+     */
     public String getAsString() {
         String constraintString = "";
         try {
@@ -39,26 +82,5 @@ class DataConstraint {
             constraintString = constraintString + lhs+getOpAsSymbol()+"\""+rhs+"\"";
         }
         return constraintString;
-    }
-    public String getAsERDDAPString() {
-        // Even stuff that looks like a number has to be enclosed in quotes for ERDDAP variables that come is a list of distinct values.
-        if ( op.equals("is") || op.equals("like") || rhs.contains("*") || rhs.contains("[") || rhs.contains("]") ) {
-            lhs = lhs.replaceAll("_ns_", "|");
-
-            String[] parts = rhs.split("_ns_");
-            StringBuilder r = new StringBuilder();
-            for (int i = 0; i < parts.length; i++) {
-
-                String p = parts[i]; // Don't use quote pattern... Pattern.quote(parts[i]);
-                r.append(p);
-                if ( i < parts.length - 1 ) {
-                    r.append("|");
-                }
-            }
-
-            rhs = r.toString();
-
-        }
-        return lhs+getOpAsSymbol()+"\""+rhs+"\"";
     }
 }

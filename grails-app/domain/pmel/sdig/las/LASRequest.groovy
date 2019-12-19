@@ -22,10 +22,12 @@ class LASRequest {
 
     def List<RequestProperty> getPropertyGroup(String group_name) {
         def group = []
-        for (int i = 0; i < requestProperties.size(); i++) {
-            RequestProperty rp = requestProperties.get(i)
-            if ( rp.type == group_name) {
-                group.add(rp)
+        if ( requestProperties ) {
+            for (int i = 0; i < requestProperties.size(); i++) {
+                RequestProperty rp = requestProperties.get(i)
+                if (rp.type == group_name) {
+                    group.add(rp)
+                }
             }
         }
         group

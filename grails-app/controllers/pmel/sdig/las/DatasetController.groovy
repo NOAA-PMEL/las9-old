@@ -1,6 +1,10 @@
 package pmel.sdig.las
 
 import grails.converters.JSON
+import grails.gorm.transactions.Transactional
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 class DatasetController {
 
@@ -9,6 +13,7 @@ class DatasetController {
     AsyncIngestService asyncIngestService
     AsyncFerretService asyncFerretService
     //MakeStatsService makeStatsService
+    @Transactional
     def add() {
         String url = params.url
         if ( url ) {
@@ -44,12 +49,9 @@ class DatasetController {
 
             if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) ) {
                 dataset.setStatus(Dataset.INGEST_STARTED)
-                dataset.setMessage("This data set has not been ingested by LAS. That process has been started. This may take a while, but you can check back anytime to see if it's finished.")
+                dataset.setMessage("This data set has not been ingested by LAS. That process has been started. This may take a while, but you can click again anytime to see if it's finished.")
                 dataset.save(flush: true)
-
                 asyncIngestService.addVariablesAndSaveFromThredds(dataset.getUrl(), dataset.getHash(), null, true)
-//              ingestService.addVariablesAndSaveFromThredds(dataset.getUrl(), null, true)
-
             } else if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_STARTED) ) ) {
                 IngestStatus ingestStatus = IngestStatus.findByHash(dataset.getHash())
                 String message = "This the process of ingesting this data set has been started. This may take a while, but you can check back anytime to see if it's finished."
@@ -84,5 +86,51 @@ class DatasetController {
         }
         log.debug("Starting response for dataset list with " + browseDatasets.size() + " members.")
         render(template: "browse",  model: [datasetList: browseDatasets])
+    }
+    def oracle() {
+
+        def lookup = []
+        // This matcher and regex grabs either blank separated words or groups of works in quotes.
+        // https://stackoverflow.com/questions/3366281/tokenizing-a-string-but-ignoring-delimiters-within-quotes
+        String regex = "\"([^\"]*)\"|(\\S+)";
+
+        def queryJSON = request.JSON
+        SuggestQuery vq = new SuggestQuery(queryJSON)
+        String query = vq.getQuery()
+        String name = vq.getName();
+        List<LASSuggestion> suggestions = new ArrayList<LASSuggestion>()
+        Set results = []
+        if (query) {
+
+            Matcher m = Pattern.compile(regex).matcher(query);
+            while (m.find()) {
+                if (m.group(1) != null) {
+                    lookup.add("%" + m.group(1) + "%");
+                } else {
+                    lookup.add("%" + m.group(2) + "%");
+                }
+            }
+
+            for (int i = 0; i < lookup.size(); i++) {
+                def termResults = Dataset.createCriteria().list {
+                    or {
+                        ilike(name, lookup.get(i))
+                    }
+                    and {
+                        eq("variableChildren", true)
+                    }
+
+                }
+                if (termResults) {
+                    for (int j = 0; j < termResults.size(); j++) {
+                        Dataset d = termResults.get(j)
+                        LASSuggestion t = new LASSuggestion();
+                        t.setSuggestion(d.getTitle())
+                        results.add(t)
+                    }
+                }
+            }
+        }
+        render results as JSON;
     }
 }

@@ -1,8 +1,8 @@
 package pmel.sdig.las
 
 import grails.gorm.transactions.Transactional
-import grails.plugins.elasticsearch.ElasticSearchService
 import grails.util.Environment
+import grails.util.Holders
 import org.jdom2.Document
 import org.jdom2.Element
 import org.jdom2.output.Format
@@ -17,7 +17,6 @@ class InitializationService {
     IngestService ingestService
     OptionsService optionsService
     ResultsService resultsService
-    ElasticSearchService elasticSearchService
     ServletContext servletContext
 
     /**
@@ -64,17 +63,17 @@ class InitializationService {
 
         // This is an attempt to automate the choice of the full path to the python executable by taking it from the pyferret script
         def ferret = new Ferret()
-        File pyferret = new File(ferretEnvironment.getFer_dir()+File.separator+"bin"+File.separator+"pyferret")
-        def python = "/usr/bin/python"
-        pyferret.eachLine { line ->
-            def matcher = line =~ /python_exe\s*=\s*(.*)/
-            while (matcher.find()) {
-                python = matcher.group(1)
-                python = python.replace("\"","")
-            }
-        }
+//        File pyferret = new File(ferretEnvironment.getFer_dir()+File.separator+"bin"+File.separator+"pyferret")
+//        def python = "python"
+//        pyferret.eachLine { line ->
+//            def matcher = line =~ /python_exe\s*=\s*(.*)/
+//            while (matcher.find()) {
+//                python = matcher.group(1)
+//                python = python.replace("\"","")
+//            }
+//        }
 
-        ferret.setPath(python)
+        ferret.setPath("python")
         ferret.setTempDir("/tmp/las")
         ferret.setFerretEnvironment(ferretEnvironment)
         ferret.addToArguments(new Argument([value: "-cimport sys; import pyferret; (errval, errmsg) = pyferret.init(sys.argv[1:], True)"]))
@@ -166,7 +165,11 @@ class InitializationService {
         if (Environment.current == Environment.DEVELOPMENT) {
             configFileWriter = new FileWriter(new File("/home/rhs/tomcat/content/ftds/catalog.xml"))
         } else {
-            configFileWriter = new FileWriter(new File("../content/ftds/catalog.xml"))
+            File outputFile = Holders.grailsApplication.mainContext.getResource("output").file
+            File contextPath = outputFile.getParentFile();
+            File webapp = contextPath.getParentFile();
+            String tomcat = webapp.getParent();
+            configFileWriter = new FileWriter(new File("${tomcat}/content/ftds/catalog.xml"))
         }
         catalog.writeTo(configFileWriter).close()
     }
@@ -218,7 +221,10 @@ class InitializationService {
         if (Environment.current == Environment.DEVELOPMENT) {
             configFileWriter = new FileWriter(new File("/home/rhs/tomcat/webapps/las#thredds/WEB-INF/classes/FerretConfig.xml"))
         } else {
-            configFileWriter = new FileWriter(new File("../webapps/las#thredds/WEB-INF/classes/resources/iosp/FerretConfig.xml"))
+            File outputFile = Holders.grailsApplication.mainContext.getResource("output").file
+            File contextPath = outputFile.getParentFile();
+            String webapp = contextPath.getParent();
+            configFileWriter = new FileWriter(new File("${webapp}/las#thredds/WEB-INF/classes/resources/iosp/FerretConfig.xml"))
         }
         out.output(doc, configFileWriter)
     }
@@ -395,7 +401,7 @@ class InitializationService {
          */
         Product profile = Product.findByName("Profile_Plot_2D")
         if ( !profile ) {
-            profile = new Product([name:"Plot_2D_Profile", title: "Profile Plot", view: "zt", data_view: "xyzt", ui_group: "Profile Plots", geometry: GeometryType.PROFILE, product_order: "100001"])
+            profile = new Product([name:"Profile_Plot_2D", title: "Profile Plot", view: "zt", data_view: "xyzt", ui_group: "Profile Plots", geometry: GeometryType.PROFILE, product_order: "100001"])
             Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
             operation_extract_data.setResultSet(resultsService.getNetcdfFile())
 
@@ -957,7 +963,7 @@ class InitializationService {
 
         Product charts_timeseries_plot = Product.findByNameAndTitle("Charts Timeseries Plot", "Timeseries Plot");
         if ( !charts_timeseries_plot ) {
-            charts_timeseries_plot = new Product([name: "Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "100001"])
+            charts_timeseries_plot = new Product([name: "Charts Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "100001"])
             Operation operation_timeseries_plot = new Operation([service_action: "client_plot", type: "client"])
             charts_timeseries_plot.addToOperations(operation_timeseries_plot)
             charts_timeseries_plot.save(failOnError: true)
@@ -1190,26 +1196,25 @@ class InitializationService {
                     Dataset coadsDS = Dataset.findByHash(coadshash)
                     if (!coadsDS) {
                         coadsDS = ingestService.ingest(coadshash, coads)
-                        coadsDS.setTitle("COADS")
-                        coadsDS.setStatus(Dataset.INGEST_FINISHED)
-                        Variable v = coadsDS.getVariables().get(0);
-                        v.addToVariableProperties(new VariableProperty([type: "ferret", name: "time_step", value: "3"]))
-                        coadsDS.addToDatasetProperties(new DatasetProperty([type: "ferret", name: "time_step", value: "4"]))
-                        Vector vector = new Vector();
-                        vector.setGeometry(GeometryType.VECTOR)
-                        vector.setTitle("Ocean Currents")
-                        Variable ucomp = coadsDS.getVariables().find{it.name == "UWND"};
-                        Variable vcomp = coadsDS.getVariables().find{it.name == "VWND"}
-                        vector.setHash(ucomp.getHash() + "_" + vcomp.getHash())
-                        vector.setName(ucomp.getName() + " and " + vcomp.getName())
-                        vector.setU(ucomp)
-                        vector.setV(vcomp)
-                        coadsDS.addToVectors(vector)
-                        coadsDS.save(flush: true)
-                        elasticSearchService.index(coadsDS)
-                    }
-                    if (coadsDS) {
-                        site.addToDatasets(coadsDS)
+                        if (coadsDS) {
+                            coadsDS.setTitle("COADS")
+                            coadsDS.setStatus(Dataset.INGEST_FINISHED)
+                            Variable v = coadsDS.getVariables().get(0);
+                            v.addToVariableProperties(new VariableProperty([type: "ferret", name: "time_step", value: "3"]))
+                            coadsDS.addToDatasetProperties(new DatasetProperty([type: "ferret", name: "time_step", value: "4"]))
+                            Vector vector = new Vector();
+                            vector.setGeometry(GeometryType.VECTOR)
+                            vector.setTitle("Ocean Currents")
+                            Variable ucomp = coadsDS.getVariables().find { it.name == "UWND" };
+                            Variable vcomp = coadsDS.getVariables().find { it.name == "VWND" }
+                            vector.setHash(ucomp.getHash() + "_" + vcomp.getHash())
+                            vector.setName(ucomp.getName() + " and " + vcomp.getName())
+                            vector.setU(ucomp)
+                            vector.setV(vcomp)
+                            coadsDS.addToVectors(vector)
+                            coadsDS.save(flush: true)
+                            site.addToDatasets(coadsDS)
+                        }
                     }
                 }
                 if (ocean_atlas) {
@@ -1218,32 +1223,28 @@ class InitializationService {
                     Dataset ocean_atlasDS = Dataset.findByHash(oahash)
                     if (!ocean_atlasDS) {
                         ocean_atlasDS = ingestService.ingest(oahash, ocean_atlas)
-                        ocean_atlasDS.setTitle("Ocean Atlas Subset")
-                        ocean_atlasDS.setStatus(Dataset.INGEST_FINISHED)
-                        ocean_atlasDS.save(flush: true)
-                        elasticSearchService.index(ocean_atlasDS)
-                    }
-                    if (ocean_atlasDS) {
-                        site.addToDatasets(ocean_atlasDS)
+                        if (ocean_atlasDS) {
+                            ocean_atlasDS.setTitle("Ocean Atlas Subset")
+                            ocean_atlasDS.setStatus(Dataset.INGEST_FINISHED)
+                            ocean_atlasDS.save(flush: true)
+                            site.addToDatasets(ocean_atlasDS)
+                        }
                     }
                 }
-                if ( levitus ) {
+                if (levitus) {
                     log.debug("Ingesting Levitus climatology")
                     def levhash = IngestService.getDigest("levitus_climatology.cdf")
                     Dataset levitusDS = Dataset.findByHash(levhash)
-                    if ( !levitusDS ) {
+                    if (!levitusDS) {
                         levitusDS = ingestService.ingest(levhash, levitus)
-                        levitusDS.setTitle("Levitus Ocean Climatology")
-                        levitusDS.setStatus(Dataset.INGEST_FINISHED)
-                        levitusDS.save(flush: true)
-                        elasticSearchService.index(levitusDS)
-                    }
-                    if ( levitusDS ) {
-                        site.addToDatasets(levitusDS)
+                        if (levitusDS) {
+                            levitusDS.setTitle("Levitus Ocean Climatology")
+                            levitusDS.setStatus(Dataset.INGEST_FINISHED)
+                            levitusDS.save(flush: true)
+                            site.addToDatasets(levitusDS)
+                        }
                     }
                 }
-
-
 
 
 //                log.debug("Ingesting carbon tracker THREDDS catalog.")
@@ -1257,58 +1258,66 @@ class InitializationService {
 //                }
 
 
-                // TODO GOOD EXMAPLES OF DSG DATA SETS FOR RELEASE??
-                log.debug("Ingesting example Timeseries DSG from ERDDAP")
-                def ts = "http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060"
-                List<AddProperty> properties = new ArrayList<>()
-                AddProperty hours = new AddProperty([name: "hours", value: ".25"])
-                properties.add(hours)
-                AddProperty display_hi = new AddProperty([name: "display_hi", value: "2018-02-20T00:00:00.000Z"])
-                properties.add(display_hi)
-                AddProperty display_lo = new AddProperty(([name: "display_lo", value: "2018-02-05T00:00:00.000Z"]))
-                properties.add(display_lo)
-                def dsgDataset = Dataset.findByHash(IngestService.getDigest(ts))
-                if ( !dsgDataset ) {
-                    dsgDataset = ingestService.ingestFromErddap(ts, properties)
-                    dsgDataset.setStatus(Dataset.INGEST_FINISHED)
-                    dsgDataset.save(flush: true)
-                    site.addToDatasets(dsgDataset)
-                }
+                // TODO GOOD EXAMPLES OF DSG DATA SETS FOR RELEASE??
+//                log.debug("Ingesting example Timeseries DSG from ERDDAP")
+//                def ts = "http://ferret.pmel.noaa.gov/engineering/erddap/tabledap/15min_w20_fdd7_a060"
+//                List<AddProperty> properties = new ArrayList<>()
+//                AddProperty hours = new AddProperty([name: "hours", value: ".25"])
+//                properties.add(hours)
+//                AddProperty display_hi = new AddProperty([name: "display_hi", value: "2018-02-20T00:00:00.000Z"])
+//                properties.add(display_hi)
+//                AddProperty display_lo = new AddProperty(([name: "display_lo", value: "2018-02-05T00:00:00.000Z"]))
+//                properties.add(display_lo)
+//                def dsgDataset = Dataset.findByHash(IngestService.getDigest(ts))
+//                if (!dsgDataset) {
+//                    dsgDataset = ingestService.ingestFromErddap(ts, properties)
+//                    if (dsgDataset) {
+//                        dsgDataset.setStatus(Dataset.INGEST_FINISHED)
+//                        dsgDataset.save(flush: true)
+//                        site.addToDatasets(dsgDataset)
+//                    }
+//                }
 
-                log.debug("Ingesting example trajectory")
-                def traj = "https://upwell.pfeg.noaa.gov/erddap/tabledap/LiquidR_HBG3_2015_weather"
-                def trajDataset = Dataset.findByHash(IngestService.getDigest(traj))
-                if ( !trajDataset ) {
-                    trajDataset = ingestService.ingestFromErddap(traj, null)
-                    trajDataset.setStatus(Dataset.INGEST_FINISHED)
-                    trajDataset.save(flush: true)
-                    site.addToDatasets(trajDataset)
-                }
+//                log.debug("Ingesting example trajectory")
+//                def traj = "https://upwell.pfeg.noaa.gov/erddap/tabledap/LiquidR_HBG3_2015_weather"
+//                def trajDataset = Dataset.findByHash(IngestService.getDigest(traj))
+//                if (!trajDataset) {
+//                    trajDataset = ingestService.ingestFromErddap(traj, null)
+//                    if (trajDataset) {
+//                        trajDataset.setStatus(Dataset.INGEST_FINISHED)
+//                        trajDataset.save(flush: true)
+//                        site.addToDatasets(trajDataset)
+//                    }
+//                }
 
-                log.debug("Ingesting example points")
-                def ais = "https://upwell.pfeg.noaa.gov/erddap/tabledap/hawaii_soest_01af_e372_5bb6"
-                def aisDataset = Dataset.findByHash(IngestService.getDigest(ais))
-                if ( !aisDataset ) {
-                    aisDataset = ingestService.ingestFromErddap(ais, null)
-                    aisDataset.setStatus(Dataset.INGEST_FINISHED)
-                    aisDataset.save(flush: true)
-                    site.addToDatasets(aisDataset)
-                }
+//                log.debug("Ingesting example points")
+//                def ais = "https://upwell.pfeg.noaa.gov/erddap/tabledap/hawaii_soest_01af_e372_5bb6"
+//                def aisDataset = Dataset.findByHash(IngestService.getDigest(ais))
+//                if (!aisDataset) {
+//                    aisDataset = ingestService.ingestFromErddap(ais, null)
+//                    if (aisDataset) {
+//                        aisDataset.setStatus(Dataset.INGEST_FINISHED)
+//                        aisDataset.save(flush: true)
+//                        site.addToDatasets(aisDataset)
+//                    }
+//                }
                 // TODO END OF --- GOOD EXMAPLES OF DSG DATA SETS FOR RELEASE??
 
-
-                log.debug("Ingesting example profile dataset")
-                def prof = "https://ferret.pmel.noaa.gov/alamo/erddap/tabledap/arctic_heat_alamo_profiles_9076"
-                def profDataset = Dataset.findByHash(IngestService.getDigest(prof))
-                if ( !profDataset ) {
-                    List<AddProperty> profileProps = new ArrayList<>()
-                    AddProperty add1 = new AddProperty([name: "hours", value: ".25"])
-                    profileProps.add(add1)
-                    profDataset = ingestService.ingestFromErddap(prof, profileProps)
-                    profDataset.setStatus(Dataset.INGEST_FINISHED)
-                    profDataset.save(flush: true)
-                    site.addToDatasets(profDataset)
-                }
+//
+//                log.debug("Ingesting example profile dataset")
+//                def prof = "https://ferret.pmel.noaa.gov/alamo/erddap/tabledap/arctic_heat_alamo_profiles_9076"
+//                def profDataset = Dataset.findByHash(IngestService.getDigest(prof))
+//                if (!profDataset) {
+//                    List<AddProperty> profileProps = new ArrayList<>()
+//                    AddProperty add1 = new AddProperty([name: "hours", value: ".25"])
+//                    profileProps.add(add1)
+//                    profDataset = ingestService.ingestFromErddap(prof, profileProps)
+//                    if (profDataset) {
+//                        profDataset.setStatus(Dataset.INGEST_FINISHED)
+//                        profDataset.save(flush: true)
+//                        site.addToDatasets(profDataset)
+//                    }
+//                }
 
 //                log.debug("Ingesting UAF THREDDS server")
 //                //def uaf = "http://ferret.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml"
@@ -1325,11 +1334,13 @@ class InitializationService {
 
 //                ingestService.cleanup(site)
 
-                def n = "https://oceanwatch.pfeg.noaa.gov/thredds/dodsC/satellite/QA/vekm/3day"
-                Dataset wind = ingestService.ingest(null, n)
-                wind.setStatus(Dataset.INGEST_FINISHED)
-                wind.save()
-                site.addToDatasets(wind)
+//                def n = "https://oceanwatch.pfeg.noaa.gov/thredds/dodsC/satellite/QA/vekm/3day"
+//                Dataset wind = ingestService.ingest(null, n)
+//                if (wind) {
+//                    wind.setStatus(Dataset.INGEST_FINISHED)
+//                    wind.save()
+//                    site.addToDatasets(wind)
+//                }
 
                 site.save(failOnError: true)
 

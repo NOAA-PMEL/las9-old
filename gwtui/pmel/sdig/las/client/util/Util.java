@@ -1,6 +1,11 @@
 package pmel.sdig.las.client.util;
 
 import com.google.gwt.i18n.client.NumberFormat;
+import com.google.gwt.user.client.Window;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class Util {
 
@@ -42,5 +47,28 @@ public class Util {
 	public static String format_four(double d) {
 		NumberFormat dFormat = NumberFormat.getFormat("########.####");
 		return dFormat.format(d);
+	}
+	public static String[] getParameterStrings(String name) {
+		Map<String, List<String>> parameters = Window.Location.getParameterMap();
+		List param = parameters.get(name);
+		if ( param != null ) {
+			int i = 0;
+			String[] ps = new String[param.size()];
+			for (Iterator paramIt = param.iterator(); paramIt.hasNext(); ) {
+				String p = (String) paramIt.next();
+				ps[i] = p;
+				i++;
+			}
+			return ps;
+		}
+		return null;
+	}
+	public static String getParameterString(String name) {
+		Map<String, List<String>> parameters = Window.Location.getParameterMap();
+		List param = parameters.get(name);
+		if ( param != null ) {
+			return (String) param.get(0);
+		}
+		return null;
 	}
 }

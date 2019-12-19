@@ -19,7 +19,9 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.SuggestOracle;
 import com.google.gwt.user.client.ui.Widget;
+import gwt.material.design.addins.client.autocomplete.MaterialAutoComplete;
 import gwt.material.design.addins.client.window.MaterialWindow;
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.Display;
@@ -27,7 +29,7 @@ import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.SideNavClosedEvent;
 import gwt.material.design.client.events.SideNavOpenedEvent;
 import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCard;
+import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
@@ -54,20 +56,19 @@ import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
 import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
-import pmel.sdig.las.client.event.Browse;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
 import pmel.sdig.las.client.event.PanelCount;
 import pmel.sdig.las.client.event.Search;
 import pmel.sdig.las.client.event.ShowValues;
 import pmel.sdig.las.client.map.OLMapWidget;
+import pmel.sdig.las.client.oracle.VariableOracle;
 import pmel.sdig.las.client.state.State;
 import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.client.widget.AxisWidget;
 import pmel.sdig.las.client.widget.Breadcrumb;
 import pmel.sdig.las.client.widget.ComparePanel;
 import pmel.sdig.las.client.widget.DataItem;
-import pmel.sdig.las.client.widget.DatasetInfo;
 import pmel.sdig.las.client.widget.DateTimeWidget;
 import pmel.sdig.las.client.widget.ImagePanel;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
@@ -76,18 +77,21 @@ import pmel.sdig.las.client.widget.ResultsPanel;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
 import pmel.sdig.las.client.widget.VariableConstraintWidget;
 import pmel.sdig.las.client.widget.YesNoOptionsWidget;
+import pmel.sdig.las.client.oracle.DatasetOracle;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
 import pmel.sdig.las.shared.autobean.DataConstraint;
 import pmel.sdig.las.shared.autobean.Dataset;
+import pmel.sdig.las.shared.autobean.DatasetProperty;
 import pmel.sdig.las.shared.autobean.RequestProperty;
+import pmel.sdig.las.shared.autobean.SearchRequest;
+import pmel.sdig.las.shared.autobean.LASSuggestion;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.VariableProperty;
 import pmel.sdig.las.shared.autobean.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static pmel.sdig.las.client.util.Constants.navWidth;
 
 
 /**
@@ -266,7 +270,26 @@ public class Layout extends Composite {
     @UiField
     MaterialIcon home;
     @UiField
-    MaterialButton browse;
+    MaterialButton openAdvancedSearch;
+
+    @UiField
+    MaterialAutoComplete searchByDatasetTitle;
+    @UiField
+    MaterialAutoComplete searchByStandardName;
+    @UiField
+    MaterialAutoComplete searchByVariableTitle;
+    @UiField
+    MaterialTextBox txtSearch2;
+    @UiField
+    MaterialButton advancedSearchLaunch;
+    @UiField
+    MaterialButton nextAdvancedSearch;
+    @UiField
+    MaterialButton prevAdvancedSearch;
+
+    int advancedSearchTotal;
+    int advancedSearchCount = Constants.PAGE;
+    int advancedSearchOffset = 0;
 
 //    @UiField
 //    MaterialIcon back;
@@ -297,10 +320,20 @@ public class Layout extends Composite {
     MaterialLabel total;
 
     @UiField
-    MaterialLink discrete;
+    MaterialCheckBox discrete;
+    @UiField
+    MaterialCheckBox profileCount;
+    @UiField
+    MaterialCheckBox trajectoryCount;
+    @UiField
+    MaterialCheckBox timeseriesCount;
+    @UiField
+    MaterialCheckBox pointCount;
 
     @UiField
-    MaterialLink grids;
+    MaterialCheckBox grids;
+
+    int offset;
 
     @UiField
     MaterialLink btnSearch;
@@ -338,11 +371,18 @@ public class Layout extends Composite {
 
     interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
     private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
+    DatasetOracle datasetOracle = new DatasetOracle("title");
+    VariableOracle variableTitleOracle = new VariableOracle("title");
+    VariableOracle variableStandardNameOracle = new VariableOracle("standard_name");
 
     public Layout() {
         root = ourUiBinder.createAndBindUi(this);
 
         initWidget(root);
+
+        searchByDatasetTitle.setSuggestions(datasetOracle);
+        searchByVariableTitle.setSuggestions(variableTitleOracle);
+        searchByStandardName.setSuggestions(variableStandardNameOracle);
 
         Constants.UPDATE_NOT_NEEDED = update.getBackgroundColor();
 
@@ -373,13 +413,17 @@ public class Layout extends Composite {
 
         txtSearch.getLabel().addClickHandler(event -> {
             String search = txtSearch.getText();
-            startSearch(search);
+            SearchRequest sr = new SearchRequest();
+            sr.setQuery(search);
+            startSearch(sr);
         });
 
         txtSearch.addKeyPressHandler(event -> {
             if ( event.getCharCode() == KeyCodes.KEY_ENTER ) {
                 String search = txtSearch.getText();
-                startSearch(search);
+                SearchRequest sr = new SearchRequest();
+                sr.setQuery(search);
+                startSearch(sr);
             }
         });
 
@@ -1006,23 +1050,24 @@ public class Layout extends Composite {
         String set = brandWidth + "px";
         brand.setWidth(set);
     }
-    private void startSearch(String query) {
+    public void startSearch(SearchRequest search) {
         navbar.setVisible(true);
         navBarSearch.setVisible(false);
+        showDataProgress();
         removeBreadcrumbs(1);
         Breadcrumb bc = new Breadcrumb();
-        bc.setText("Search: \"" + query + "\"");
-        bc.setTitle("Search: \"" + query + "\"");
+        bc.setText("Search: \"" + search.toString() + "\"");
+        bc.setTitle("Search: \"" + search.toString() + "\"");
         bc.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent clickEvent) {
                 List<Breadcrumb> crumbs = panel1.getBreadcrumbs();
                 removeBreadcrumbs(crumbs, 0, 1);
-                eventBus.fireEventFromSource(new Search(query), txtSearch);
+                eventBus.fireEventFromSource(new Search(search), txtSearch);
             }
         });
         addBreadcrumb(bc, 1);
-        eventBus.fireEventFromSource(new Search(query), txtSearch);
+        eventBus.fireEventFromSource(new Search(search), txtSearch);
     }
     public void setPlotCount(int count) {
         if ( count == 1 ) {
@@ -1341,17 +1386,183 @@ public class Layout extends Composite {
     void onSearch(ClickEvent e){
         txtSearch.open();
     }
-    @UiHandler("browse")
+    @UiHandler("openAdvancedSearch")
     void onBrowse(ClickEvent event) {
-        eventBus.fireEventFromSource(new Browse(0), browse);
+        advancedSearch.setDisplay(Display.BLOCK);
         event.stopPropagation();
     }
-    @UiHandler("next10")
-    void onNext10(ClickEvent click) {
-        eventBus.fireEventFromSource(new Browse(10), next10);
+    private SearchRequest getAdvancedSearchTerms() {
+        SearchRequest sr = new SearchRequest();
+        String dsSearch = "";
+        // TODO values is a list?
+        List<? extends SuggestOracle.Suggestion> ds_values = searchByDatasetTitle.getValue();
+        for (int i = 0; i < ds_values.size(); i++) {
+            if ( ds_values.get(i) instanceof LASSuggestion) {
+                dsSearch = dsSearch + " \"" + ((LASSuggestion) ds_values.get(i)).getDisplayString() + "\"";
+            } else {
+                // Not an exact match, no quotes
+                dsSearch = dsSearch + " " + ((SuggestOracle.Suggestion) ds_values.get(i)).getDisplayString();
+            }
+        }
+        List<DatasetProperty> dpl = new ArrayList<>();
+        if ( dsSearch != null && !dsSearch.isEmpty() ) {
+            DatasetProperty dp = new DatasetProperty();
+            dp.setType("search");
+            dp.setName("title");
+            dp.setValue(dsSearch);
+            dpl.add(dp);
+        }
+
+        String vSearch = "";
+        List<? extends SuggestOracle.Suggestion> v_values = searchByVariableTitle.getValue();
+        for (int i = 0; i < v_values.size(); i++) {
+            if ( v_values.get(i) instanceof LASSuggestion) {
+                vSearch = vSearch + " \"" + ((LASSuggestion) v_values.get(i)).getDisplayString() + "\"";
+            } else {
+                // Not an exact match, no quotes
+                vSearch = vSearch + " " + ((SuggestOracle.Suggestion) v_values.get(i)).getDisplayString();
+            }
+        }
+
+        List<VariableProperty> vpl = new ArrayList<>();
+        if ( vSearch != null && !vSearch.isEmpty() ) {
+            VariableProperty vp = new VariableProperty();
+            vp.setType("search");
+            vp.setName("title");
+            vp.setValue(vSearch);
+            vpl.add(vp);
+        }
+
+
+        String snSearch = "";
+        List<? extends SuggestOracle.Suggestion> sn_values = searchByStandardName.getValue();
+        for (int i = 0; i < sn_values.size(); i++) {
+            if ( sn_values.get(i) instanceof LASSuggestion) {
+                snSearch = snSearch + " \"" + ((LASSuggestion) sn_values.get(i)).getDisplayString() + "\"";
+            } else {
+                // Not an exact match, no quotes
+                snSearch = snSearch + " " + ((SuggestOracle.Suggestion) sn_values.get(i)).getDisplayString();
+            }
+        }
+        if ( snSearch != null && !snSearch.isEmpty() ) {
+            VariableProperty vp = new VariableProperty();
+            vp.setType("search");
+            vp.setName("standard_name");
+            vp.setValue(snSearch);
+            vpl.add(vp);
+        }
+
+        String keywords = txtSearch2.getText();
+        if ( keywords != null && !keywords.isEmpty() ) {
+            sr.setQuery(keywords);
+        }
+
+        if ( discrete.getValue() ) {
+            DatasetProperty dp_pro = new DatasetProperty();
+            dp_pro.setType("search");
+            dp_pro.setName("geometry");
+            dp_pro.setValue("profile");
+            dpl.add(dp_pro);
+
+            DatasetProperty dp_ts = new DatasetProperty();
+            dp_ts.setType("search");
+            dp_ts.setName("geometry");
+            dp_ts.setValue("timeseries");
+            dpl.add(dp_ts);
+
+            DatasetProperty dp_point = new DatasetProperty();
+            dp_point.setType("search");
+            dp_point.setName("geometry");
+            dp_point.setValue("point");
+            dpl.add(dp_point);
+
+            DatasetProperty dp_traj = new DatasetProperty();
+            dp_traj.setType("search");
+            dp_traj.setName("geometry");
+            dp_traj.setValue("trajectory");
+            dpl.add(dp_traj);
+        }
+
+        if ( profileCount.getValue() && !discrete.getValue() ) {
+
+            DatasetProperty dp_pro = new DatasetProperty();
+            dp_pro.setType("search");
+            dp_pro.setName("geometry");
+            dp_pro.setValue("profile");
+            dpl.add(dp_pro);
+
+        }
+
+        if ( timeseriesCount.getValue() && !discrete.getValue() ) {
+
+            DatasetProperty dp_ts = new DatasetProperty();
+            dp_ts.setType("search");
+            dp_ts.setName("geometry");
+            dp_ts.setValue("timeseries");
+            dpl.add(dp_ts);
+
+        }
+
+        if ( pointCount.getValue() && !discrete.getValue() ) {
+
+            DatasetProperty dp_point = new DatasetProperty();
+            dp_point.setType("search");
+            dp_point.setName("geometry");
+            dp_point.setValue("point");
+            dpl.add(dp_point);
+
+        }
+
+        if ( trajectoryCount.getValue() && !discrete.getValue() ) {
+
+            DatasetProperty dp_traj = new DatasetProperty();
+            dp_traj.setType("search");
+            dp_traj.setName("geometry");
+            dp_traj.setValue("trajectory");
+            dpl.add(dp_traj);
+
+        }
+
+        if ( grids.getValue() ) {
+
+            DatasetProperty dp_grid = new DatasetProperty();
+            dp_grid.setType("search");
+            dp_grid.setName("geometry");
+            dp_grid.setValue("grid");
+            dpl.add(dp_grid);
+
+        }
+
+        if ( dpl.size() > 0 ) {
+            sr.setDatasetProperties(dpl);
+        }
+        if ( vpl.size() > 0 ) {
+            sr.setVariableProperties(vpl);
+        }
+        return sr;
     }
-    @UiHandler("prev10")
-    void onPrev10(ClickEvent click) {
-        eventBus.fireEventFromSource(new Browse(-10), next10);
+    private void runAdvancedSearch(int offset) {
+        SearchRequest sr = getAdvancedSearchTerms();
+        sr.setCount(advancedSearchCount);
+        sr.setOffset(offset);
+        startSearch( sr );
+    }
+    @UiHandler("advancedSearchLaunch")
+    void onAdvancedSearch(ClickEvent event) {
+        prevAdvancedSearch.setDisplay(Display.NONE);
+        nextAdvancedSearch.setDisplay(Display.NONE);
+        runAdvancedSearch(0);
+    }
+    @UiHandler("nextAdvancedSearch")
+    void onAdvancedSearchNext(ClickEvent clickEvent) {
+        runAdvancedSearch(advancedSearchOffset);
+    }
+    @UiHandler("prevAdvancedSearch")
+    void onAdvancedSearchPrev(ClickEvent clickEvent) {
+        int offset = advancedSearchOffset - 2*advancedSearchCount;
+        if ( offset < 0 ) {
+            offset = 0;
+        }
+        runAdvancedSearch(offset);
     }
 }

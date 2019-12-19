@@ -60,6 +60,8 @@ import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Annotation;
 import pmel.sdig.las.shared.autobean.AnnotationGroup;
 import pmel.sdig.las.shared.autobean.Dataset;
+import pmel.sdig.las.shared.autobean.SearchRequest;
+import pmel.sdig.las.shared.autobean.SearchResults;
 import pmel.sdig.las.shared.autobean.Site;
 import pmel.sdig.las.shared.autobean.TimeAxis;
 import pmel.sdig.las.shared.autobean.Variable;
@@ -338,14 +340,15 @@ public class ComparePanel extends Composite {
         }
         return dataItems;
     }
-    public MethodCallback <List<Dataset>> searchCallback = new MethodCallback<List<Dataset>>() {
+    public MethodCallback <SearchResults> searchCallback = new MethodCallback<SearchResults>() {
         @Override
         public void onFailure(Method method, Throwable throwable) {
             Window.alert("Unable to perform search.");
         }
 
         @Override
-        public void onSuccess(Method method, List<Dataset> searchDatasets) {
+        public void onSuccess(Method method, SearchResults searchResults) {
+            List<Dataset> searchDatasets = searchResults.getDatasetList();
             if (searchDatasets != null && searchDatasets.size() > 0) {
                 dataItem.hideProgress();
                 panelDatasets.clear();
@@ -699,6 +702,8 @@ public class ComparePanel extends Composite {
     private void startSearch(String search) {
         navBar.setVisible(true);
         navBarSearch.setVisible(false);
-        eventBus.fireEventFromSource(new Search(search), ComparePanel.this);
+        SearchRequest sr = new SearchRequest();
+        sr.setQuery(search);
+        eventBus.fireEventFromSource(new Search(sr), ComparePanel.this);
     }
 }

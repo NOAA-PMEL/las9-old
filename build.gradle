@@ -13,12 +13,13 @@ buildscript {
         // this is the gwt gradle plug0-in
         classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
 
+
     }
 }
 
 
 
-version "9.0.6"
+version "9.0.9"
 group "las"
 
 apply plugin:"eclipse"
@@ -125,21 +126,17 @@ dependencies {
     // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
     compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.2.1'
     compile group: 'org.quartz-scheduler', name: "quartz-jobs", version: "2.2.1"
-    
-    // For searching
-    compile 'org.grails.plugins:elasticsearch:2.4.1'
+
+    // Spring security - access control for admin pages. - RHS
+    // Do this later. For now filter out admin... compile 'org.grails.plugins:spring-security-core:3.3.1'
 
 }
 
 // My stuff -- RHS
 
-// Override the Spring Boot elastic search version
-def elasticsearchVersion = '5.4.3'
-extensions['elasticsearch.version'] = elasticsearchVersion
-
 // GWT Modules
 gwt {
-    modules 'pmel.sdig.las.UI'
+    modules 'pmel.sdig.las.UI,pmel.sdig.installer.Admin'
     compileGwt.enabled = false;
 }
 
@@ -147,7 +144,7 @@ gwt {
 sourceSets {
     client {
         java {
-            srcDirs = ['gwtui']
+            srcDirs = ['gwtui','gwtadmin']
         }
     }
 }

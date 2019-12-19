@@ -43,8 +43,6 @@ public class DatasetInfo extends Composite {
 
     Dataset dataset;
 
-    boolean horizontal = true;
-
     ClientFactory clientFactory = GWT.create(ClientFactory.class);
     EventBus eventBus = clientFactory.getEventBus();
 
@@ -62,15 +60,9 @@ public class DatasetInfo extends Composite {
     public DatasetInfo() {
         init();
     }
-    public DatasetInfo(Dataset dataset, boolean horizontal) {
-        this.dataset = dataset;
-        this.horizontal = horizontal;
-        init();
-        configure(dataset);
-    }
+
     public DatasetInfo(Dataset dataset) {
         this.dataset = dataset;
-        horizontal = false;
         init();
         configure(dataset);
     }
@@ -105,18 +97,13 @@ public class DatasetInfo extends Composite {
 
         final VariableInfo info = new VariableInfo(dataset, variable);
 
-        if ( horizontal ) {
-            carousel.add(info);
-            rows.add(carousel);
-        } else {
-            int position = count % 3;
-            if (position == 0) {
-                MaterialRow row = new MaterialRow();
-                currentRow = row;
-                rows.add(row);
-            }
-            currentRow.add(info);
+        int position = count % 3;
+        if (position == 0) {
+            MaterialRow row = new MaterialRow();
+            currentRow = row;
+            rows.add(row);
         }
+        currentRow.add(info);
 
         count++;
 

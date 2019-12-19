@@ -69,14 +69,14 @@
 
                 </m:MaterialNavSection>
                 <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." overflow="HIDDEN"/>
-                <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>
+                <m:MaterialPanel addStyleNames="valign-vertical">
+                    <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>
+                    <m:MaterialButton marginTop="14" ui:field="openAdvancedSearch" text="Advanced Search" float="RIGHT" marginRight="16"></m:MaterialButton>
+                </m:MaterialPanel>
             </m:MaterialNavBar>
             <!-- NavBar Search ... replaces entire navbar with a text field when searching. -->
             <m:MaterialNavBar ui:field="navBarSearch" width="100%" visible="false">
-
-                        <m:MaterialSearch height="64" ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1"/>
-
-
+                <m:MaterialSearch height="64" ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1"/>
             </m:MaterialNavBar>
         </m:MaterialHeader>
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
@@ -102,7 +102,6 @@
                             <m:MaterialPanel addStyleNames="valign-wrapper">
                                 <m:MaterialIcon marginLeft="4" ui:field="home" iconType="HOME"></m:MaterialIcon>
                                 <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Data" display="FLEX"></m:MaterialLink>
-                                <m:MaterialButton ui:field="browse" text="Browse" display="FLEX" float="RIGHT" marginRight="16"></m:MaterialButton>
                                 <!--
                                 Doesn't quite work right, seems counter intuitive, just use the breadcrumbs for now.
                                 <m:MaterialIcon ui:field="back" iconType="ARROW_BACK" iconPosition="RIGHT"/>
@@ -338,13 +337,26 @@
                             <m:MaterialLabel lineHeight="24" textColor="BLACK" ui:field="total" text=""></m:MaterialLabel>
                         </m:MaterialRow>
                         <m:MaterialCollection lineHeight="22" border="0" padding="0">
-                            <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink ui:field="discrete" text=""></m:MaterialLink></m:MaterialCollectionItem>
+                            <m:MaterialCollectionItem padding="0" border="0">
+                                <m:MaterialCheckBox ui:field="discrete" text=""></m:MaterialCheckBox>
+                            </m:MaterialCollectionItem>
                                <m:MaterialCollection marginLeft="24" border="0">
-                                   <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink text="N profile data sets"></m:MaterialLink></m:MaterialCollectionItem>
-                                   <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink text="M trajectory data sets"></m:MaterialLink></m:MaterialCollectionItem>
-                                   <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink text="M point data sets"></m:MaterialLink></m:MaterialCollectionItem>
+                                   <m:MaterialCollectionItem padding="0" border="0">
+                                       <m:MaterialCheckBox ui:field="profileCount" text=""></m:MaterialCheckBox>
+                                   </m:MaterialCollectionItem>
+                                   <m:MaterialCollectionItem padding="0" border="0">
+                                       <m:MaterialCheckBox ui:field="timeseriesCount" text=""></m:MaterialCheckBox>
+                                   </m:MaterialCollectionItem>
+                                   <m:MaterialCollectionItem padding="0" border="0">
+                                       <m:MaterialCheckBox ui:field="pointCount" text=""></m:MaterialCheckBox>
+                                   </m:MaterialCollectionItem>
+                                   <m:MaterialCollectionItem padding="0" border="0">
+                                       <m:MaterialCheckBox ui:field="trajectoryCount" text=""></m:MaterialCheckBox>
+                                   </m:MaterialCollectionItem>
                                </m:MaterialCollection>
-                            <m:MaterialCollectionItem padding="0" border="0"><m:MaterialLink ui:field="grids" text=""></m:MaterialLink></m:MaterialCollectionItem>
+                            <m:MaterialCollectionItem padding="0" border="0">
+                                <m:MaterialCheckBox ui:field="grids" text=""></m:MaterialCheckBox>
+                            </m:MaterialCollectionItem>
                         </m:MaterialCollection>
                     </m:MaterialCardContent>
                 </m:MaterialCard>
@@ -356,11 +368,9 @@
                                 <m:MaterialCard backgroundColor="WHITE">
                                     <m:MaterialCardContent textColor="BLACK">
                                         <m:MaterialCardTitle textColor="BLACK" text="By Data Set Title"></m:MaterialCardTitle>
-                                        <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" ui:field="byDatasetTitle" shadow="2">
-                                            <m.html:Option title="Data set title 1" text="Data set title 1" separator="true"/>
-                                            <m.html:Option title="Data set title 2" text="Data set title 2" separator="true"/>
-                                            <m.html:Option title="Data set title 3" text="Data set title 3" separator="true"/>
-                                        </m:MaterialListBox>
+                                        <m:MaterialRow>
+                                           <ma:autocomplete.MaterialAutoComplete display="INLINE" placeholder="Dataset Title" grid="s12" ui:field="searchByDatasetTitle"></ma:autocomplete.MaterialAutoComplete>
+                                        </m:MaterialRow>
                                     </m:MaterialCardContent>
                                 </m:MaterialCard>
                             </m:MaterialColumn>
@@ -368,11 +378,9 @@
                                 <m:MaterialCard backgroundColor="WHITE">
                                     <m:MaterialCardContent textColor="BLACK">
                                         <m:MaterialCardTitle textColor="BLACK" text="By Variable Title/Long_name"></m:MaterialCardTitle>
-                                        <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" ui:field="byVariableTitle" shadow="2">
-                                            <m.html:Option title="Data set title 1" text="Data set title 1" separator="true"/>
-                                            <m.html:Option title="Data set title 2" text="Data set title 2" separator="true"/>
-                                            <m.html:Option title="Data set title 3" text="Data set title 3" separator="true"/>
-                                        </m:MaterialListBox>
+                                        <m:MaterialRow>
+                                          <ma:autocomplete.MaterialAutoComplete display="INLINE" placeholder="Variable Title" grid="s12" ui:field="searchByVariableTitle"></ma:autocomplete.MaterialAutoComplete>
+                                        </m:MaterialRow>
                                     </m:MaterialCardContent>
                                 </m:MaterialCard>
                             </m:MaterialColumn>
@@ -380,18 +388,16 @@
                                 <m:MaterialCard backgroundColor="WHITE">
                                     <m:MaterialCardContent textColor="BLACK">
                                         <m:MaterialCardTitle textColor="BLACK" text="By CF Standard Name"></m:MaterialCardTitle>
-                                        <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" ui:field="byStandardName" shadow="2">
-                                            <m.html:Option title="Data set title 1" text="Data set title 1" separator="true"/>
-                                            <m.html:Option title="Data set title 2" text="Data set title 2" separator="true"/>
-                                            <m.html:Option title="Data set title 3" text="Data set title 3" separator="true"/>
-                                        </m:MaterialListBox>
+                                        <m:MaterialRow>
+                                            <ma:autocomplete.MaterialAutoComplete display="INLINE" placeholder="CF Standard name" grid="s12" ui:field="searchByStandardName"></ma:autocomplete.MaterialAutoComplete>
+                                        </m:MaterialRow>
                                     </m:MaterialCardContent>
                                 </m:MaterialCard>
                             </m:MaterialColumn>
                         </m:MaterialRow>
                     </m:MaterialCardContent>
                     <m:MaterialCardAction>
-                        <m:MaterialButton text="Search"/>
+                        <m:MaterialButton ui:field="advancedSearchLaunch" text="Search"/><m:MaterialButton ui:field="prevAdvancedSearch" text="Prev" display="NONE"/><m:MaterialButton ui:field="nextAdvancedSearch" text="Next" display="NONE"/>
                     </m:MaterialCardAction>
                 </m:MaterialCard>
             </m:MaterialRow>

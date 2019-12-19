@@ -2,7 +2,6 @@ package pmel.sdig.las
 
 import com.google.gson.*
 import grails.gorm.transactions.Transactional
-import grails.plugins.elasticsearch.ElasticSearchService
 import grails.web.context.ServletContextHolder
 import opendap.dap.AttributeTable
 import opendap.dap.DAS
@@ -38,8 +37,6 @@ class IngestService {
 
     IngestStatusService ingestStatusService;
     DateTimeService dateTimeService
-
-    ElasticSearchService elasticSearchService
 
     def servletContext = ServletContextHolder.servletContext
 
@@ -590,7 +587,7 @@ class IngestService {
                 dataset.geometry = GeometryType.GRID
 
                 int done = i + 1;
-                String m2 = done + "variables out of a total of " + grids.size() + " have been processed."
+                String m2 = done + " variables out of a total of " + grids.size() + " have been processed."
                 ingestStatusService.saveProgress(parentHash, m2)
 
             }
@@ -608,47 +605,48 @@ class IngestService {
         // Is it an ESGF catalog or data set?
     }
     def addVariablesAndSaveFromThredds(String url, String parentHash, String erddap, boolean full) {
-        Dataset dataset = Dataset.findByUrl(url)
-        // If this is being done by the background process, it is possible that a user already requested this data set be loaded.
-        log.debug("dataset found" + url)
-        try {
-            log.debug("Loading the catalog for" +url)
-            ingestStatusService.saveProgress(parentHash, "Loading the THREDDS catalog for these variables.")
-            Dataset temp = ingestFromThredds(url, parentHash, erddap, full)
-            log.debug("Finished loading variables for " + url)
+        Dataset.withNewTransaction {
+            Dataset dataset = Dataset.findByUrl(url)
+            // If this is being done by the background process, it is possible that a user already requested this data set be loaded.
+            log.debug("dataset found" + url)
+            try {
+                log.debug("Loading the catalog for" + url)
+                ingestStatusService.saveProgress(parentHash, "Loading the THREDDS catalog for these variables.")
+                Dataset temp = ingestFromThredds(url, parentHash, erddap, full)
+                log.debug("Finished loading variables for " + url)
 
-            // There will be a layer that represents the catalog at the top with the variables in a data set one level down.
+                // There will be a layer that represents the catalog at the top with the variables in a data set one level down.
 
-            if (temp.getDatasets() && temp.getDatasets().size() == 1) {
-                Dataset temp2 = temp.getDatasets().get(0)
-                if (temp2 && temp2.getVariables()) {
-                    def t2v = temp2.getVariables();
-                    log.debug(t2v.size() + " variables found " + dataset.getUrl())
-                    for (int i = 0; i < t2v.size(); i++) {
-                        dataset.addToVariables(t2v.get(i))
+                if (temp.getDatasets() && temp.getDatasets().size() == 1) {
+                    Dataset temp2 = temp.getDatasets().get(0)
+                    if (temp2 && temp2.getVariables()) {
+                        def t2v = temp2.getVariables();
+                        log.debug(t2v.size() + " variables found " + dataset.getUrl())
+                        t2v.each { Variable v ->
+                            dataset.addToVariables(v)
+                            v.save(failOnError: true, flush: true)
+                        }
+                        dataset.setStatus(Dataset.INGEST_FINISHED)
+                        if (dataset.validate()) {
+                            dataset.save(flush: true)
+                        }
+                    } else {
+                        if (temp2.getStatus() == Dataset.INGEST_FAILED) {
+                            dataset.setStatus(Dataset.INGEST_FAILED)
+                            dataset.save(failOnError: true, flush: true)
+                        }
                     }
-                    dataset.setStatus(Dataset.INGEST_FINISHED)
-                    if ( dataset.validate() ) {
-                        dataset.save(flush: true)
-                    }
-                    elasticSearchService.index(dataset)
                 } else {
-                    if ( temp2.getStatus() == Dataset.INGEST_FAILED ) {
-                        dataset.setStatus(Dataset.INGEST_FAILED)
-                        dataset.save(failOnError: true, flush: true)
-                    }
+                    log.debug("No variables found for " + dataset.getUrl())
+                    dataset.setStatus(Dataset.INGEST_FAILED)
+                    dataset.save(failOnError: true, flush: true)
                 }
-            } else {
-                log.debug("No variables found for " + dataset.getUrl())
+            } catch (Exception e) {
+                log.debug("Ingest failed " + e.getMessage())
                 dataset.setStatus(Dataset.INGEST_FAILED)
                 dataset.save(failOnError: true, flush: true)
             }
-        } catch (Exception e) {
-            log.debug("Ingest failed " + e.getMessage())
-            dataset.setStatus(Dataset.INGEST_FAILED)
-            dataset.save(failOnError: true, flush:true)
         }
-
     }
     Dataset ingestFromThredds(String url, String parentHash, String erddap, boolean full) {
 
@@ -1254,8 +1252,6 @@ class IngestService {
 
             int total = 0;
             int limit = rows.size();
-            // DEBUG, DEBUG, DEBUG
-            if ( url.contains("alamo") || url.contains("engineer")) limit = 6;
             // The first one is a listing of all data sets, not the first tabledap data set.
             for (int i = 1; i < limit; i++) {
                 total++;
@@ -1541,7 +1537,7 @@ class IngestService {
             // This should be set when scanning a catalog...
             if (auto_display) {
                 timeAxis.setDisplay_lo(mediumFerretForm.print(dtstart))
-                timeAxis.setDisplay_hi(mediumFerretForm.print(dtstart.plusDays(1)))
+                timeAxis.setDisplay_hi(mediumFerretForm.print(dtstart.plusDays(14)))
             }
 
         }
@@ -1689,6 +1685,16 @@ class IngestService {
 
             String start = metadata.getAttributeValue(NC_GLOBAL, "geospatial_vertical_min")
             String end = metadata.getAttributeValue(NC_GLOBAL, "geospatial_vertical_max")
+
+            if ( !start && !end ) {
+                // try this instead
+                String range = metadata.getAttributeValue(zVar, "actual_range")
+                if ( range.contains((","))) {
+                    String[] parts = range.split(",")
+                    start = parts[0].trim()
+                    end = parts[1].trim()
+                }
+            }
 
             if (start != null && end != null) {
                 double min = Double.valueOf(start).doubleValue()
@@ -3061,9 +3067,7 @@ class IngestService {
         for (int i = 0; i < needIngest.size(); i++) {
             Dataset d = needIngest.get(i)
             log.debug("Adding variables to " + d.getUrl() + " which has variableChildren = " + d.variableChildren)
-            Dataset.withNewTransaction {
-                addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
-            }
+            addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
         }
 
         log.debug("FINISHED adding variables to all THREDDS catalogs with OPeNDAP endpoints.")

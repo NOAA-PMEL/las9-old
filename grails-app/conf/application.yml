@@ -1,6 +1,6 @@
 ---
 server:
-#   port: 8940
+#    port: 8940
     port: 8282
     contextPath: /las
 ---
@@ -110,21 +110,6 @@ dataSource:
     driverClassName: org.h2.Driver
     username: sa
     password: ''
-
-# Elastic Search config
-elasticSearch:
-    disableAutoIndex: true
-    datastoreImpl: hibernateDatastore
-    client:
-        mode: local
-    plugin:
-        mapperAttachment:
-            enabled: false
-    path:
-        data: /home/rhs/las_db/elastic
-    index:
-        store:
-            type: simplefs
 environments:
     development:
         dataSource:

@@ -2,6 +2,8 @@ package pmel.sdig.las
 
 import grails.gorm.transactions.Transactional
 import grails.util.Holders
+import org.hibernate.SessionFactory
+import pmel.sdig.las.type.GeometryType
 
 
 @Transactional
@@ -10,6 +12,7 @@ class FerretService {
     DateTimeService dateTimeService
     ResultsService resultsService
     ProductService productService
+    SessionFactory sessionFactory
 
     def ferretColorsMap = [
             red:"(69.7, 7.58, 22.73)",
@@ -120,8 +123,7 @@ class FerretService {
     }
 
     def makeThumbnail(String dhash, String vhash) {
-        File outputFile = Holders.grailsApplication.mainContext.getResource("output").file
-        String outputPath = outputFile.getAbsolutePath()
+
         Dataset dataset = Dataset.findByHash(dhash)
         if ( dataset ) {
             Variable variable = dataset.variables.find{it.hash == vhash}
@@ -137,148 +139,242 @@ class FerretService {
                 def z = variable.getVerticalAxis()
                 def t = variable.getTimeAxis()
 
-                File ddir = new File("${outputPath}${File.separator}${dhash}")
-                if (!ddir.exists()) ddir.mkdirs()
-
-
-                def hash = "${dhash}${File.separator}${vhash}"
+                def hash = "${dhash}_${vhash}"
 
                 def opname;
-                def opaction;
                 def opview;
-                if (variable.getIntervals().startsWith("xy")) {
+                if (dataset.getGeometry().equals(GeometryType.GRID ) ) {
                     opname = "Plot_2D_XY"
-                    opaction = "Plot_2D_XY"
                     opview = "xy"
-                } else if (variable.getIntervals().startsWith("t")) {
-                    opname = "Time"
-                    opaction = "Plot_1D"
+                } else if (dataset.getGeometry().equals(GeometryType.TIMESERIES ) ) {
+                    opname = "Timeseries_station_plot"
                     opview = "t"
+                    /*
+{
+	"targetPanel": 1,
+	"datasetHashes": ["46bc3b7d4ae261841352c1ae695b2402"],
+	"dataQualifiers": null,
+	"variableHashes": ["87b437774dad2b5a5857f6e7ba3e7c3d"],
+	"axesSets": [{
+		"thi": "19-Sep-2015 00:00",
+		"tlo": "18-Sep-2015 22:14",
+		"xhi": "-125.44958496094",
+		"xlo": "-125.94960021973",
+		"zhi": null,
+		"yhi": "45.065101623535",
+		"zlo": null,
+		"ylo": "44.565101623535"
+	}],
+	"requestProperties": [{
+		"name": "interpolate_data",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "deg_min_sec",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "data_count",
+		"id": 0,
+		"type": "ferret",
+		"value": "1"
+	}],
+	"id": 0,
+	"analysis": [null],
+	"operation": "Timeseries_station_plot",
+	"dataConstraints": []
+}
+                     */
+                } else if ( dataset.getGeometry().equals((GeometryType.TRAJECTORY) ) ) {
+
+                    /*
+{
+	"targetPanel": 1,
+	"datasetHashes": ["e37d787028837593c04bbe65a81b042d"],
+	"dataQualifiers": null,
+	"variableHashes": ["2f456c189b51babdea3fd924722bcb30"],
+	"axesSets": [{
+		"thi": "15-Mar-2018 00:00",
+		"tlo": "14-Mar-2018 18:00",
+		"xhi": "-120.28875904",
+		"xlo": "-137.75806336",
+		"zhi": null,
+		"yhi": "40.51020488",
+		"zlo": null,
+		"ylo": "17.29451992"
+	}],
+	"requestProperties": [{
+		"name": "interpolate_data",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "deg_min_sec",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "data_count",
+		"id": 0,
+		"type": "ferret",
+		"value": "1"
+	}],
+	"id": 0,
+	"analysis": [null],
+	"operation": "Trajectory_interactive_plot",
+	"dataConstraints": []
+}
+                     */
+                } else if ( dataset.getGeometry().equals(GeometryType.PROFILE) ) {
+                    opname = "Plot_2D_Profile"
+                    opview = "zt"
+                    /*
+{
+	"targetPanel": 1,
+	"datasetHashes": ["9d0a32ac05ac185609f3f8f4e760cc09"],
+	"dataQualifiers": null,
+	"variableHashes": ["b7b39960ad5015c9b3c1d14559b7bb3f"],
+	"axesSets": [{
+		"thi": "10-Dec-2016 00:00",
+		"tlo": "16-Sep-2016 09:47",
+		"xhi": "360",
+		"xlo": "0",
+		"zhi": "45.77",
+		"yhi": "90",
+		"zlo": "-0.23",
+		"ylo": "-90"
+	}],
+	"requestProperties": [{
+		"name": "interpolate_data",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "deg_min_sec",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "data_count",
+		"id": 0,
+		"type": "ferret",
+		"value": "1"
+	}],
+	"id": 0,
+	"analysis": [null],
+	"operation": "Plot_2D_Profile",
+	"dataConstraints": []
+}
+                     */
+
+
+                } else if ( dataset.getGeometry().equals(GeometryType.POINT) ) {
+                    opname = "Point_location_value_plot"
+                    opview = "xy"
+                    /*
+                    {
+	"targetPanel": 1,
+	"datasetHashes": ["de56a95e8d201e04217fb5cf4b51e6ee"],
+	"dataQualifiers": null,
+	"variableHashes": ["410bf1993e81cf95215c4475a6fb1dc0"],
+	"axesSets": [{
+		"thi": "10-Jan-1951 00:00",
+		"tlo": "09-Jan-1951 18:16",
+		"xhi": "-110.19176470321",
+		"xlo": "-122.20677671562",
+		"zhi": null,
+		"yhi": "36.207115942573",
+		"zlo": null,
+		"ylo": "24.927643127871"
+	}],
+	"requestProperties": [{
+		"name": "deg_min_sec",
+		"id": 0,
+		"type": "ferret",
+		"value": "0"
+	}, {
+		"name": "set_aspect",
+		"id": 0,
+		"type": "ferret",
+		"value": "1"
+	}, {
+		"name": "data_count",
+		"id": 0,
+		"type": "ferret",
+		"value": "1"
+	}],
+	"id": 0,
+	"analysis": [null],
+	"operation": "Point_location_value_plot",
+	"dataConstraints": []
+}
+                     */
                 }
 
-                StringBuffer jnl = new StringBuffer()
+                LASRequest lasRequest = new LASRequest();
+                lasRequest.setDatasetHashes([dhash])
+                lasRequest.setVariableHashes([vhash])
+                lasRequest.setOperation(opname)
 
-                jnl.append("DEFINE SYMBOL data_0_dataset_name = ${dataset.title}\n")
-                jnl.append("DEFINE SYMBOL data_0_dataset_url = ${variable_url}\n")
-                jnl.append("DEFINE SYMBOL data_0_grid_type = regular\n")
-                jnl.append("DEFINE SYMBOL data_0_name = ${variable_name}\n")
-                jnl.append("DEFINE SYMBOL data_0_ID = ${variable_name}\n")
-                jnl.append("DEFINE SYMBOL data_0_region = region_0\n")
-                jnl.append("DEFINE SYMBOL data_0_title = ${variable_title}\n")
-                if (variable.units) jnl.append("DEFINE SYMBOL data_0_units = ${variable.units}\n")
-                jnl.append("DEFINE SYMBOL data_0_url = ${variable_url}\n")
-                jnl.append("DEFINE SYMBOL data_0_var = ${variable_name}\n")
-
-
+                AxesSet axesSet = new AxesSet()
                 if (t) {
+
                     String sd = dateTimeService.ferretFromIso(t.getStart(), t.getCalendar())
                     String fd = dateTimeService.ferretFromIso(t.getEnd(), t.getCalendar())
 
-                    if (opview.equals("xy")) {
-                        // Use the last day
-                        jnl.append("DEFINE SYMBOL region_0_t_lo = ${fd}\n")
-                    } else if (opview.equals("t")) {
-                        // Use the first day, timeseries the entire time range. :-)
-                        jnl.append("DEFINE SYMBOL region_0_t_lo = ${sd}\n")
+                    // Full range if on T view, last only otherwise
+                    if (opview.contains("t")) {
+                        axesSet.setTlo(sd)
+                    } else {
+                        axesSet.setTlo(fd)
                     }
-                    jnl.append("DEFINE SYMBOL region_0_t_hi = ${fd}\n")
+                    axesSet.setThi(fd)
+
                 }
                 if (x) {
-                    jnl.append("DEFINE SYMBOL region_0_x_hi = ${x.getMax()}\n")
-                    jnl.append("DEFINE SYMBOL region_0_x_lo = ${x.getMin()}\n")
+                    axesSet.setXhi(String.format("%.4f", x.getMax()))
+                    axesSet.setXlo(String.format("%.4f", x.getMin()))
                 }
                 if (y) {
-                    jnl.append("DEFINE SYMBOL region_0_y_hi = ${y.getMax()}\n")
-                    jnl.append("DEFINE SYMBOL region_0_y_lo = ${y.getMin()}\n")
+                    axesSet.setYhi(String.format("%.4f",y.getMax()))
+                    axesSet.setYlo(String.format("%.4f",y.getMin()))
                 }
                 if (z) {
-                    jnl.append("DEFINE SYMBOL region_0_z_lo = ${z.getMin()}\n")
-                    jnl.append("DEFINE SYMBOL region_0_z_hi = ${z.getMin()}\n")
-                }
-
-
-                jnl.append("DEFINE SYMBOL data_count = 1\n")
-                jnl.append("DEFINE SYMBOL ferret_annotations = file\n")
-                if (variable.getIntervals().startsWith("xy")) {
-                    jnl.append("DEFINE SYMBOL ferret_service_action = Plot_2D_XY\n")
-                    jnl.append("DEFINE SYMBOL operation_name = Plot_2D_XY\n")
-
-                }
-                if (variable.getIntervals().startsWith("t")) {
-                    jnl.append("DEFINE SYMBOL ferret_service_action = Plot_1D\n")
-                    jnl.append("DEFINE SYMBOL operation_name = Time\n")
-                }
-                jnl.append("DEFINE SYMBOL ferret_size = .456\n")
-                jnl.append("DEFINE SYMBOL ferret_view = ${opview}\n")
-                jnl.append("DEFINE SYMBOL las_debug = false\n")
-                jnl.append("DEFINE SYMBOL las_output_type = xml\n")
-                jnl.append("DEFINE SYMBOL operation_ID = ${opname}\n")
-                jnl.append("DEFINE SYMBOL operation_key = ${dhash}/${vhash}\n")
-                jnl.append("DEFINE SYMBOL operation_service = ferret\n")
-
-
-                jnl.append("DEFINE SYMBOL ferret_service_action = ${opaction}\n")
-                jnl.append("DEFINE SYMBOL operation_name = ${opname}\n")
-
-                // TODO this has to come from the config
-                jnl.append("DEFINE SYMBOL product_server_ps_timeout = 3600\n")
-                jnl.append("DEFINE SYMBOL product_server_ui_timeout = 10\n")
-                jnl.append("DEFINE SYMBOL product_server_use_cache = true\n")
-
-                def cacheFilename
-                def cacheUrl
-                def resultSet = resultsService.getThumbnailResults()
-                resultSet.results.each { Result result ->
-                    // All we care about is the plot
-                    result.url = "output${File.separator}${hash}_${result.name}${result.suffix}"
-                    result.filename = "${outputPath}${File.separator}${hash}_${result.name}${result.suffix}"
-
-                    if ( result.name == "plot_image") cacheFilename = result.filename
-                    if ( result.name == "plot_image") cacheUrl = result.url
-
-                }
-
-
-
-                // TODO separate thumbnails into their own directory and then again by data set hash
-                for (int i = 0; i < resultSet.getResults().size(); i++) {
-
-                    def result = resultSet.getResults().get(i)
-
-                    jnl.append("DEFINE SYMBOL result_${result.name}_ID = ${result.name}\n")
-                    jnl.append("DEFINE SYMBOL result_${result.name}_filename = ${outputPath}${File.separator}${hash}_${result.name}${result.suffix}\n")
-
-                    jnl.append("DEFINE SYMBOL result_${result.name}_type = ${result.type}\n")
-
-                }
-                jnl.append("go ${opaction}\n")
-
-                File cache = null
-                if (cacheFilename) {
-                    cache = new File(cacheFilename)
-                }
-
-                if (cache && cache.exists()) {
-                    return cacheUrl
-                } else {
-                    def ferretResult = runScript(jnl)
-                    def error = ferretResult["error"];
-                    if (!error) {
-                        ResultSet allResults = new ResultSet()
-                        addResults(resultSet, allResults, "${opname}")
-                        Result r = allResults.results.find { it.name == "plot_image" }
-                        return r.getUrl()
+                    if ( opview.contains("z") ) {
+                        axesSet.setZlo(String.format("%.4f", z.getMin()))
+                        axesSet.setZhi(String.format("%.4f", z.getMax()))
+                    } else {
+                        axesSet.setZlo(String.format("%.4f", z.getMin()))
+                        axesSet.setZhi(String.format("%.4f", z.getMin()))
                     }
+                }
+
+                lasRequest.setAxesSets([axesSet])
+
+                ResultSet allResults = productService.doRequest(lasRequest, hash)
+                def error = allResults.getError()
+                if ( !error ) {
+                    Result r = allResults.results.find { it.name == "plot_image" }
+                    return r.getUrl()
                 }
             }
         }
         return null;
     }
     def makeAndSaveThumbnail(Dataset dataset, Variable variable) {
+        log.debug("Attempting to make thumbnail for " + variable.title + " with id " + variable.id)
         def url = makeThumbnail(dataset.hash, variable.hash)
         if ( url ) {
             variable.setUrl(url)
-            variable.save()
+            variable.save(flush:true)
+            log.debug("Succeeded with thumbnail for " + variable.title + " with id " + variable.id)
+        }
+    }
+    def makeThumbnails(Dataset dataset) {
+        dataset.variables.each{
+            makeAndSaveThumbnail(dataset, it)
         }
     }
     def addResults(ResultSet resultSet, ResultSet allResults, String product) {
@@ -312,10 +408,9 @@ class FerretService {
             if ( url ) {
                 log.debug("Succeeded with thumbnail for " + variable.title + " with id " + variable.id)
                 variable.setThumbnail(url)
-                if ( !variable.save() ) {
+                if ( !variable.save(flush: true) ) {
                     log.debug("Failed to save thumbnail " + variable.errors.allErrors )
                 }
-
             }
         }
         log.debug("FINISHED making thumbnails for all existing variables.")

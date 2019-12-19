@@ -1,13 +1,18 @@
 package pmel.sdig.las.client.event;
 
 import com.google.gwt.event.shared.GwtEvent;
+import pmel.sdig.las.shared.autobean.DatasetProperty;
+import pmel.sdig.las.shared.autobean.SearchRequest;
+import pmel.sdig.las.shared.autobean.VariableProperty;
+
+import java.util.List;
 
 public class Search extends GwtEvent<SearchHandler> {
 
-    String query;
+    SearchRequest searchRequest;
 
-    public Search(String q) {
-        query = q;
+    public Search(SearchRequest searchRequest) {
+        this.searchRequest = searchRequest;
     }
 
     public static Type<SearchHandler> TYPE = new Type<SearchHandler>();
@@ -20,11 +25,11 @@ public class Search extends GwtEvent<SearchHandler> {
         handler.onSearch(this);
     }
 
-    public String getQuery() {
-        return query;
+    public SearchRequest getSearchRequest() {
+        return searchRequest;
     }
 
-    public void setQuery(String query) {
-        this.query = query;
+    public void setSearchRequest(SearchRequest searchRequest) {
+        this.searchRequest = searchRequest;
     }
 }

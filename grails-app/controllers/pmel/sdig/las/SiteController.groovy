@@ -34,20 +34,89 @@ class SiteController {
                 count()
             }
         }
-        def d = Dataset.createCriteria()
-        def discrete = d.get {
+        def traj = Dataset.createCriteria()
+        def trajCount = traj.get {
             eq("variableChildren", true)
-            // TODO fix this, but we could just take total - grids
-//            'in'("geometry", [GeometryType.TRAJECTORY, GeometryType.TIMESERIES, GeometryType.PROFILE, GeometryType.POINT])
+            eq("geometry", GeometryType.TRAJECTORY)
+            projections {
+                count()
+            }
+        }
+        def point = Dataset.createCriteria()
+        def pointCount = point.get {
+            eq("variableChildren", true)
+            eq("geometry", GeometryType.POINT)
+            projections {
+                count()
+            }
+        }
+        def ts = Dataset.createCriteria()
+        def tsCount = ts.get{
+            eq("variableChildren", true)
+            eq("geometry", GeometryType.TIMESERIES)
+            projections {
+                count()
+            }
+        }
+        def profile = Dataset.createCriteria()
+        def profileCount = profile.get{
+            eq("variableChildren", true)
+            eq("geometry", GeometryType.PROFILE)
             projections {
                 count()
             }
         }
 
+        // TODO trajectory profile
+
+        // Attributes to search // TODO should read from list of searchable attributes in site domain
+        Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+
+        // This got big fast with UAF.
+        // Doing auto complete searches with textboxes.
+        // May never use "attributes" or may have some other use for them later.
+//        List<String> dataset_title = Dataset.withCriteria {
+//            projections {
+//                distinct("title")
+//                order("title")
+//            }
+//        }
+//        if ( dataset_title )
+//            attributes.put("dataset_title", dataset_title)
+//
+//        List<String> variable_title = Variable.withCriteria {
+//            projections {
+//                distinct("title")
+//                order("title")
+//            }
+//        }
+//        if ( variable_title )
+//            attributes.put("variable_title", variable_title)
+//
+//        List<String> standard_name = Variable.withCriteria {
+//            projections {
+//                distinct("standard_name")
+//                order("standard_name")
+//            }
+//        }
+//
+//        if ( standard_name )
+//            attributes.put("standard_name", standard_name)
+
+        site.setAttributes(attributes)
+
+        def discrete = trajCount + pointCount + tsCount + profileCount
+
         def total = grids + discrete
         site.setTotal(total)
         site.setGrids(grids)
+        site.setTrajectory(trajCount)
+        site.setPoint(pointCount)
+        site.setTimeseries(tsCount)
+        site.setProfile(profileCount)
         site.setDiscrete(discrete)
+
+
 
         if ( site ) {
             withFormat {

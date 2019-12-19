@@ -1,6 +1,7 @@
 package pmel.sdig.las.shared.autobean;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by rhs on 5/21/15.
@@ -11,7 +12,13 @@ public class Site {
 
     int total;
     int grids;
+    int profile;
+    int timeseries;
+    int trajectory;
+    int point;
     int discrete;
+
+    Map<String, List<String>> attributes;
 
     boolean toast;
     boolean dashboard;
@@ -82,5 +89,45 @@ public class Site {
 
     public void setDiscrete(int discrete) {
         this.discrete = discrete;
+    }
+
+    public int getProfile() {
+        return profile;
+    }
+
+    public void setProfile(int profile) {
+        this.profile = profile;
+    }
+
+    public int getTimeseries() {
+        return timeseries;
+    }
+
+    public void setTimeseries(int timeseries) {
+        this.timeseries = timeseries;
+    }
+
+    public int getTrajectory() {
+        return trajectory;
+    }
+
+    public void setTrajectory(int trajectory) {
+        this.trajectory = trajectory;
+    }
+
+    public int getPoint() {
+        return point;
+    }
+
+    public void setPoint(int point) {
+        this.point = point;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
     }
 }

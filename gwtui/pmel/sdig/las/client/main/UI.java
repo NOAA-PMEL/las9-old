@@ -4,7 +4,6 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.OptionElement;
-import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.MouseDownEvent;
@@ -33,31 +32,18 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.Widget;
 import google.visualization.AnnotationChart;
 import google.visualization.AnnotationChartOptions;
-import google.visualization.BarChart;
-import google.visualization.BarChartOptions;
 import google.visualization.DataTable;
-import google.visualization.GeoMap;
-import google.visualization.GeoMapOptions;
 import google.visualization.LineChart;
 import google.visualization.LineChartOptions;
-import google.visualization.LineChartOptions.Explorer;
-import google.visualization.Map;
-import google.visualization.MapOptions;
 import gwt.material.design.client.constants.Display;
-import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCard;
-import gwt.material.design.client.ui.MaterialCardContent;
-import gwt.material.design.client.ui.MaterialCardTitle;
-import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialHeader;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
 import gwt.material.design.client.ui.MaterialRadioButton;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.MaterialToast;
-import gwt.material.design.client.ui.html.Div;
 import gwt.material.design.client.ui.html.Option;
+import org.fusesource.restygwt.client.Attribute;
 import org.fusesource.restygwt.client.JsonEncoderDecoder;
 import org.fusesource.restygwt.client.Method;
 import org.fusesource.restygwt.client.MethodCallback;
@@ -65,10 +51,8 @@ import org.fusesource.restygwt.client.Resource;
 import org.fusesource.restygwt.client.RestService;
 import org.fusesource.restygwt.client.RestServiceProxy;
 import org.fusesource.restygwt.client.TextCallback;
-import org.gwttime.time.Chronology;
 import org.gwttime.time.DateTime;
 import org.gwttime.time.DateTimeZone;
-import org.gwttime.time.chrono.GregorianChronology;
 import org.gwttime.time.format.DateTimeFormatter;
 import org.gwttime.time.format.ISODateTimeFormat;
 import org.moxieapps.gwt.highcharts.client.Axis;
@@ -82,8 +66,6 @@ import pmel.sdig.las.client.event.AnimateActionHandler;
 import pmel.sdig.las.client.event.AutoColors;
 import pmel.sdig.las.client.event.AutoColorsHandler;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
-import pmel.sdig.las.client.event.Browse;
-import pmel.sdig.las.client.event.BrowseHandler;
 import pmel.sdig.las.client.event.DateChange;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.DownloadHandler;
@@ -106,6 +88,7 @@ import pmel.sdig.las.client.map.MapSelectionChangeListener;
 import pmel.sdig.las.client.map.OLMapWidget;
 import pmel.sdig.las.client.state.State;
 import pmel.sdig.las.client.util.Constants;
+import pmel.sdig.las.client.util.Util;
 import pmel.sdig.las.client.widget.AxisWidget;
 import pmel.sdig.las.client.widget.Breadcrumb;
 import pmel.sdig.las.client.widget.ComparePanel;
@@ -114,9 +97,6 @@ import pmel.sdig.las.client.widget.DateTimeWidget;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
 import pmel.sdig.las.client.widget.ProductButton;
 import pmel.sdig.las.client.widget.ProductButtonList;
-import pmel.sdig.las.client.widget.RegionItem;
-import pmel.sdig.las.client.widget.RegionSelect;
-import pmel.sdig.las.client.widget.RegionSelectHandler;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
 import pmel.sdig.las.client.widget.VariableConstraintWidget;
 import pmel.sdig.las.client.widget.VariableInfo;
@@ -129,6 +109,7 @@ import pmel.sdig.las.shared.autobean.ConfigSet;
 import pmel.sdig.las.shared.autobean.DataConstraint;
 import pmel.sdig.las.shared.autobean.DataQualifier;
 import pmel.sdig.las.shared.autobean.Dataset;
+import pmel.sdig.las.shared.autobean.DatasetProperty;
 import pmel.sdig.las.shared.autobean.LASRequest;
 import pmel.sdig.las.shared.autobean.MapScale;
 import pmel.sdig.las.shared.autobean.Operation;
@@ -137,9 +118,12 @@ import pmel.sdig.las.shared.autobean.Region;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 import pmel.sdig.las.shared.autobean.Result;
 import pmel.sdig.las.shared.autobean.ResultSet;
+import pmel.sdig.las.shared.autobean.SearchRequest;
+import pmel.sdig.las.shared.autobean.SearchResults;
 import pmel.sdig.las.shared.autobean.Site;
 import pmel.sdig.las.shared.autobean.TimeAxis;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.VariableProperty;
 import pmel.sdig.las.shared.autobean.Vector;
 import pmel.sdig.las.shared.autobean.VerticalAxis;
 
@@ -152,6 +136,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import static pmel.sdig.las.client.util.Constants.GRID;
@@ -263,14 +248,16 @@ public class UI implements EntryPoint {
 
     // Display the info page of the first data set
     boolean info = true;
-    // Display the browse navigation
-    boolean browse = false;
+
+    // Incoming data set URL
+    String xDataURL;
 
     public void onModuleLoad() {
 
         iso = ISODateTimeFormat.dateTimeNoMillis();
 
         String initialHistory = getAnchor();
+        xDataURL = Util.getParameterString("data_url");
 
         animateDateTimeWidget.setTitle("Time Range for Animation");
         downloadDateTime.setTitle("Time Range for Data Download.");
@@ -368,15 +355,20 @@ public class UI implements EntryPoint {
             @Override
             public void onSearch(Search event) {
                 Object source = event.getSource();
-                String query = event.getQuery();
-                if ( query.isEmpty()) {
-                    MaterialToast.fireToast("Please specify at least one search term.");
-                } else {
+                SearchRequest sr = event.getSearchRequest();
+                String query = sr.getQuery();
+                List<DatasetProperty> dpl = sr.getDatasetProperties();
+                List<VariableProperty> vpl = sr.getVariableProperties();
+                // check all for null before toasting
+                if ( query != null || dpl != null || vpl != null ) {
                     if ( source instanceof ComparePanel) {
-                        searchService.getSearchResults(query, layout.panel2.searchCallback);
+                        searchService.getSearchResults(sr, layout.panel2.searchCallback);
                     } else {
-                        searchService.getSearchResults(query, searchCallback);
+                        searchService.getSearchResults(sr, searchCallback);
                     }
+                } else {
+                    layout.hideDataProgress();
+                    MaterialToast.fireToast("Please specify at least one search term.");
                 }
             }
         });
@@ -572,11 +564,11 @@ public class UI implements EntryPoint {
                         // This was the home button...
 
                         info = false;
-                        browse = false;
                         siteService.getSite("1.json", siteCallback);
                         layout.panel1.getOutputPanel().clear();
                         layout.panel1.clearAnnotations();
                         layout.removeBreadcrumbs(1);
+                        layout.advancedSearch.setDisplay(Display.BLOCK);
                         layout.clearDatasets();
                         layout.showDataProgress();
 
@@ -712,16 +704,6 @@ public class UI implements EntryPoint {
                         layout.setUpdate(Constants.UPDATE_NEEDED);
                     }
                 }
-            }
-        });
-        eventBus.addHandler(Browse.TYPE, new BrowseHandler() {
-            @Override
-            public void onBrowse(Browse event) {
-                int change = event.getOffset();
-                layout.showProgress();
-                offset = offset + change;
-                if ( offset < 0 ) offset = 0;
-                infoService.getInfo(String.valueOf(offset), browseCallback);
             }
         });
         eventBus.addHandler(DateChange.TYPE, new DateChange.Handler() {
@@ -906,7 +888,6 @@ public class UI implements EntryPoint {
                 long id = event.getId();
                 layout.setInfoSelect(id);
                 String rid = id + ".json";
-                browse = false;
                 info = true;
                 datasetService.getDataset(rid, infoCallback);
             }
@@ -991,9 +972,11 @@ public class UI implements EntryPoint {
                 MaterialToast.fireToast("Getting initial site information.");
             siteService.getSite("1.json", siteCallback);
             layout.showDataProgress();
+
         } else {
             popHistory(initialHistory);
         }
+
     }
     private void saveAxes() {
         xlo = refMap.getXlo();
@@ -1082,8 +1065,8 @@ public class UI implements EntryPoint {
         public void getRegions(MethodCallback<List<Region>> regionCallback);
     }
     public interface SearchService extends RestService {
-        @GET
-        public void getSearchResults(@QueryParam("search") String seachQuery, MethodCallback<List<Dataset>> datasetCallback);
+        @POST
+        public void getSearchResults(SearchRequest search, MethodCallback<SearchResults> datasetCallback);
     }
     public interface ProductsByIntervalService extends RestService {
         @GET
@@ -1650,11 +1633,9 @@ public class UI implements EntryPoint {
             layout.advancedSearch.setDisplay(Display.NONE);
             layout.animate.setEnabled(false);
             layout.topMenuEnabled(false);
-            if ( !browse ) {
-                layout.infoPanel.clear();
-                dataset = infoDataset;
-            }
-            DatasetInfo di = new DatasetInfo(infoDataset, browse);
+            layout.infoPanel.clear();
+            dataset = infoDataset;
+            DatasetInfo di = new DatasetInfo(infoDataset);
             info = false;
             if ( infoDataset != null ) {
                 List<Variable> returnedVariables = infoDataset.getVariables();
@@ -1665,72 +1646,54 @@ public class UI implements EntryPoint {
                 }
                 layout.infoPanel.add(di);
             }
-            if ( browse ) {
-                long next = layout.getNextDataset(infoDataset);
-                if ( next > 0 ) {
-                    datasetService.getDataset(next + ".json", infoCallback);
-                }
-            }
         }
     };
-    MethodCallback <List<Dataset>> browseCallback = new MethodCallback<List<Dataset>>() {
+    MethodCallback <SearchResults> searchCallback = new MethodCallback<SearchResults>() {
         @Override
         public void onFailure(Method method, Throwable throwable) {
-            layout.hideProgress();
+            layout.hideDataProgress();
         }
 
         @Override
-        public void onSuccess(Method method, List<Dataset> browseDatasets) {
-            layout.hideProgress();
-            layout.panel1.setVisible(false);
-            layout.infoPanel.setDisplay(Display.BLOCK);
-            layout.infoHeader.setDisplay(Display.BLOCK);
-            layout.advancedSearch.setDisplay(Display.NONE);
-            layout.infoPanel.clear();
-            browse = true;
-            if (browseDatasets != null && browseDatasets.size() > 0) {
-                Collections.sort(browseDatasets);
-                // Grab the first to kick of the initialization of the carousels
-                Dataset infoDataset = browseDatasets.get(0);
-//                dataset = infoDataset;
-                layout.clearDatasets();
-                layout.hideDataProgress();
-
-                for (int i = 0; i < browseDatasets.size(); i++) {
-                    layout.addSelection(browseDatasets.get(i));
-                }
-                datasetService.getDataset(infoDataset.getId()+".json", infoCallback);
-            } else {
-                MaterialToast.fireToast("No more datasets to browse.");
-                browse = false;
-                info = true;
-                siteService.getSite("1.json", siteCallback);
-            }
-        }
-    };
-    MethodCallback <List<Dataset>> searchCallback = new MethodCallback<List<Dataset>>() {
-        @Override
-        public void onFailure(Method method, Throwable throwable) {
-            layout.hideProgress();
-        }
-
-        @Override
-        public void onSuccess(Method method, List<Dataset> searchDatasets) {
-            layout.hideProgress();
+        public void onSuccess(Method method, SearchResults searchResults) {
+            layout.hideDataProgress();
             layout.clearDatasets();
             layout.panel1.setVisible(true);
             layout.infoPanel.setDisplay(Display.NONE);
             layout.infoHeader.setDisplay(Display.NONE);
             layout.infoPanel.clear();
+            List<Dataset> searchDatasets = searchResults.getDatasetList();
+            layout.advancedSearchTotal = searchResults.getTotal();
+            int start = searchResults.getStart();
+            int end = searchResults.getEnd();
+            int total = end - start;
+            if ( layout.advancedSearchTotal > total ) {
+                if ( start > 0 ) {
+                    layout.prevAdvancedSearch.setDisplay(Display.INLINE);
+                } else if ( start ==0 ) {
+                    layout.prevAdvancedSearch.setDisplay(Display.NONE);
+                }
+                layout.nextAdvancedSearch.setDisplay(Display.INLINE);
+                layout.advancedSearchOffset = end;
+            }
+            if ( end >= layout.advancedSearchTotal ) {
+                layout.nextAdvancedSearch.setDisplay(Display.NONE);
+            } else {
+                layout.nextAdvancedSearch.setDisplay(Display.INLINE);
+            }
             if ( searchDatasets != null && searchDatasets.size() > 0 ) {
                 for (int i = 0; i < searchDatasets.size(); i++) {
                     layout.addSelection(searchDatasets.get(i));
                 }
+                layout.dataItem.expand();
+                if ( xDataURL != null && !xDataURL.isEmpty() ) {
+                    xDataURL = null;
+                }
             } else {
-                MaterialToast.fireToast("Not data sets found matching your search terms.");
-                browse = false;
+                MaterialToast.fireToast("No data sets found matching your search terms.");
                 info = false;
                 siteService.getSite("1.json", siteCallback);
+                layout.removeBreadcrumbs(1);
             }
         }
     };
@@ -1788,7 +1751,6 @@ public class UI implements EntryPoint {
                 layout.setDatasetsMessage(returnedDataset.getMessage());
             }
             layout.dataItem.expand();
-
         }
     };
     MethodCallback<Site> siteCallback = new MethodCallback<Site>() {
@@ -1813,6 +1775,17 @@ public class UI implements EntryPoint {
 
             String d = site.getDiscrete() + " data sets on discrete geometries.";
             layout.discrete.setText(d);
+            String traj = site.getTrajectory() + " trajectory data sets.";
+            layout.trajectoryCount.setText(traj);
+            String point = site.getPoint() + " point data sets.";
+            layout.pointCount.setText(point);
+            String profile = site.getProfile() + " profile data sets.";
+            layout.profileCount.setText(profile);
+            String timeseries = site.getTimeseries() + " timeseries data sets.";
+            layout.timeseriesCount.setText(timeseries);
+
+            // TODO not used at the moment. Was for ds and var titles etc. We now do those with autocomplete
+            Map<String, List<String>> attrs = site.getAttributes();
 
             toast = site.isToast();
             if (site.getDatasets().size() > 0) {
@@ -1823,7 +1796,23 @@ public class UI implements EntryPoint {
                     layout.addSelection(iterDataset);
                 }
             }
-            layout.navcollapsible.setActive(1, true);
+
+            if ( xDataURL != null && !xDataURL.isEmpty() ) {
+                MaterialToast.fireToast("Searching for initial data set.");
+                List<VariableProperty> vpl = new ArrayList<>();
+                SearchRequest sr = new SearchRequest();
+                sr.setCount(10);
+                sr.setOffset(0);
+                VariableProperty vp = new VariableProperty();
+                vp.setType("search");
+                vp.setName("url");
+                vp.setValue(xDataURL);
+                vpl.add(vp);
+                sr.setVariableProperties(vpl);
+                layout.startSearch(sr);
+            } else {
+                layout.navcollapsible.setActive(1, true);
+            }
 
         }
 
@@ -1965,10 +1954,22 @@ public class UI implements EntryPoint {
             String display_lo = tAxis.getDisplay_lo();
 
             if (display_hi != null) {
-                dateTimeWidget.setHi(display_hi);
+                if ( display_hi.equalsIgnoreCase("start") ) {
+                    dateTimeWidget.setHi(tAxis.getStart());
+                } else if ( display_hi.equalsIgnoreCase("end") ) {
+                    dateTimeWidget.setHi(tAxis.getEnd());
+                } else {
+                    dateTimeWidget.setHi(display_hi);
+                }
             }
             if (display_lo != null) {
-                dateTimeWidget.setLo(display_lo);
+                if ( display_lo.equalsIgnoreCase("start") ) {
+                    dateTimeWidget.setLo(tAxis.getStart());
+                } else if ( display_lo.equalsIgnoreCase("end") ) {
+                    dateTimeWidget.setLo(tAxis.getEnd());
+                } else {
+                    dateTimeWidget.setLo(display_lo);
+                }
             }
         }
 

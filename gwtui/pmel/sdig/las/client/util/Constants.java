@@ -18,11 +18,15 @@ public class Constants {
     public static final String erddapDataRequest = base + "product/erddapDataRequest";
     public static final String datatable = base + "product/datatable";
     public static final String productsByInterval = base + "config/productsByInterval";
-    public static final String search = base + "search";
+    public static final String search = base + "search/search";
     public static final String regions = base + "config/regions";
+    public static final String datasetSuggestSearch = base + "dataset/oracle";
+    public static final String variableSuggestSearch = base + "variable/oracle";
 
     public final static int navWidth = 400;
     public final static int imageBorderFactor = 200;
+
+    public final static int PAGE = 10;
 
 
     public static final int rndRedColor = 244;

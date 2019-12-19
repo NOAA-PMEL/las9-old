@@ -57,21 +57,20 @@ class FerretEnvironment {
 	}
 	String[] getRuntimeEnvironment() {
 		
-		String[] runtimeEnvironment = new String[13]
-		
-		runtimeEnvironment[0] = "FER_DATA="+fer_data
-		runtimeEnvironment[1] = "FER_GO="+fer_go
-		runtimeEnvironment[2] = "FER_GRIDS="+fer_grids
-		runtimeEnvironment[3] = "FER_EXTERNAL_FUNCTIONS="+fer_external_functions
-		runtimeEnvironment[4] = "FER_LIBS="+fer_libs
-		runtimeEnvironment[5] = "FER_PALETTE="+fer_palette
-		runtimeEnvironment[6] = "FER_DSETS="+fer_dsets
-		runtimeEnvironment[7] = "FER_FONTS="+fer_fonts
-		runtimeEnvironment[8] = "FER_DESCR="+fer_descr
-		runtimeEnvironment[9] = "FER_DIR="+fer_dir
-		runtimeEnvironment[10] = "PLOTFONTS="+plotfonts
-		runtimeEnvironment[11] = "PYTHONPATH="+pythonpath
-		runtimeEnvironment[12] = "LD_LIBRARY_PATH="+ld_library_path
+		def runtimeEnvironment = []
+		if ( fer_data ) runtimeEnvironment.push("FER_DATA="+fer_data)
+		if ( fer_go ) runtimeEnvironment.push("FER_GO="+fer_go)
+		if ( fer_grids ) runtimeEnvironment.push("FER_GRIDS="+fer_grids)
+		if ( fer_external_functions ) runtimeEnvironment.push("FER_EXTERNAL_FUNCTIONS="+fer_external_functions)
+		if ( fer_libs) runtimeEnvironment.push("FER_LIBS="+fer_libs)
+		if ( fer_palette) runtimeEnvironment.push("FER_PALETTE="+fer_palette)
+		if ( fer_dsets) runtimeEnvironment.push("FER_DSETS="+fer_dsets)
+		if ( fer_fonts) runtimeEnvironment.push("FER_FONTS="+fer_fonts)
+		if( fer_descr) runtimeEnvironment.push("FER_DESCR="+fer_descr)
+		if ( fer_dir) runtimeEnvironment.push("FER_DIR="+fer_dir)
+		if ( plotfonts ) runtimeEnvironment.push("PLOTFONTS="+plotfonts)
+		if ( pythonpath ) runtimeEnvironment.push("PYTHONPATH="+pythonpath)
+		if ( ld_library_path) runtimeEnvironment.push("LD_LIBRARY_PATH="+ld_library_path)
 		runtimeEnvironment
 	}
 }

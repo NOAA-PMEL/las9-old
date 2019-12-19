@@ -374,7 +374,7 @@ public class DateTimeWidget extends MaterialPanel {
         shortFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy").withChronology(chrono).withZone(DateTimeZone.UTC);
         mediumFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy HH:mm").withChronology(chrono).withZone(DateTimeZone.UTC);
         longFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy HH:mm:ss").withChronology(chrono).withZone(DateTimeZone.UTC);
-        isoForm = ISODateTimeFormat.dateTime().withChronology(chrono).withZone(DateTimeZone.UTC);;
+        isoForm = ISODateTimeFormat.dateTimeNoMillis().withChronology(chrono).withZone(DateTimeZone.UTC);;
     }
 //    public void init(String lo_date, String hi_date, String render,  String calendar, boolean climo) {
 //        init(lo_date, hi_date, -1, render, calendar, climo);
@@ -972,6 +972,7 @@ public class DateTimeWidget extends MaterialPanel {
             if ( hi == null ) {
                 hi = parseDate(thi);
             }
+
             if ( hasYear ) {
                 String year = String.valueOf(hi.getYear());
                 int yearIndex = hi_year.getSelectedIndex();

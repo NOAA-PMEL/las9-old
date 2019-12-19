@@ -38,6 +38,7 @@ class Dataset {
         sort "title"
         url type: "text"
         title type: "text"
+        history type: "text"
         datasets cascade: 'all-delete-orphan'
     }
 

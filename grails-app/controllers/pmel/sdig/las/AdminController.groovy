@@ -4,6 +4,9 @@ import grails.converters.JSON
 
 class AdminController {
     IngestService ingestService
+    def index() {
+        respond "You logged in."
+    }
     def addDataset() {
 
 
@@ -20,7 +23,7 @@ class AdminController {
             dataset.setStatus(Dataset.INGEST_FINISHED)
             if ( !dataset.validate() ) {
                 dataset.errors.each{
-                    log.debug(it)
+                    log.debug(it.toString())
                 }
             }
             dataset.save(flush: true)

@@ -35,4 +35,7 @@ class Site {
         profile(nullable: true)
         attributes(nullable: true)
     }
+    static mapping = {
+        title type: "text"
+    }
 }

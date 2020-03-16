@@ -1,0 +1,21 @@
+<p-tabView (onChange)="loadSecondary($event)">
+  <p-tabPanel header="Edit Site">
+    <app-site-edit></app-site-edit>
+  </p-tabPanel>
+  <p-tabPanel header="Add Data">
+    <app-dataset-add></app-dataset-add>
+  </p-tabPanel>
+  <p-tabPanel header="Edit Data">
+    <app-dataset-edit></app-dataset-edit>
+  </p-tabPanel>
+  <p-tabPanel header="Organize Data">
+    <app-dataset-organize></app-dataset-organize>
+  </p-tabPanel>
+  <p-tabPanel header="Show/Hide Data">
+    <app-dataset-hide></app-dataset-hide>
+  </p-tabPanel>
+  <p-tabPanel header="Delete Data">
+    <app-dataset-delete></app-dataset-delete>
+  </p-tabPanel>
+</p-tabView>
+

@@ -12,12 +12,8 @@ buildscript {
         classpath "org.grails.plugins:views-gradle:1.2.7"
         // this is the gwt gradle plug0-in
         classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
-
-
     }
 }
-
-
 
 version "9.0.9"
 group "las"
@@ -40,9 +36,11 @@ apply plugin: 'gwt'
 repositories {
     mavenLocal()
     maven { url "https://repo.grails.org/grails/core" }
-    maven { url "https://artifacts.unidata.ucar.edu/repository/unidata-all/" }
+    maven { url "https://artifacts.unidata.ucar.edu/repository/unidata-all" }
 }
-
+ext {
+    unidata_version = '5.2.0'
+}
 dependencies {
     compile "org.springframework.boot:spring-boot-starter-logging"
     compile "org.springframework.boot:spring-boot-autoconfigure"
@@ -83,26 +81,54 @@ dependencies {
     // Mine
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
     compile group: 'com.google.code.gson', name: 'gson', version: '2.8.2'
-    compile 'edu.ucar:cdm:4.5.2'
-    runtime 'edu.ucar:cdm:4.5.2'
 
-    compile 'edu.ucar:clcommon:4.5.2'
-    runtime 'edu.ucar:clcommon:4.5.2'
+//  4.6.14
+//    compile "edu.ucar:cdm:${unidata_version}"
+//    runtime "edu.ucar:cdm:${unidata_version}"
 
-    compile 'edu.ucar:bufr:4.5.2'
-    runtime 'edu.ucar:bufr:4.5.2'
+//  4.6.14
+//    compile "edu.ucar:clcommon:${unidata_version}"
+//    runtime "edu.ucar:clcommon:${unidata_version}"
 
-    compile 'edu.ucar:grib:4.5.2'
-    runtime 'edu.ucar:grib:4.5.2'
+    // 4.6.14
+//    compile "edu.ucar:visadCdm:${unidata_version}"
+//    runtime "edu.ucar:visadCdm:${unidata_version}"
 
-    compile 'edu.ucar:netcdf4:4.5.2'
-    runtime 'edu.ucar:netcdf4:4.5.2'
+//    5.+
+    compile "edu.ucar:cdm-core:${unidata_version}"
+    runtime "edu.ucar:cdm-core:${unidata_version}"
 
-    compile 'edu.ucar:opendap:4.5.2'
-    runtime 'edu.ucar:opendap:4.5.2'
+//    5.+
+    compile "edu.ucar:cdm-radial:${unidata_version}"
+    runtime "edu.ucar:cdm-radial:${unidata_version}"
 
-    compile 'edu.ucar:visadCdm:4.5.2'
-    runtime 'edu.ucar:visadCdm:4.5.2'
+//    5.+
+    compile "edu.ucar:cdm-misc:${unidata_version}"
+    runtime "edu.ucar:cdm-misc:${unidata_version}"
+
+//    5.+
+    compile "edu.ucar:cdm-image:${unidata_version}"
+    runtime "edu.ucar:cdm-image:${unidata_version}"
+
+    compile "edu.ucar:bufr:${unidata_version}"
+    runtime "edu.ucar:bufr:${unidata_version}"
+
+    compile "edu.ucar:grib:${unidata_version}"
+    runtime "edu.ucar:grib:${unidata_version}"
+
+    compile "edu.ucar:netcdf4:${unidata_version}"
+    runtime "edu.ucar:netcdf4:${unidata_version}"
+
+    compile "edu.ucar:opendap:${unidata_version}"
+    runtime "edu.ucar:opendap:${unidata_version}"
+
+//    5.+
+    compile "edu.ucar:cdm-vis5d:${unidata_version}"
+    runtime "edu.ucar:cdm-vis5d:${unidata_version}"
+
+//    5.+
+    compile "edu.ucar:cdm-mcidas:${unidata_version}"
+    runtime "edu.ucar:cdm-mcidas:${unidata_version}"
 
     // Mine for JODA Time from Maven central
     compile 'joda-time:joda-time:2.7'
@@ -120,15 +146,19 @@ dependencies {
     // Required for running production using MySQL
     runtime 'mysql:mysql-connector-java:5.1.29'
 
-    // Quartz for job scheduling...
+    // Quartz and Schwartz for job scheduling..
 
-    // Use to auto update time axes and to automatically ingest data from THREDDS
-    // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
-    compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.2.1'
-    compile group: 'org.quartz-scheduler', name: "quartz-jobs", version: "2.2.1"
+    String quartzVersion = '2.2.3'
+    compile 'org.quartz-scheduler:quartz:' + quartzVersion, {
+        exclude module: 'c3p0'
+    }
+    compile 'org.quartz-scheduler:quartz-jobs:' + quartzVersion
+    compile 'com.agileorbit:schwartz:1.0.1'
 
-    // Spring security - access control for admin pages. - RHS
-    // Do this later. For now filter out admin... compile 'org.grails.plugins:spring-security-core:3.3.1'
+    // https://github.com/nerdErg/grails-shiro
+    // for access control
+    compile "org.grails.plugins:grails-shiro:3.1"
+
 
 }
 

@@ -1,5 +1,6 @@
 package pmel.sdig.las
 
+import grails.core.GrailsApplication
 import grails.gorm.transactions.Transactional
 import grails.util.Environment
 import grails.util.Holders
@@ -17,6 +18,7 @@ class InitializationService {
     IngestService ingestService
     OptionsService optionsService
     ResultsService resultsService
+    GrailsApplication grailsApplication
     ServletContext servletContext
 
     /**
@@ -54,27 +56,63 @@ class InitializationService {
 
         URL ferret_go_dir = this.class.classLoader.getResource("ferret/scripts")
 
-        fer_go = fer_go + " " + ferret_go_dir.getPath().replace("file:", "")
+        def resource_fer_go = ferret_go_dir.getPath().replace("file:", "")
+
+        fer_go = fer_go + " " + resource_fer_go;
 
         cleanenv.put("fer_go", fer_go)
 
-        def ferretEnvironment = new FerretEnvironment(cleanenv)
+        // Override the system environment with values from the external config application.yml file
+        fer_go = grailsApplication.config.getProperty('ferret.FER_GO')
+        def fer_grids = grailsApplication.config.getProperty('ferret.FER_GRIDS')
+        def fer_palette = grailsApplication.config.getProperty('ferret.FER_PALETTE')
+        def fer_dsets = grailsApplication.config.getProperty('ferret.FER_DSETS')
+        def fer_data = grailsApplication.config.getProperty('ferret.FER_DATA')
+        def fer_fonts = grailsApplication.config.getProperty('ferret. FER_FONTS')
+        def fer_descr = grailsApplication.config.getProperty('ferret.FER_DESCR')
+        fer_dir = grailsApplication.config.getProperty('ferret.FER_DIR')
+        def pyfer_external_functions = grailsApplication.config.getProperty('ferret.PYFER_EXTERNAL_FUNCTIONS')
+        def tmp = grailsApplication.config.getProperty('ferret.TMP')
+        def python = grailsApplication.config.getProperty('ferret.PYTHON')
+        def ld_library_path = grailsApplication.config.getProperty('ferret.LD_LIBRARY_PATH')
 
+        if ( !python ) python = 'python'
+
+        if ( fer_go )
+            cleanenv['fer_go'] = fer_go + " " + resource_fer_go; // Add the webapp resource directory back in each time
+        if ( fer_grids )
+            cleanenv['fer_grids'] = fer_grids
+        if ( fer_palette )
+            cleanenv['fer_palette'] = fer_palette
+        if ( fer_dsets )
+            cleanenv['fer_dsets'] = fer_dsets
+        if ( fer_data )
+            cleanenv['fer_data'] = fer_data
+        if ( fer_fonts )
+            cleanenv['fer_fonds'] = fer_fonts
+        if ( fer_descr )
+            cleanenv['fer_descr'] = fer_descr
+        if (fer_dir )
+            cleanenv['fer_dir'] = fer_dir
+        if ( pyfer_external_functions )
+            cleanenv['pyfer_external_functions'] = pyfer_external_functions
+        if ( tmp )
+            cleanenv['tmp'] = tmp
+        if ( ld_library_path )
+            cleanenv['ld_library_path'] = ld_library_path
+
+        def ferretEnvironment = new FerretEnvironment(cleanenv)
 
         // This is an attempt to automate the choice of the full path to the python executable by taking it from the pyferret script
         def ferret = new Ferret()
-//        File pyferret = new File(ferretEnvironment.getFer_dir()+File.separator+"bin"+File.separator+"pyferret")
-//        def python = "python"
-//        pyferret.eachLine { line ->
-//            def matcher = line =~ /python_exe\s*=\s*(.*)/
-//            while (matcher.find()) {
-//                python = matcher.group(1)
-//                python = python.replace("\"","")
-//            }
-//        }
 
-        ferret.setPath("python")
-        ferret.setTempDir("/tmp/las")
+        ferret.setPath(python)
+
+        if ( tmp ) {
+            ferret.setTempDir(tmp)
+        } else {
+            ferret.setTempDir("/tmp/las")
+        }
         ferret.setFerretEnvironment(ferretEnvironment)
         ferret.addToArguments(new Argument([value: "-cimport sys; import pyferret; (errval, errmsg) = pyferret.init(sys.argv[1:], True)"]))
         ferret.addToArguments(new Argument([value: "-nodisplay"]))

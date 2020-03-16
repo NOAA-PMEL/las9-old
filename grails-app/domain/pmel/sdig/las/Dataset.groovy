@@ -25,8 +25,8 @@ class Dataset {
 
     static hasMany = [datasetProperties: DatasetProperty, variables: Variable, datasets: Dataset, vectors: Vector]
 
-
-    static belongsTo = [parent: Dataset]
+    Dataset parent;
+    static belongsTo = [Dataset, Site]
 
     static searchable = {
         variables component: true
@@ -39,7 +39,10 @@ class Dataset {
         url type: "text"
         title type: "text"
         history type: "text"
-        datasets cascade: 'all-delete-orphan'
+        datasets cascade: 'all'
+        datasetProperties cascade: 'all-delete-orphan'
+        variables cascade: 'all-delete-orphan'
+        vectors cascade: 'all-delete-orphan'
     }
 
 

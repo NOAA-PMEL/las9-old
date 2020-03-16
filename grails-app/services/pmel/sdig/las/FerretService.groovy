@@ -129,6 +129,9 @@ class FerretService {
             Variable variable = dataset.variables.find{it.hash == vhash}
             if ( variable ) {
 
+                if ( variable.getThumbnail() && !variable.getThumbnail().isEmpty() ) {
+                    return variable.getThumbnail();
+                }
 
                 String variable_url = variable.getUrl()
                 String variable_name = variable.getName()
@@ -400,7 +403,9 @@ class FerretService {
     }
     def makeThumbnails() {
         log.debug("STARTED making thumbnails for all existing variables.")
-        Variable.getAll().each{Variable variable ->
+        List<Variable> allVariables = Variable.getAll();
+        Collections.shuffle(allVariables);
+        allVariables.each{Variable variable ->
             def dhash = variable.getDataset().getHash();
             def vhash = variable.getHash()
             log.debug("Attempting to make thumbnail for " + variable.title + " with id " + variable.id)

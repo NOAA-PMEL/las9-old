@@ -12,7 +12,11 @@ import org.joda.time.chrono.GregorianChronology
 import org.joda.time.format.*
 import pmel.sdig.las.tabledap.JsonMetadata
 import pmel.sdig.las.type.GeometryType
-import thredds.catalog.*
+import thredds.client.catalog.Access
+import thredds.client.catalog.Catalog
+import thredds.client.catalog.Service
+import thredds.client.catalog.ServiceType
+import thredds.client.catalog.builder.CatalogBuilder
 import ucar.nc2.Attribute
 import ucar.nc2.constants.FeatureType
 import ucar.nc2.dataset.CoordinateAxis
@@ -58,12 +62,20 @@ class IngestService {
     DateTimeFormatter mediumFerretForm = DateTimeFormat.forPattern("dd-MMM-yyyy HH:mm").withChronology(GregorianChronology.getInstance(DateTimeZone.UTC)).withZone(DateTimeZone.UTC);
 
 
-    Dataset processRequset(AddRequest addRequest) {
+    Dataset processRequset(AddRequest addRequest, Object parent) {
 
         if ( addRequest.getType().equals("netcdf") ) {
             return ingest(null, addRequest.getUrl())
         } else if ( addRequest.getType().equals("dsg") ) {
             return ingestDSG(addRequest)
+        } else if ( addRequest.getType().equals("tabledap")) {
+            return ingestAllFromErddap(addRequest.getUrl(), addRequest.getAddProperties())
+        } else if ( addRequest.getType().equals("thredds")) {
+            def phash = null;
+            if ( parent instanceof Dataset) {
+                phash = parent.getHash()
+            }
+            return ingestFromThredds(addRequest.getUrl(), phash, null, false)
         }
     }
 
@@ -343,8 +355,20 @@ class IngestService {
                     if (x.isRegular()) {
                         xAxis.setDelta(x.getIncrement())
                     }
-                    xAxis.setMin(x.getMinValue())
-                    xAxis.setMax(x.getMaxValue())
+                    def xmin = x.getMinValue()
+                    def xmax = x.getMaxValue()
+                    if ( !xmin || !xmax || Double.isNaN(xmin)  || Double.isNaN(xmax) ) {
+                        if (x.isRegular()) {
+                            xmin = x.getStart();
+                            xmax = x.getSize() * x.getIncrement();
+                        } else {
+                            def dim = x.getDimension(0)
+                            xmin = x.getCoordValue(0)
+                            xmax = x.getCoordValue(dim.length - 1)
+                        }
+                    }
+                    xAxis.setMin(Math.min(xmin, xmax))
+                    xAxis.setMax(Math.max(xmin, xmax))
                     xAxis.setSize(x.getSize())
                     xAxis.setDimensions(1)
 
@@ -652,7 +676,6 @@ class IngestService {
 
         log.debug("Starting ingest of " + url)
         dateTimeService.init()
-        InvCatalogFactory factory = new InvCatalogFactory("default", false);
         String tdsid;
         String urlwithid;
         if ( url.contains("#") ) {
@@ -665,16 +688,8 @@ class IngestService {
             urlwithid = url;
         }
         ingestStatusService.saveProgress(parentHash, "Reading the catalog from the remote server.")
-        InvCatalog catalog = (InvCatalog) factory.readXML(urlwithid);
-        StringBuilder buff = new StringBuilder();
-        boolean show = false
-        if ( log.debugEnabled ) {
-            show = true
-        }
-        if (!catalog.check(buff, show)) {
-            log.error("Invalid catalog <" + url + ">\n" + buff.toString());
-            return null
-        }
+        CatalogBuilder builder = new CatalogBuilder();
+        Catalog catalog = builder.buildFromLocation(urlwithid, null);
         if ( erddap == null ) { // Just a thredds catalog, no supporting ERDDAP
             ingestStatusService.saveProgress(parentHash, "Catalog read. Looking for data sources.")
             return createDatasetFromCatalog(catalog, parentHash, full);
@@ -683,7 +698,7 @@ class IngestService {
         }
         log.debug("Finished ingest of " + url)
     }
-    Dataset createDatasetFromUAF(InvCatalog catalog, String erddap) {
+    Dataset createDatasetFromUAF(Catalog catalog, String erddap) {
         Dataset dataset = new Dataset()
         String cname = catalog.getName();
         if ( cname.equals("THREDDS Server Default Catalog : You must change this to fit your server!"))
@@ -695,9 +710,9 @@ class IngestService {
         }
         dataset.setUrl(catalog.getUriString())
         dataset.setHash(getDigest(catalog.getUriString()))
-        def children = catalog.getDatasets();
+        def children = catalog.getDatasetsLogical();
         for ( int i = 0; i < children.size(); i++ ) {
-            InvDataset invDataset = (InvDataset) children.get(i)
+            thredds.client.catalog.Dataset invDataset = (Dataset) children.get(i)
             if ( !invDataset.getName().toLowerCase().equals("tds quality rubric")) {
                 List<Dataset> childDatasets = processUAFDataset(invDataset, erddap)
                 for (int j = 0; j < childDatasets.size(); j++) {
@@ -708,22 +723,22 @@ class IngestService {
         }
         dataset
     }
-    List<Dataset> processUAFDataset(InvDataset invDataset, String erddap) {
+    List<Dataset> processUAFDataset(thredds.client.catalog.Dataset invDataset, String erddap) {
 
         List<Dataset> all = new ArrayList<Dataset>()
         if (invDataset.hasAccess() && invDataset.getAccess(ServiceType.OPENDAP) != null) {
             all.addAll(createFromUAFDataset(invDataset, erddap))
         }
         if ( invDataset.hasNestedDatasets() ) {
-            List<InvDataset> children = invDataset.getDatasets()
-            InvDataset rubric = children.get(children.size() - 1)
+            List<thredds.client.catalog.Dataset> children = invDataset.getDatasetsLogical()
+            thredds.client.catalog.Dataset rubric = children.get(children.size() - 1)
             if ( rubric.getName().equals("") ) {
                 children.remove(rubric)
             }
 
             Dataset childDataset = new Dataset([name: invDataset.getName(), title: invDataset.getName(), hash: getDigest(invDataset.getName() + invDataset.getCatalogUrl())])
             for (int i = 0; i < children.size(); i++) {
-                InvDataset child = children.get(i)
+                thredds.client.catalog.Dataset child = children.get(i)
                 List<Dataset> kids = processUAFDataset(child, erddap)
                 for (int j = 0; j < kids.size(); j++) {
                     childDataset.addToDatasets(kids.get(j))
@@ -734,7 +749,7 @@ class IngestService {
         all
     }
 
-    List<Dataset> createFromUAFDataset(InvDataset invDataset, String erddap) {
+    List<Dataset> createFromUAFDataset(thredds.client.catalog.Dataset invDataset, String erddap) {
         List<Dataset> rankDatasets = new ArrayList<Dataset>()
         // Either one with variables or one data sets holding the different rank variables?
         if ( erddap.endsWith("/") ) {
@@ -1104,7 +1119,7 @@ class IngestService {
         }
         main
     }
-    Dataset createDatasetFromCatalog(InvCatalog catalog, String parentHash, boolean full) {
+    Dataset createDatasetFromCatalog(Catalog catalog, String parentHash, boolean full) {
         Dataset dataset = new Dataset()
         if (catalog.getName()) {
             if ( catalog.getName().toLowerCase().contains("you must change") ) {
@@ -1120,43 +1135,58 @@ class IngestService {
         dataset.setUrl(catalog.getUriString())
         dataset.setHash(getDigest(catalog.getUriString()))
 
-        List<InvDataset> children = catalog.getDatasets();
+        List<thredds.client.catalog.Dataset> children = catalog.getDatasetsLogical();
 
-
-        if ( children.size() == 2 && !children.get(0).hasAccess() && children.get(1).getFullName().toLowerCase().contains("rubric") ) {
-            InvDataset onlyChild = children.get(0);
+                                                                     // TODO getFullName ???
+        if ( children.size() == 2 && !children.get(0).hasAccess() && children.get(1).getName().toLowerCase().contains("rubric") ) {
+            thredds.client.catalog.Dataset onlyChild = children.get(0);
             String name = onlyChild.getName();
-            if ( name == null ) {
+            if (name == null) {
                 name = "TDS Data"
             }
-            dataset.setTitle(name)
-            children = onlyChild.getDatasets()
+            if (!name.toLowerCase().contains("tds quality") && !name.contains("automated cleaning process") && !name.contains("An error occurred processing")) {
+                dataset.setTitle(name)
+                children = onlyChild.getDatasetsLogical()
+            }
         }
         for (int i = 0; i < children.size(); i++) {
 
-            InvDataset nextChild = (InvDataset) children.get(i)
-            if (!nextChild.getName().toLowerCase().contains("tds quality") && !nextChild.getName().contains("automated cleaning process")) {
+            thredds.client.catalog.Dataset nextChild = (thredds.client.catalog.Dataset) children.get(i)
+            if (!nextChild.getName().toLowerCase().contains("tds quality") &&
+                    !nextChild.getName().contains("automated cleaning process") &&
+                    !nextChild.getName().contains("An error occurred processing")) {
+                log.debug(nextChild.getName() + ' name approved. Processing.')
                 Dataset child = processDataset(nextChild, parentHash, full, dataset)
-                if ( child )
+                if ( child && (child.variableChildren || (child.getDatasets() && child.getDatasets().size() > 0) ) ) {
                     dataset.addToDatasets(child)
+                }
             }
         }
         dataset
     }
-    Dataset processDataset(InvDataset invDataset, String parentHash, boolean full, Dataset parent) {
+    Dataset processDataset(thredds.client.catalog.Dataset invDataset, String parentHash, boolean full, Dataset parent) {
 
-        List<InvDataset> invDatasetList = invDataset.getDatasets();
-        List<InvDataset> remove = new ArrayList<>()
-        boolean access = invDataset.getAccess(ServiceType.OPENDAP) != null;
+        List<thredds.client.catalog.Dataset> invDatasetList = new LinkedList<thredds.client.catalog.Dataset>(invDataset.getDatasetsLogical());
+        List<thredds.client.catalog.Dataset> remove = new ArrayList<>()
+        boolean access = false;
+        if ( invDataset.hasAccess() ) {
+            access = invDataset.getAccess(ServiceType.OPENDAP) != null;
+        }
         for (int i = 0; i < invDatasetList.size(); i++) {
-            InvDataset child = invDatasetList.get(i)
-            InvAccess a = child.getAccess(ServiceType.OPENDAP)
-            if ( a != null) access = true;
-            if ( child.getName().contains("automated cleaning process") || child.getName().toLowerCase().contains("tds quality") ) {
+            thredds.client.catalog.Dataset child = invDatasetList.get(i)
+            if (child.access) {
+                Access a = child.getAccess(ServiceType.OPENDAP)
+                if (a != null) {
+                    access = true
+                }
+            }
+            if ( child.getName().contains("automated cleaning process") || child.getName().toLowerCase().contains("tds quality") || child.getName().contains("An error occurred processing")) {
                 remove.add(child)
             }
         }
-        invDatasetList.removeAll(remove)
+        for (int i = 0; i < remove.size(); i++) {
+            invDatasetList.remove(remove.get(i))
+        }
 
         // FIXME
         String title = invDataset.getName()
@@ -1197,13 +1227,15 @@ class IngestService {
         } catch (Exception e) {
             log.debug("Exception processing data set. Message = " + e.getMessage() + " Trying to go on with nested data ses.")
         }
-        List<InvDataset> kids = invDataset.getDatasets();
+        List<thredds.client.catalog.Dataset> kids = invDataset.getDatasetsLogical();
         for (int i = 0; i < kids.size(); i++) {
-            InvDataset kid = kids.get(i)
+            thredds.client.catalog.Dataset kid = kids.get(i)
             if (!kid.getName().toLowerCase().contains("quality rubric") && !kid.getName().contains("automated cleaning process")) {
                 Dataset dkid = processDataset(kid, parentHash, full, saveToDataset)
                 if ( dkid != null ) {
-                    saveToDataset.addToDatasets(dkid)
+                    if ( dkid.variableChildren || (dkid.getDatasets() && dkid.getDatasets().size() > 0) ) {
+                        saveToDataset.addToDatasets(dkid)
+                    }
                 }
             }
         }
@@ -1213,7 +1245,7 @@ class IngestService {
 
 
         def search = "index.json?page=1&itemsPerPage=1000"
-        if ( !url.endsWith("tabledap") || !url.endsWith("tabledap/") ) {
+        if ( !url.endsWith("tabledap") && !url.endsWith("tabledap/") ) {
             log.warn("Expecting a url of the form https://host.gov/erddap/tabledap/ trying with /tabledap appended.")
             if ( url.endsWith("erddap") ) {
                 url = url + "/tabledap/"
@@ -1221,7 +1253,7 @@ class IngestService {
                 url = url + "tabledap/"
             }
         } else {
-            if ( !url .endsWith("/") ) {
+            if ( !url.endsWith("/") ) {
                 url = url + "/"
             }
         }
@@ -1367,6 +1399,8 @@ class IngestService {
         String subset_names = null
         if (cdm_trajectory_variables && cdm_profile_variables ) {
             dataset.setGeometry(GeometryType.TRAJECTORY_PROFILE)
+        } else if ( cdm_timeseries_variables && cdm_profile_variables ) {
+            dataset.setGeometry(GeometryType.TIMESERIES_PROFILE)
         } else if (cdm_trajectory_variables) {
             subset_names = cdm_trajectory_variables
             dataset.setGeometry(GeometryType.TRAJECTORY)
@@ -3036,7 +3070,7 @@ class IngestService {
                     dataset.setParent(grandparent)
                     grandparent.addToDatasets(dataset)
                     log.debug("Removing: " + parent.getTitle() + " with id " + parent.getId() )
-                    parent.delete()
+                    parent.setParent(null);
                     // Are we at the top yet?
                     if (grandparent.getParent()) {
                         if (grandparent.getParent().getParent()) {

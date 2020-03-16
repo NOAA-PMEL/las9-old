@@ -26,6 +26,8 @@ class Vector {
 
     }
     static constraints = {
+        u(nullable: true)
+        v(nullable: true)
         w(nullable: true)
         dataset(nullable: true)
     }

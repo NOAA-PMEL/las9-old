@@ -269,15 +269,13 @@ public class Layout extends Composite {
 
     @UiField
     MaterialIcon home;
-    @UiField
-    MaterialButton openAdvancedSearch;
 
     @UiField
-    MaterialAutoComplete searchByDatasetTitle;
+    MaterialTextBox searchByDatasetTitle;
     @UiField
-    MaterialAutoComplete searchByStandardName;
+    MaterialTextBox searchByStandardName;
     @UiField
-    MaterialAutoComplete searchByVariableTitle;
+    MaterialTextBox searchByVariableTitle;
     @UiField
     MaterialTextBox txtSearch2;
     @UiField
@@ -336,12 +334,6 @@ public class Layout extends Composite {
     int offset;
 
     @UiField
-    MaterialLink btnSearch;
-    @UiField
-    MaterialSearch txtSearch;
-    @UiField
-    MaterialNavBar navBarSearch;
-    @UiField
     MaterialNavSection navSection;
 
     @UiField
@@ -371,18 +363,11 @@ public class Layout extends Composite {
 
     interface LayoutUiBinder extends UiBinder<Widget, Layout> {     }
     private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
-    DatasetOracle datasetOracle = new DatasetOracle("title");
-    VariableOracle variableTitleOracle = new VariableOracle("title");
-    VariableOracle variableStandardNameOracle = new VariableOracle("standard_name");
 
     public Layout() {
         root = ourUiBinder.createAndBindUi(this);
 
         initWidget(root);
-
-        searchByDatasetTitle.setSuggestions(datasetOracle);
-        searchByVariableTitle.setSuggestions(variableTitleOracle);
-        searchByStandardName.setSuggestions(variableStandardNameOracle);
 
         Constants.UPDATE_NOT_NEEDED = update.getBackgroundColor();
 
@@ -400,32 +385,6 @@ public class Layout extends Composite {
 //        outputRow01.setMarginLeft(2);
 //        outputRow02.setMarginLeft(2);
 
-        // Add Open Handler
-        txtSearch.addOpenHandler(openEvent -> {
-            navbar.setVisible(false);
-            navBarSearch.setVisible(true);
-        });
-        // Add Close Handler
-        txtSearch.addCloseHandler(event -> {
-            navbar.setVisible(true);
-            navBarSearch.setVisible(false);
-        });
-
-        txtSearch.getLabel().addClickHandler(event -> {
-            String search = txtSearch.getText();
-            SearchRequest sr = new SearchRequest();
-            sr.setQuery(search);
-            startSearch(sr);
-        });
-
-        txtSearch.addKeyPressHandler(event -> {
-            if ( event.getCharCode() == KeyCodes.KEY_ENTER ) {
-                String search = txtSearch.getText();
-                SearchRequest sr = new SearchRequest();
-                sr.setQuery(search);
-                startSearch(sr);
-            }
-        });
 
         sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
             @Override
@@ -1045,14 +1004,12 @@ public class Layout extends Composite {
     public void setBrandWidth(int nav) {
         int total = Window.getClientWidth();
         int left = navSection.getOffsetWidth();
-        int right = btnSearch.getOffsetWidth();
-        int brandWidth = total - (nav + left + right + 80);
+        int brandWidth = total - (nav + left + 80);
         String set = brandWidth + "px";
         brand.setWidth(set);
     }
     public void startSearch(SearchRequest search) {
         navbar.setVisible(true);
-        navBarSearch.setVisible(false);
         showDataProgress();
         removeBreadcrumbs(1);
         Breadcrumb bc = new Breadcrumb();
@@ -1063,11 +1020,11 @@ public class Layout extends Composite {
             public void onClick(ClickEvent clickEvent) {
                 List<Breadcrumb> crumbs = panel1.getBreadcrumbs();
                 removeBreadcrumbs(crumbs, 0, 1);
-                eventBus.fireEventFromSource(new Search(search), txtSearch);
+                eventBus.fireEventFromSource(new Search(search), txtSearch2);
             }
         });
         addBreadcrumb(bc, 1);
-        eventBus.fireEventFromSource(new Search(search), txtSearch);
+        eventBus.fireEventFromSource(new Search(search), txtSearch2);
     }
     public void setPlotCount(int count) {
         if ( count == 1 ) {
@@ -1382,28 +1339,11 @@ public class Layout extends Composite {
             loadDialog.close();
         }
     }
-    @UiHandler("btnSearch")
-    void onSearch(ClickEvent e){
-        txtSearch.open();
-    }
-    @UiHandler("openAdvancedSearch")
-    void onBrowse(ClickEvent event) {
-        advancedSearch.setDisplay(Display.BLOCK);
-        event.stopPropagation();
-    }
+
     private SearchRequest getAdvancedSearchTerms() {
         SearchRequest sr = new SearchRequest();
-        String dsSearch = "";
-        // TODO values is a list?
-        List<? extends SuggestOracle.Suggestion> ds_values = searchByDatasetTitle.getValue();
-        for (int i = 0; i < ds_values.size(); i++) {
-            if ( ds_values.get(i) instanceof LASSuggestion) {
-                dsSearch = dsSearch + " \"" + ((LASSuggestion) ds_values.get(i)).getDisplayString() + "\"";
-            } else {
-                // Not an exact match, no quotes
-                dsSearch = dsSearch + " " + ((SuggestOracle.Suggestion) ds_values.get(i)).getDisplayString();
-            }
-        }
+        String dsSearch = searchByDatasetTitle.getValue();;
+
         List<DatasetProperty> dpl = new ArrayList<>();
         if ( dsSearch != null && !dsSearch.isEmpty() ) {
             DatasetProperty dp = new DatasetProperty();
@@ -1413,16 +1353,7 @@ public class Layout extends Composite {
             dpl.add(dp);
         }
 
-        String vSearch = "";
-        List<? extends SuggestOracle.Suggestion> v_values = searchByVariableTitle.getValue();
-        for (int i = 0; i < v_values.size(); i++) {
-            if ( v_values.get(i) instanceof LASSuggestion) {
-                vSearch = vSearch + " \"" + ((LASSuggestion) v_values.get(i)).getDisplayString() + "\"";
-            } else {
-                // Not an exact match, no quotes
-                vSearch = vSearch + " " + ((SuggestOracle.Suggestion) v_values.get(i)).getDisplayString();
-            }
-        }
+        String vSearch = searchByVariableTitle.getValue();
 
         List<VariableProperty> vpl = new ArrayList<>();
         if ( vSearch != null && !vSearch.isEmpty() ) {
@@ -1434,16 +1365,8 @@ public class Layout extends Composite {
         }
 
 
-        String snSearch = "";
-        List<? extends SuggestOracle.Suggestion> sn_values = searchByStandardName.getValue();
-        for (int i = 0; i < sn_values.size(); i++) {
-            if ( sn_values.get(i) instanceof LASSuggestion) {
-                snSearch = snSearch + " \"" + ((LASSuggestion) sn_values.get(i)).getDisplayString() + "\"";
-            } else {
-                // Not an exact match, no quotes
-                snSearch = snSearch + " " + ((SuggestOracle.Suggestion) sn_values.get(i)).getDisplayString();
-            }
-        }
+        String snSearch = searchByStandardName.getValue();
+
         if ( snSearch != null && !snSearch.isEmpty() ) {
             VariableProperty vp = new VariableProperty();
             vp.setType("search");

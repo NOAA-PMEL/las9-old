@@ -20,7 +20,9 @@ class Variable {
 
     boolean dsgId = false; // True if the is the ID variable for the data set to which it belongs. Only applies to DSG data sets.
 
-    static belongsTo = [dataset: Dataset]
+    Dataset dataset
+    static belongsTo = [Dataset, Vector]
+
     static hasMany = [variableProperties: VariableProperty, variableAttributes: VariableAttribute]
     static hasOne = [stats: Stats, timeAxis: TimeAxis, geoAxisX: GeoAxisX, geoAxisY: GeoAxisY, verticalAxis: VerticalAxis]
     static mapping = {

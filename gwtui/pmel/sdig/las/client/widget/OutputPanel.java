@@ -501,4 +501,7 @@ public class OutputPanel extends AbsolutePanel {
     public String getLevels() {
         return levels;
     }
+    public IESafeImage getPlotImage() {
+        return plotImage;
+    }
 }

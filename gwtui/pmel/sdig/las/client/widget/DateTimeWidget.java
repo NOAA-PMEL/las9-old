@@ -483,7 +483,7 @@ public class DateTimeWidget extends MaterialPanel {
         hours.addItem(hr, min);
         current = current.plus(delta);
 
-        while ( current.isBefore(end) || current.equals(end) ) {
+        while ( current.isBefore(end) ) {
             hr = current.getHourOfDay();
             min = current.getMinuteOfHour();
             hours.addItem(hr, min);
@@ -545,7 +545,7 @@ public class DateTimeWidget extends MaterialPanel {
                 hasMonth = true;
                 minRow.add(lo_day);
                 if ( range )
-                    maxRow.add(lo_day);
+                    maxRow.add(hi_day);
                 hasDay = true;
             }
 

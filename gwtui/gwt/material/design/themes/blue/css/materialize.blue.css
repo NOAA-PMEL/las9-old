@@ -5,6 +5,7 @@ Keep chips from wrapping
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-block !important;
 }
 /*
 Underline for links
@@ -2167,7 +2168,7 @@ video.responsive-video {
     background-color: #64b5f6; }
   .pagination li.disabled a {
     cursor: default;
-    color: #999; }
+    color: #999;}
   .pagination li i {
     font-size: 2.2rem;
     vertical-align: middle; }

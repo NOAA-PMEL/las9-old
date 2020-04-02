@@ -70,6 +70,7 @@ import pmel.sdig.las.client.widget.Breadcrumb;
 import pmel.sdig.las.client.widget.ComparePanel;
 import pmel.sdig.las.client.widget.DataItem;
 import pmel.sdig.las.client.widget.DateTimeWidget;
+import pmel.sdig.las.client.widget.IESafeImage;
 import pmel.sdig.las.client.widget.ImagePanel;
 import pmel.sdig.las.client.widget.MenuOptionsWidget;
 import pmel.sdig.las.client.widget.ProductButtonList;
@@ -103,6 +104,9 @@ public class Layout extends Composite {
     MaterialContainer main;
 
     @UiField
+    MaterialPanel footerPanel;
+
+    @UiField
     MaterialNavBrand brand;
     @UiField
     MaterialCollection datasets;
@@ -129,7 +133,7 @@ public class Layout extends Composite {
     MaterialCollapsible navcollapsible;
 
     @UiField
-    MaterialListBox plotsDropdown;
+    MaterialLink plotsDropdown;
 
     @UiField
     MaterialLink animate;
@@ -196,6 +200,8 @@ public class Layout extends Composite {
     MaterialWindow downloadWindow;
     @UiField
     MaterialLink saveAsButton;
+    @UiField
+    MaterialLink printButton;
     @UiField
     MaterialCollection downloadDatasets;
     @UiField
@@ -1028,11 +1034,9 @@ public class Layout extends Composite {
     }
     public void setPlotCount(int count) {
         if ( count == 1 ) {
-            plotsDropdown.setSelectedIndex(0);
+            plotsDropdown.setText("Plot 1");
         } else if ( count == 2) {
-            plotsDropdown.setSelectedIndex(1);
-        } else if ( count == 4 ) {
-            plotsDropdown.setSelectedIndex(2);
+            plotsDropdown.setText("Plot 2");
         }
     }
     public void topMenuEnabled(boolean enabled) {
@@ -1040,6 +1044,7 @@ public class Layout extends Composite {
         showValuesButton.setEnabled(enabled);
         saveAsButton.setEnabled(enabled);
         plotsDropdown.setEnabled(enabled);
+        printButton.setEnabled(enabled);
     }
     ValueChangeHandler addAndDisable = new ValueChangeHandler() {
         @Override
@@ -1124,8 +1129,59 @@ public class Layout extends Composite {
     public void update(ClickEvent clickEvent) {
         eventBus.fireEventFromSource(clickEvent, update);
     }
+    @UiHandler("printButton")
+    public void print(ClickEvent clickEvent) {
+        int panelCount = 1;
+        State state = panel1.getOutputPanel().getState();
+        if ( state != null ) {
+            panelCount = state.getPanelCount();
+        }
+        String content = "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <title>Print</title>\n" +
+                "</head>\n" +
+                "<body>\n";
+        List<Widget> annotations = panel1.getAnnotations();
+        for (int i = 0; i < annotations.size(); i++) {
+            Widget a = annotations.get(i);
+            if ( a instanceof MaterialLabel) {
+                MaterialLabel l = (MaterialLabel) a;
+                content = content + "<br>" + l.getText();
+            }
+        }
 
+        IESafeImage image = panel1.getOutputPanel().getPlotImage();
+        content = content + "<br><img src=\"" + image.getUrl() + "\">";
 
+        if ( panelCount == 2 ) {
+            content = content + "<P style=\"page-break-before: always\">";
+            List<Widget> anno2 = panel2.getAnnotations();
+            for (int i = 0; i < anno2.size(); i++) {
+                Widget a = anno2.get(i);
+                if ( a instanceof MaterialLabel) {
+                    MaterialLabel l = (MaterialLabel)a;
+                    content = content + "<br>" + l.getText();
+                }
+            }
+            IESafeImage image2 =  panel2.getOutputPanel().getPlotImage();
+            content = content + "<br><img src=\"" + image2.getUrl() + "\">";
+        }
+
+        content = content + "\n" +
+                "</body>\n" +
+                "</html>";
+        openPrintWindow(content);
+    }
+    native void openPrintWindow(String contents) /*-{
+        var printWindow = window.open("", "PrintWin");
+        if (printWindow && printWindow.top) {
+            printWindow.document.write(contents);
+        } else {
+            alert("The print feature works by opening a popup window, but our popup window was blocked by your browser.  If you can disable the blocker temporarily, you'll be able to print here.");
+        }
+    }-*/;
     ValueChangeHandler onPlotsDropDown = new ValueChangeHandler() {
         @Override
         public void onValueChange(ValueChangeEvent event) {
@@ -1141,7 +1197,18 @@ public class Layout extends Composite {
             eventBus.fireEventFromSource(new PanelCount(count), plotsDropdown);
         }
     };
-
+    @UiHandler("plot1")
+    void onPlot1(ClickEvent click) {
+        plotsDropdown.setText("Plot 1");
+        setPlotCount(1);
+        eventBus.fireEventFromSource(new PanelCount(1), plotsDropdown);
+    }
+    @UiHandler("plot2")
+    void onPlot2(ClickEvent click) {
+        plotsDropdown.setText("Plot 2");
+        setPlotCount(2);
+        eventBus.fireEventFromSource(new PanelCount(2), plotsDropdown);
+    }
     @UiHandler("formatsDropDown")
     void onFormatChange(SelectionEvent<Widget> event) {
         downloadLink.setDisplay(Display.NONE);
@@ -1288,6 +1355,8 @@ public class Layout extends Composite {
         BreadcrumbSelect bcse = new BreadcrumbSelect();
         bcse.setTargetPanel(1);
         eventBus.fireEventFromSource(bcse, home);
+        topMenuEnabled(false);
+        animate.setEnabled(false);
         event.stopPropagation();
     }
     //    @UiHandler("back")

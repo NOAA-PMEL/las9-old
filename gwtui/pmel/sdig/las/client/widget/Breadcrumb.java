@@ -35,7 +35,8 @@ public class Breadcrumb extends MaterialPanel {
 
     public Breadcrumb () {
         super();
-        chip.setDisplay(Display.INLINE);
+        setDisplay(Display.INLINE_BLOCK);
+        chip.setDisplay(Display.INLINE_BLOCK);
         chip.setOverflow(Style.Overflow.HIDDEN);
         chip.addStyleName("LAS-chip");
         add(chip);
@@ -44,7 +45,8 @@ public class Breadcrumb extends MaterialPanel {
         setText(text);
         setTitle(text);
         setIconType(iconType);
-        chip.setDisplay(Display.INLINE);
+        setDisplay(Display.INLINE_BLOCK);
+        chip.setDisplay(Display.INLINE_BLOCK);
         chip.setOverflow(Style.Overflow.HIDDEN);
         chip.addStyleName("LAS-chip");
         add(chip);
@@ -54,7 +56,9 @@ public class Breadcrumb extends MaterialPanel {
         if ( selected instanceof Dataset ) {
             Dataset dataset = (Dataset) selected;
             if ( carret ) {
-                chip.setText(" > " + dataset.getTitle());
+//                chip.setText(" > " + dataset.getTitle());
+                // The ">" looks kinda stupid tbh
+                chip.setText(dataset.getTitle());
             } else {
                 chip.setText(dataset.getTitle());
             }
@@ -62,13 +66,15 @@ public class Breadcrumb extends MaterialPanel {
             type = BreadcrumbType.DATASET;
         } else if ( selected instanceof Variable ) {
             Variable variable = (Variable) selected;
-            chip.setText(" > " + variable.getTitle());
+//            chip.setText(" > " + variable.getTitle());
+            chip.setText(variable.getTitle());
             chip.setTitle(variable.getTitle());
             type = BreadcrumbType.VARIABLE;
         }
         chip.addStyleName("LAS-chip");
-        chip.setDisplay(Display.INLINE);
+        chip.setDisplay(Display.INLINE_BLOCK);
         chip.setOverflow(Style.Overflow.HIDDEN);
+        setDisplay(Display.INLINE_BLOCK);
         add(chip);
     }
 

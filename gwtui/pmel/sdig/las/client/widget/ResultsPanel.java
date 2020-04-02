@@ -102,6 +102,7 @@ public class ResultsPanel extends Composite {
             MaterialLabel l = new MaterialLabel();
             l.setText(error);
             annotationPanel.add(l);
+            outputPanel.clearPlot();
         } else {
             outputPanel.setState(state);
             List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
@@ -219,5 +220,8 @@ public class ResultsPanel extends Composite {
     }
     public void setDashboard(boolean dashboard) {
         this.dashboard = dashboard;
+    }
+    public List<Widget> getAnnotations() {
+        return annotationPanel.getChildrenList();
     }
 }

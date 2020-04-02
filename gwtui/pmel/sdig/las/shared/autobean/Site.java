@@ -26,6 +26,7 @@ public class Site {
     String infoUrl;
 
     List<Dataset> datasets;
+    List<FooterLink> footerLinks;
 
     public boolean isDashboard() {
         return dashboard;
@@ -129,5 +130,11 @@ public class Site {
 
     public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
+    }
+    public List<FooterLink> getFooterLinks() {
+        return footerLinks;
+    }
+    public void setFooterLinks(List<FooterLink> footerLinks) {
+        this.footerLinks = footerLinks;
     }
 }

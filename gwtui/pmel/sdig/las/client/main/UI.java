@@ -35,6 +35,7 @@ import google.visualization.AnnotationChartOptions;
 import google.visualization.DataTable;
 import google.visualization.LineChart;
 import google.visualization.LineChartOptions;
+import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.ui.MaterialButton;
 import gwt.material.design.client.ui.MaterialLabel;
@@ -110,6 +111,7 @@ import pmel.sdig.las.shared.autobean.DataConstraint;
 import pmel.sdig.las.shared.autobean.DataQualifier;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.DatasetProperty;
+import pmel.sdig.las.shared.autobean.FooterLink;
 import pmel.sdig.las.shared.autobean.LASRequest;
 import pmel.sdig.las.shared.autobean.MapScale;
 import pmel.sdig.las.shared.autobean.Operation;
@@ -150,6 +152,8 @@ public class UI implements EntryPoint {
     int loop = 0;
 
     boolean toast = false;
+
+    boolean processingQueue = false;
 
     NumberFormat dFormat = NumberFormat.getFormat("########.##");
 
@@ -255,6 +259,9 @@ public class UI implements EntryPoint {
     public void onModuleLoad() {
 
         iso = ISODateTimeFormat.dateTimeNoMillis();
+
+        layout.topMenuEnabled(false);
+        layout.animate.setEnabled(false);
 
         String initialHistory = getAnchor();
         xDataURL = Util.getParameterString("data_url");
@@ -764,7 +771,12 @@ public class UI implements EntryPoint {
                     MaterialButton b = (MaterialButton) event.getSource();
                     if (b.getText().toLowerCase().equals("update") ) {
                         Product p = products.getSelectedProduct();
-                        update(p);
+                        if ( processingQueue ) {
+                            MaterialToast.fireToast("Waiting for current request to finish.");
+                            layout.setUpdate(Constants.UPDATE_NEEDED);
+                        } else {
+                            update(p);
+                        }
                     }
 
                 }
@@ -1268,6 +1280,7 @@ public class UI implements EntryPoint {
                 // Active the animate button for the xy view only for now
                 // TODO animate in other dimensions
                 layout.animate.setEnabled(true);
+                layout.animate.setTextColor(Color.WHITE);
             } else {
                 layout.animate.setEnabled(false);
             }
@@ -1814,6 +1827,29 @@ public class UI implements EntryPoint {
                 layout.navcollapsible.setActive(1, true);
             }
 
+            List<FooterLink> footerLinks = site.getFooterLinks();
+            Collections.sort(footerLinks);
+            for (int i = 0; i < footerLinks.size(); i++) {
+                FooterLink fl = footerLinks.get(i);
+                //<m:MaterialLink  paddingBottom="15" text="NOAA" href="https://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>
+                MaterialLink flink = new MaterialLink();
+                flink.setText(fl.getText());
+                flink.setHref(fl.getUrl());
+                flink.setPaddingBottom(15);
+                flink.setTextColor(Color.WHITE);
+                flink.setTarget("_blank");
+                // <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+                layout.footerPanel.add(flink);
+                if ( i < footerLinks.size() - 1 ) {
+                    MaterialLabel divider = new MaterialLabel();
+                    divider.setText("|");
+                    divider.setPaddingLeft(8);
+                    divider.setPaddingRight(8);
+                    divider.setTextColor(Color.WHITE);
+                    divider.setDisplay(Display.INLINE_BLOCK);
+                    layout.footerPanel.add(divider);
+                }
+            }
         }
 
         public void onFailure(Method method, Throwable exception) {
@@ -2559,6 +2595,7 @@ public class UI implements EntryPoint {
 //    }
 
     private void processQueue() {
+        processingQueue = true;
         if ( !requestQueue.isEmpty() ) {
             layout.showProgress();
             LASRequest lasRequest = requestQueue.remove();
@@ -2567,6 +2604,8 @@ public class UI implements EntryPoint {
             productService.getProduct(lasRequest, productRequestCallback);
             if ( toast )
                 MaterialToast.fireToast("Requesting "+ lasRequest.getOperation() + " ...");
+        } else {
+            processingQueue = false;
         }
     }
     private void pushHistory() {

@@ -53,22 +53,19 @@
 
                     <m:MaterialButton ui:field="update" text="Update"></m:MaterialButton>
 
-                    <m:MaterialListBox textAlign="CENTER" paddingLeft="8" paddingTop="4" enabled="false" ui:field="plotsDropdown" shadow="2">
-                        <m.html:Option title="Plot 1" text="Plot 1" separator="true"/>
-                        <m.html:Option title="Plot 2" text="Plot 2" separator="true"/>
-<!--                        <m.html:Option title="Plot 4" text="Plot 4" separator="true"/>-->
-                    </m:MaterialListBox>
+                    <m:MaterialLink ui:field="plotsDropdown" textColor="WHITE" text="Plot 1" iconType="ARROW_DROP_DOWN" iconPosition="RIGHT" activates="num-plots"></m:MaterialLink>
+                    <m:MaterialDropDown activator="num-plots" constrainWidth="true">
+                        <m:MaterialLink ui:field="plot1" text="Plot 1" />
+                        <m:MaterialLink ui:field="plot2" text="Plot 2" />
+                    </m:MaterialDropDown>
 
-                    <m:MaterialLink ui:field="animate" text="Animate" waves="LIGHT" enabled="false"></m:MaterialLink>
-                    <m:MaterialLink ui:field="correlationLink" text="Correlation Viewer" waves="LIGHT"
-                                    enabled="false"></m:MaterialLink>
-                    <m:MaterialLink ui:field="showValuesButton" text="Show values..." waves="LIGHT"
-                                    enabled="false"></m:MaterialLink>
-                    <m:MaterialLink ui:field="saveAsButton" text="Save as..." waves="LIGHT"
-                                    enabled="false"></m:MaterialLink>
-
+                    <m:MaterialLink ui:field="animate" text="Animate" waves="LIGHT"></m:MaterialLink>
+                    <m:MaterialLink ui:field="correlationLink" text="Correlation Viewer" waves="LIGHT"></m:MaterialLink>
+                    <m:MaterialLink ui:field="showValuesButton" text="Show values..." waves="LIGHT"></m:MaterialLink>
+                    <m:MaterialLink ui:field="saveAsButton" text="Save as..." waves="LIGHT"></m:MaterialLink>
+                    <m:MaterialLink ui:field="printButton" text="Print" waves="LIGHT"></m:MaterialLink>
                 </m:MaterialNavSection>
-                <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." overflow="HIDDEN"/>
+                <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." fontSize="1.3em"/>
 <!--                <m:MaterialPanel addStyleNames="valign-vertical">-->
 <!--                    <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>-->
 <!--&lt;!&ndash;                    <m:MaterialButton marginTop="14" ui:field="openAdvancedSearch" text="Advanced Search" float="RIGHT" marginRight="16"></m:MaterialButton>&ndash;&gt;-->
@@ -81,22 +78,8 @@
         </m:MaterialHeader>
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
             <m:MaterialSideNavContent padding="0">
-                <!--<m:MaterialNavBrand>-->
-                <!---->
-                <!--</m:MaterialNavBrand>-->
-                <!--<m:MaterialRow marginBottom="0" lineHeight="20">-->
-                <!--<m:MaterialColumn height="32" grid="s4">-->
-                <!--<m:MaterialLink ui:field="total" height="32" textColor="BLUE" text="Data Sets"></m:MaterialLink>-->
-                <!--</m:MaterialColumn>-->
-                <!--<m:MaterialColumn height="32" grid="s4">-->
-                <!--<m:MaterialLink ui:field="grids" height="32" textColor="BLUE" text="Grids"></m:MaterialLink>-->
-                <!--</m:MaterialColumn>-->
-                <!--<m:MaterialColumn height="32" grid="s4">-->
-                <!--<m:MaterialLink ui:field="discrete" height="32" textColor="BLUE" text="Discrete"></m:MaterialLink>-->
-                <!--</m:MaterialColumn>-->
-                <!--</m:MaterialRow>-->
                 <m:MaterialPanel ui:field="dashboardRegions" display="NONE"></m:MaterialPanel>
-                <m:MaterialPanel border="1"><m:MaterialLabel fontSize=".75em">This is beta software. Please report problems using the contact below. We will update frequently. v9.0.10beta3</m:MaterialLabel></m:MaterialPanel>
+                <m:MaterialPanel border="1"><m:MaterialLabel fontSize=".75em" paddingLeft="8">This is beta software. Please report problems using the contact below. We will update frequently. v9.0.10beta04</m:MaterialLabel></m:MaterialPanel>
                 <m:MaterialCollapsible ui:field="navcollapsible" accordion="false">
                     <m:MaterialCollapsibleItem ui:field="dataItem" shadow="1">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
@@ -404,8 +387,6 @@
             </m:MaterialRow>
             <m:MaterialRow paddingTop="60" ui:field="outputRow01">
 
-
-
                 <m:MaterialRow paddingTop="32" ui:field="infoHeader" flexAlignContent="CENTER" display="NONE">
                     <m:MaterialColumn grid="s6">
                         <m:MaterialButton ui:field="prev10" text="Prev 10" iconPosition="LEFT" iconType="ARROW_BACK" float="LEFT"></m:MaterialButton>
@@ -422,8 +403,6 @@
 
                 <las:ResultsPanel ui:field="panel1" title="panel01" visible="false"></las:ResultsPanel>
                 <las:ComparePanel ui:field="panel2" title="panel02" grid="s6" visible="false"></las:ComparePanel>
-
-
 
             </m:MaterialRow>
             <m:MaterialRow ui:field="dashboardThumbnails" display="NONE">
@@ -632,14 +611,14 @@
             </m:MaterialPanel>
         </ma:window.MaterialWindow>
         <m:MaterialFooter type="FIXED">
-            <m:MaterialPanel marginRight="20">
-            <m:MaterialLink float="RIGHT" paddingBottom="15" text="NOAA" href="https://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>
-            <m:MaterialLabel float="RIGHT" display="INLINE" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>
-            <m:MaterialLink float="RIGHT" href="https://www.pmel.noaa.gov/" text="PMEL" target="_blank" textColor="WHITE"></m:MaterialLink>
-            <m:MaterialLabel float="RIGHT" display="INLINE" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>
-            <m:MaterialLink float="RIGHT" href="https://www.noaa.gov/protecting-your-privacy" text="Privacy" target="_blank" textColor="WHITE"></m:MaterialLink>
-            <m:MaterialLabel float="RIGHT" display="INLINE" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>
-            <m:MaterialLink float="RIGHT" href="mailto:roland.schweitzer@noaa.gov" text="Contact Administrator" textColor="WHITE"></m:MaterialLink>
+            <m:MaterialPanel ui:field="footerPanel">
+<!--                <m:MaterialLink  paddingBottom="15" text="NOAA" href="https://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>-->
+<!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+<!--                <m:MaterialLink  href="https://www.pmel.noaa.gov/" text="PMEL" target="_blank" textColor="WHITE"></m:MaterialLink>-->
+<!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+<!--                <m:MaterialLink  href="https://www.noaa.gov/protecting-your-privacy" text="Privacy" target="_blank" textColor="WHITE"></m:MaterialLink>-->
+<!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+<!--                <m:MaterialLink  href="mailto:roland.schweitzer@noaa.gov" text="Contact Administrator" textColor="WHITE"></m:MaterialLink>-->
             </m:MaterialPanel>
         </m:MaterialFooter>
     </m:MaterialPanel>

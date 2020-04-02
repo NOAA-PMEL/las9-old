@@ -102,7 +102,7 @@ public class ComparePanel extends Composite {
     MaterialCollapsible annotationsCollapse;
 
     @UiField
-    Breadcrumb panelHome;
+    MaterialIcon panelHome;
 
     @UiField
     MaterialSwitch difference;
@@ -114,13 +114,9 @@ public class ComparePanel extends Composite {
     MaterialCheckBox useAutoColors;
 
     @UiField
-    MaterialLink btnSearch;
-    @UiField
-    MaterialSearch txtSearch;
-    @UiField
-    MaterialNavBar navBar;
-    @UiField
-    MaterialNavBar navBarSearch;
+    MaterialTextBox txtSearch;
+
+    MaterialIcon searchIcon;
 
     @UiField
     MaterialIcon trigger;
@@ -189,15 +185,6 @@ public class ComparePanel extends Composite {
             }
         });
 
-        txtSearch.addOpenHandler(new OpenHandler<String>() {
-            @Override
-            public void onOpen(OpenEvent<String> openEvent) {
-
-                navBar.setVisible(false);
-                navBarSearch.setVisible(true);
-
-            }
-        });
         txtSearch.getLabel().addClickHandler(event -> {
             String search = txtSearch.getText();
             startSearch(search);
@@ -209,21 +196,8 @@ public class ComparePanel extends Composite {
                 startSearch(search);
             }
         });
-        txtSearch.addCloseHandler(new CloseHandler<String>() {
-            @Override
-            public void onClose(CloseEvent<String> closeEvent) {
-                navBar.setVisible(true);
-                navBarSearch.setVisible(false);
-            }
-        });
 
-        txtSearch.addSearchFinishHandler(new SearchFinishEvent.SearchFinishHandler() {
-            @Override
-            public void onSearchFinish(SearchFinishEvent searchFinishEvent) {
-                navBar.setVisible(true);
-                navBarSearch.setVisible(false);
-            }
-        });
+
 
         // Initialize the local axes widgets for to set axes orthogonal to the view...
         Element wmsserver = DOM.getElementById("wms-server");
@@ -296,11 +270,15 @@ public class ComparePanel extends Composite {
                 eventBus.fireEventFromSource(new PlotOptionChange(), event.getSource());
             }
         });
+        searchIcon = txtSearch.getIcon();
+        searchIcon.addClickHandler(onSearchClick);
+        searchIcon.setPaddingTop(20);
     }
     public MethodCallback<Site> siteCallback = new MethodCallback<Site>() {
 
         public void onSuccess(Method method, Site site) {
             panelDatasets.clear();
+            clearBreadcrumbs();
             dataItem.hideProgress();
             if ( site.getDatasets().size() > 0 ) {
                 List<Dataset> siteDatasets = site.getDatasets();
@@ -428,7 +406,7 @@ public class ComparePanel extends Composite {
     public Div getChart() { return chart; }
 
     public void clearBreadcrumbs() {
-        holdBreadcrumbs.clear();
+//        holdBreadcrumbs.clear();
         List<Breadcrumb> remove = new ArrayList<>();
         int total = breadcrumbs.getChildrenList().size();
         for (int i = 0; i < total; i++) {
@@ -695,15 +673,21 @@ public class ComparePanel extends Composite {
     void onUseAutoColors(ClickEvent event) {
         eventBus.fireEventFromSource(new AutoColors(useAutoColors.getValue()), useAutoColors);
     }
-    @UiHandler("btnSearch")
-    void onSearch(ClickEvent click) {
-        txtSearch.open();
-    }
+    ClickHandler onSearchClick = new ClickHandler() {
+        @Override
+        public void onClick(ClickEvent clickEvent) {
+            String search = txtSearch.getText();
+            startSearch(search);
+        }
+    };
     private void startSearch(String search) {
-        navBar.setVisible(true);
-        navBarSearch.setVisible(false);
         SearchRequest sr = new SearchRequest();
+        sr.setOffset(0);
+        sr.setCount(10);
         sr.setQuery(search);
         eventBus.fireEventFromSource(new Search(sr), ComparePanel.this);
+    }
+    public List<Widget> getAnnotations() {
+        return annotationPanel.getChildrenList();
     }
 }

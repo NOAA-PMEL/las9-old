@@ -2513,7 +2513,7 @@ nav ul a span.badge {
     background-color: #42a5f5;
     transition: width .3s linear; }
   .progress .indeterminate {
-    background-color: #42a5f5; }
+    background-color: #880e4f !important; }  /* RHS - Make progress bar contrasting color. */
     .progress .indeterminate:before {
       content: '';
       position: absolute;

@@ -80,7 +80,7 @@
             <m:MaterialSideNavContent padding="0">
                 <m:MaterialPanel ui:field="dashboardRegions" display="NONE"></m:MaterialPanel>
                 <m:MaterialPanel border="1"><m:MaterialLabel fontSize=".75em" paddingLeft="8">This is beta software. Please report problems using the contact below. We will update frequently. v9.0.10beta04</m:MaterialLabel></m:MaterialPanel>
-                <m:MaterialCollapsible ui:field="navcollapsible" accordion="false">
+                <m:MaterialCollapsible ui:field="navcollapsible" accordion="false" marginLeft="8" marginRight="8">
                     <m:MaterialCollapsibleItem ui:field="dataItem" shadow="1">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialPanel addStyleNames="valign-wrapper">
@@ -91,8 +91,7 @@
                                 <m:MaterialIcon ui:field="back" iconType="ARROW_BACK" iconPosition="RIGHT"/>
                                 -->
                             </m:MaterialPanel>
-                            <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE"
-                                                display="NONE"></m:MaterialProgress>
+                            <m:MaterialProgress ui:field="dataProgress" type="INDETERMINATE" color="PINK_DARKEN_4" display="NONE"></m:MaterialProgress>
                         </m:MaterialCollapsibleHeader>
                         <m:MaterialCollapsibleBody padding="0">
                             <m:MaterialCollection ui:field="datasets">
@@ -444,7 +443,7 @@
         </m:MaterialContainer>
         <ma:window.MaterialWindow ui:field="animateWindow" title="Animate" height="100%" width="100%" maximize="false">
             <m:MaterialRow>
-                <m:MaterialProgress ui:field="animateProgress" type="INDETERMINATE" display="NONE"></m:MaterialProgress>
+                <m:MaterialProgress ui:field="animateProgress" type="INDETERMINATE" display="NONE" color="PINK_DARKEN_4"></m:MaterialProgress>
             </m:MaterialRow>
             <m:MaterialRow>
                 <m:MaterialColumn grid="s3">
@@ -524,8 +523,7 @@
         </ma:window.MaterialWindow>
         <ma:window.MaterialWindow ui:field="correlationWindow" title="Property-Property Plots" maximize="false" height="100%" width="100%">
             <m:MaterialRow>
-                <m:MaterialProgress ui:field="correlationProgress" type="INDETERMINATE"
-                                    display="NONE"></m:MaterialProgress>
+                <m:MaterialProgress ui:field="correlationProgress" type="INDETERMINATE" color="PINK_DARKEN_4" display="NONE"></m:MaterialProgress>
             </m:MaterialRow>
             <m:MaterialPanel paddingTop="16">
                 <m:MaterialRow>

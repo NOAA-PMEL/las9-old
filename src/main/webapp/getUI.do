@@ -8,7 +8,8 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="PMEL SDIG">
-    <link rel="icon" href="images/favicon.ico">
+    <link rel="icon" href="favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+    <link rel="icon" href="favicons/favicon-32x32.png" sizes="32x32" type="image/png">
 
     <title>LAS</title>
 

@@ -1,6 +1,11 @@
 import {Dataset} from "./json/Dataset";
 
 export interface ApplicationStateStore {
+
+  showProgress: boolean;
+  errorDialogMessage: string;
+  requestError: boolean;
+
   // Objects related to the primary data picker
   parent: any;
   parent_type: string;

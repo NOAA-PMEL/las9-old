@@ -114,13 +114,22 @@ export class DatasetEditComponent implements OnInit {
 
     const parent_type = this.applicationStateService.getParentType('parent_type');
     if ( this.applicationStateService.isDirty() ) {
+      this.applicationStateService.setForRequest();
       const changes = this.applicationStateService.getDirty();
       this.adminService.saveDataset(changes).subscribe(data => {
         this.applicationStateService.setParent(data, parent_type, false);
         // In this case wait for the return to happen before closing
         this.applicationStateService.reinit();
         this.editing_dataset = false;
-      });
+      },
+        error => {
+           if ( error.message.includes("auth/login") ) {
+             this.applicationStateService.setError("Failed to save changes. Are you logged in as admin. Reload the page to login.");
+           } else {
+             this.applicationStateService.setError("Failed to save changes. Is the server running.")
+           }
+        }
+        );
     } else {
       this.applicationStateService.reinit();
       this.editing_dataset = false;

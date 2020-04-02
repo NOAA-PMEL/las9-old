@@ -17,6 +17,13 @@ export interface Site {
   trajectory: number;
   dashboard: boolean;
   datasets?: (Dataset)[] | null;
+  footerLinks?: (FooterLink)[] | null;
+}
+export interface FooterLink {
+  id: number;
+  index: number;
+  url: string;
+  text: string;
 }
 export interface Attributes {
 }

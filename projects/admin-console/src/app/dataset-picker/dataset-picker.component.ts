@@ -57,16 +57,18 @@ export class DatasetPickerComponent implements OnInit {
 
     this.stateChanges = this.applicationStateService.stateChanged.subscribe(state => {
       if (state) {
-        this.current_type = state['parent_type'];
-        this.current_id = state.parent.id;
-        if (state.add_breadcrumb) this.addBreadcrumb(state.parent);
-        this.doPick(state['parent']);
-        if ( this.side_by_side ) {
-          // Won't be there until the tab is revealed
-          if ( state.secondary ) {
-            this.current_secondary_type = state.secondary_type;
-            if (state.add_secondary_breadcrumb) this.addSecondaryBreadcrumb(state.secondary);
-            this.doSecondary(state['secondary']);
+        if ( state.parent ) {
+          this.current_type = state['parent_type'];
+          this.current_id = state.parent.id;
+          if (state.add_breadcrumb) this.addBreadcrumb(state.parent);
+          this.doPick(state['parent']);
+          if (this.side_by_side) {
+            // Won't be there until the tab is revealed
+            if (state.secondary) {
+              this.current_secondary_type = state.secondary_type;
+              if (state.add_secondary_breadcrumb) this.addSecondaryBreadcrumb(state.secondary);
+              this.doSecondary(state['secondary']);
+            }
           }
         }
       }
@@ -77,9 +79,20 @@ export class DatasetPickerComponent implements OnInit {
       this.errorDialogMessage = "This data set contains variables, there are no more data sets below this point."
       this.error = true;
     } else {
+      this.applicationStateService.setForRequest();
       this.datasetService.getDataset(dataset.id).subscribe(indataset => {
         this.applicationStateService.setParent(indataset, 'dataset', true);
-      });
+      },
+        error => {
+          this.error = true;
+          this.applicationStateService.setProgress(false);
+          if (error.message.includes("auth/login")) {
+            this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+          } else {
+            this.errorDialogMessage = "Failed to get data set information from server.";
+          }
+        }
+      );
     }
   }
   getSecondaryDataset(dataset: Dataset) {
@@ -87,19 +100,52 @@ export class DatasetPickerComponent implements OnInit {
       this.errorDialogMessage = "This data set contains variables, there are no more data sets below this point."
       this.error = true;
     }
+    this.applicationStateService.setForRequest();
     this.datasetService.getDataset(dataset.id).subscribe(indataset => {
       this.applicationStateService.setSecondary(indataset, 'dataset', true);
-    });
+    },
+      error => {
+        this.error = true;
+        this.applicationStateService.setProgress(false);
+        if (error.message.includes("auth/login")) {
+          this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+        } else {
+          this.errorDialogMessage = "Failed to get data set information from server. " + error.message;
+        }
+      }
+    );
   }
   editDataset(dataset: Dataset) {
+    this.applicationStateService.setForRequest();
     this.datasetService.getDataset(dataset.id).subscribe(indataset => {
       this.applicationStateService.setDatasetToEdit(indataset);
-    });
+    },
+      error => {
+         this.error = true;
+        this.applicationStateService.setProgress(false);
+        if (error.message.includes("auth/login")) {
+          this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+        } else {
+          this.errorDialogMessage = "Failed to get data set details to edit. " + error.message;
+        }
+      }
+    );
   }
   deleteDataset(dataset: Dataset) {
+    this.applicationStateService.setForRequest();
     this.adminService.deleteDataset(dataset.id).subscribe(indataset => {
       this.applicationStateService.setParent(indataset, this.current_type, false);
-    });
+    },
+      error => {
+         this.error = true;
+        this.applicationStateService.setProgress(false);
+        if (error.message.includes("auth/login")) {
+          this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+        } else {
+          this.errorDialogMessage = "Unexpected error deleting data set. " + error.message;
+        }
+      }
+    );
   }
   moveDataset(from_dataset: Dataset) {
     const dataset = this.applicationStateService.getSecondary();
@@ -117,11 +163,21 @@ export class DatasetPickerComponent implements OnInit {
         url: '',
         type: 'move'
       };
+      this.applicationStateService.setForRequest();
       this.adminService.moveDataset(moveDataset).subscribe(data => {
         const parent = data.origin;
         const dest = data.destination;
           this.applicationStateService.setParentAndSecondary(parent, this.current_type, dest, this.current_secondary_type, false, false)
-        }
+        },
+          error => {
+             this.error = true;
+            this.applicationStateService.setProgress(false);
+            if (error.message.includes("auth/login")) {
+              this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+            } else {
+              this.errorDialogMessage = "Unexpected error trying to move the data set. " + error.message;
+            }
+          }
       )
     }
   }
@@ -136,16 +192,27 @@ export class DatasetPickerComponent implements OnInit {
       url: '',
       type: 'show'
     };
+    this.applicationStateService.setForRequest();
     this.adminService.moveDataset(moveDataset).subscribe(data => {
         const parent = data.origin;
         const dest = data.destination;
         this.applicationStateService.setParentAndSecondary(parent, this.current_type, dest, this.current_secondary_type, false, false)
-      }
+      },
+        error => {
+          this.error = true;
+          this.applicationStateService.setProgress(false);
+          if (error.message.includes("auth/login")) {
+            this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+          } else {
+            this.errorDialogMessage = "Unexpected error trying to retieve data set. " + error.message;
+          }
+        }
     )
   }
   doPick(indataset: any) {
     if (indataset != null ) {
       if ( indataset.status === "Ingest failed") {
+        this.applicationStateService.setProgress(false);
         this.errorDialogMessage = indataset.message;
         this.error = true;
       } else {
@@ -184,6 +251,7 @@ export class DatasetPickerComponent implements OnInit {
         index = i;
       }
     }
+    this.applicationStateService.setForRequest();
     if ( index === 0 ) {
       this.datasetService.getSite().subscribe(site =>{
         this.applicationStateService.setSecondary(site, 'site', true)
@@ -203,6 +271,7 @@ export class DatasetPickerComponent implements OnInit {
         index = i;
       }
     }
+    this.applicationStateService.setForRequest();
     if ( index === 0 ) {
       this.datasetService.getSite().subscribe(site =>{
         this.applicationStateService.setParent(site, 'site', true);

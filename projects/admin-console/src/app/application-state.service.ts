@@ -9,17 +9,35 @@ import {Util} from "./util/Util";
 })
 export class ApplicationStateService extends ObservableStore<ApplicationStateStore>{
 
+  error: boolean = false;
+
   constructor() {
     super({ trackStateHistory: true, logStateChanges: true });
   }
   setParentAndSecondary(parent: any, parent_type: string, secondary: any, secondary_type: string, breadcrumb: boolean, secondary_breadcrumb: boolean) {
-    this.setState({parent: parent, parent_type: parent_type, add_breadcrumb: breadcrumb, secondary: secondary, secondary_type: secondary_type, add_secondary_breadcrumb: secondary_breadcrumb, edit_dataset: null}, 'SET_BOTH');
+    this.setState({showProgress: false, parent: parent, parent_type: parent_type, add_breadcrumb: breadcrumb, secondary: secondary, secondary_type: secondary_type, add_secondary_breadcrumb: secondary_breadcrumb, edit_dataset: null}, 'SET_BOTH');
   }
   setParent(parent: any, type: string, breadcrumb: boolean) {
-    this.setState({parent: parent, parent_type: type, add_breadcrumb: breadcrumb, add_secondary_breadcrumb: false, edit_dataset: null}, 'SET_PARENT');
+    this.error = false;
+    this.setState({showProgress: false, errorDialogMessage: "", parent: parent, parent_type: type, add_breadcrumb: breadcrumb, add_secondary_breadcrumb: false, edit_dataset: null}, 'SET_PARENT');
+  }
+  setProgress(show: boolean) {
+    this.setState({showProgress: show})
+  }
+  getProgress(): boolean {
+    let state = this.getState();
+    if ( state ) {
+      return state.showProgress;
+    }
+    return false;
+  }
+  // Set for request, start the progress meter and clear the previous error.
+  setForRequest() {
+    this.error = false;
+    this.setState({showProgress: true, errorDialogMessage: ""})
   }
   setSecondary(container: any, type: string, breadcrumb: boolean) {
-    this.setState({secondary: container, secondary_type: type, add_secondary_breadcrumb: breadcrumb, add_breadcrumb: false, edit_dataset: null}, 'SET_SECONDARY');
+    this.setState({showProgress: false, secondary: container, secondary_type: type, add_secondary_breadcrumb: breadcrumb, add_breadcrumb: false, edit_dataset: null}, 'SET_SECONDARY');
   }
   getSecondary():any{
     let state = this.getState();
@@ -28,10 +46,10 @@ export class ApplicationStateService extends ObservableStore<ApplicationStateSto
     }
   }
   setDatasetToMove(dataset: Dataset) {
-    this.setState({dataset_to_move: dataset, add_breadcrumb: false}, 'MOVE_DATASET');
+    this.setState({showProgress: false, dataset_to_move: dataset, add_breadcrumb: false}, 'MOVE_DATASET');
   }
   setDatasetToEdit(dataset: Dataset) {
-    this.setState({edit_dataset: dataset}, 'EDIT_DATASET');
+    this.setState({showProgress: false, edit_dataset: dataset}, 'EDIT_DATASET');
   }
   setDatasetDirty(edit_dataset: Dataset, dataset_dirty: any) {
     let state = this.getState();
@@ -100,9 +118,21 @@ export class ApplicationStateService extends ObservableStore<ApplicationStateSto
     };
     return changes;
   }
+  setError(message: string) {
+    this.error = true;
+    this.setState({showProgress: false, errorDialogMessage: message});
+  }
+  getErrorMessage(): string {
+    let state = this.getState();
+    if ( state ) {
+      return state.errorDialogMessage;
+    }
+    return "";
+  }
 
   reinit() {
-    this.setState({edit_dataset: null, dataset_dirty: null, variables_dirty: null, geox_dirty: null, geoy_dirty: null, z_dirty: null, time_dirty: null}, "REINIT_STATE")
+    this.error = false;
+    this.setState({showProgress: false, errorDialogMessage: "", edit_dataset: null, dataset_dirty: null, variables_dirty: null, geox_dirty: null, geoy_dirty: null, z_dirty: null, time_dirty: null}, "REINIT_STATE")
   }
   getEditDataset(): Dataset {
     let state = this.getState();

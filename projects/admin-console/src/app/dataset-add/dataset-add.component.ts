@@ -14,6 +14,8 @@ import {ApplicationStateService} from "../application-state.service";
 })
 export class DatasetAddComponent implements OnInit {
 
+  error:boolean = false;
+
   griddedSingleFormControl = new FormControl('', [
     Validators.required,
   ]);
@@ -48,8 +50,17 @@ export class DatasetAddComponent implements OnInit {
       url: this.griddedSingleFormControl.value,
       type: 'netcdf'
     };
+    this.applicationStateService.setForRequest();
     this.addDataService.addDataset(addnetdf).subscribe(data=>{
       this.applicationStateService.setParent(data, 'dataset', false);
+    },
+      error => {
+         if ( error.message.includes("auth/login") ) {
+           this.applicationStateService.setError("Failed to add netcdf data source. Are you logged in as admin. Reload this page to find out.")
+         } else {
+           this.applicationStateService.setError("Failed to add netcdf data source.")
+         }
+         this.error = true;
       }
     )
   }
@@ -62,10 +73,20 @@ export class DatasetAddComponent implements OnInit {
       url: this.threddsFormControl.value,
       type: 'thredds'
     };
+    this.applicationStateService.setForRequest();
     this.addDataService.addDataset(addthredds).subscribe(data=>{
         // This should be return the parent and re-show the current list.
-        console.log("Returned from add data method.");
+        this.applicationStateService.setProgress(false);
+        // Why is this not like the others?
         (data)
+      },
+      error => {
+        if ( error.message.includes("auth/login") ) {
+          this.applicationStateService.setError("Failed to add THREDDS data source. Are you logged in as admin. Reload this page to find out.")
+        } else {
+          this.applicationStateService.setError("Failed to add THREDDS data source.")
+        }
+        this.error = true;
       }
     )
   }
@@ -78,9 +99,18 @@ export class DatasetAddComponent implements OnInit {
       url: this.erddapFormControl.value,
       type: 'tabledap'
     };
+    this.applicationStateService.setForRequest();
     this.addDataService.addDataset(addtabledap).subscribe(data=>{
         console.log("Returned from add data method.");
-      this.applicationStateService.setParent(data, 'dataset', false);
+        this.applicationStateService.setParent(data, 'dataset', false);
+      },
+      error => {
+        if ( error.message.includes("auth/login") ) {
+          this.applicationStateService.setError("Failed to add tabledap data source. Are you logged in as admin. Reload this page to find out.")
+        } else {
+          this.applicationStateService.setError("Failed to add tabledap data source.")
+        }
+        this.error = true;
       }
     )
   }
@@ -93,8 +123,17 @@ export class DatasetAddComponent implements OnInit {
       url: this.dsgSingleFormControl.value,
       type: 'dsg'
     };
+    this.applicationStateService.setForRequest();
     this.addDataService.addDataset(adddsg).subscribe(data=>{
       this.applicationStateService.setParent(data, 'dataset', false);
+    },
+      error => {
+        if ( error.message.includes("auth/login") ) {
+          this.applicationStateService.setError("Failed to add DSG data source. Are you logged in as admin. Reload this page to find out.")
+        } else {
+          this.applicationStateService.setError("Failed to add DSG data source.")
+        }
+        this.error = true;
       }
     )
   }
@@ -108,8 +147,18 @@ export class DatasetAddComponent implements OnInit {
       url: null,
       type: 'empty'
     };
+    this.applicationStateService.setForRequest();
     this.addDataService.addDataset(addEmpty).subscribe(data=>{
       this.applicationStateService.setParent(data, this.picker.current_type, false);
-    });
+    },
+      error => {
+        if ( error.message.includes("auth/login") ) {
+          this.applicationStateService.setError("Failed to add container data set. Are you logged in as admin. Reload this page to find out.")
+        } else {
+          this.applicationStateService.setError("Failed to add container data set.")
+        }
+        this.error = true;
+      }
+    );
   }
 }

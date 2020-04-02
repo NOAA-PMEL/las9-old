@@ -14,7 +14,7 @@ import {
   BreadcrumbModule,
   ButtonModule,
   CardModule,
-  DialogModule, DynamicDialogModule, PickListModule,
+  DialogModule, DynamicDialogModule, PickListModule, ProgressBarModule,
   ScrollPanelModule,
   SlideMenuModule,
   TabViewModule
@@ -57,7 +57,8 @@ import { SiteEditComponent } from './site-edit/site-edit.component';
     BreadcrumbModule,
     ScrollPanelModule,
     TabViewModule,
-    PickListModule
+    PickListModule,
+    ProgressBarModule
   ],
   entryComponents: [
     DatasetPickerComponent

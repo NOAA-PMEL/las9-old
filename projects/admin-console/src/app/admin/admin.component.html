@@ -1,3 +1,6 @@
+<div *ngIf="applicationStateService.getProgress()" class="ui-g-12">
+  <p-progressBar [showValue]=applicationStateService.getProgress() mode="indeterminate"></p-progressBar>
+</div>
 <p-tabView (onChange)="loadSecondary($event)">
   <p-tabPanel header="Edit Site">
     <app-site-edit></app-site-edit>
@@ -18,4 +21,7 @@
     <app-dataset-delete></app-dataset-delete>
   </p-tabPanel>
 </p-tabView>
+<p-dialog [(visible)]="applicationStateService.error" style="width: 40%" header="An error occurred.">
+  {{applicationStateService.getErrorMessage()}}
+</p-dialog>
 

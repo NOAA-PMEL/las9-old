@@ -66,15 +66,15 @@
                     <m:MaterialLink ui:field="printButton" text="Print" waves="LIGHT"></m:MaterialLink>
                 </m:MaterialNavSection>
                 <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." fontSize="1.3em"/>
-<!--                <m:MaterialPanel addStyleNames="valign-vertical">-->
-<!--                    <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>-->
-<!--&lt;!&ndash;                    <m:MaterialButton marginTop="14" ui:field="openAdvancedSearch" text="Advanced Search" float="RIGHT" marginRight="16"></m:MaterialButton>&ndash;&gt;-->
-<!--                </m:MaterialPanel>-->
+                <!--                <m:MaterialPanel addStyleNames="valign-vertical">-->
+                <!--                    <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>-->
+                <!--&lt;!&ndash;                    <m:MaterialButton marginTop="14" ui:field="openAdvancedSearch" text="Advanced Search" float="RIGHT" marginRight="16"></m:MaterialButton>&ndash;&gt;-->
+                <!--                </m:MaterialPanel>-->
             </m:MaterialNavBar>
             <!-- NavBar Search ... replaces entire navbar with a text field when searching. -->
-<!--            <m:MaterialNavBar ui:field="navBarSearch" width="100%" visible="false">-->
-<!--                <m:MaterialSearch height="64" ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1"/>-->
-<!--            </m:MaterialNavBar>-->
+            <!--            <m:MaterialNavBar ui:field="navBarSearch" width="100%" visible="false">-->
+            <!--                <m:MaterialSearch height="64" ui:field="txtSearch" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1"/>-->
+            <!--            </m:MaterialNavBar>-->
         </m:MaterialHeader>
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
             <m:MaterialSideNavContent padding="0">
@@ -272,29 +272,29 @@
                                     <m:MaterialCollapsibleBody>
                                         <m:MaterialPanel padding="2" width="375px">
 
-                                                    <m:MaterialRow>
-                                                        <m:MaterialButton marginTop="8" marginLeft="8" grid="s4" text="Apply" ui:field="byVariableButton"></m:MaterialButton>
-                                                    </m:MaterialRow>
-                                                    <m:MaterialRow>
-                                                        <m:MaterialPanel addStyleNames="valign-vertical">
-                                                            <m:MaterialColumn grid="s3">
-                                                                <m:MaterialTextBox marginTop="0" ui:field="vmin"></m:MaterialTextBox>
-                                                            </m:MaterialColumn>
-                                                            <m:MaterialColumn grid="s1">
-                                                                <m:MaterialLabel text="&le;"></m:MaterialLabel>
-                                                            </m:MaterialColumn>
-                                                            <m:MaterialColumn grid="s4">
-                                                                <m:MaterialListBox old="true" ui:field="byVariable">
-                                                                </m:MaterialListBox>
-                                                            </m:MaterialColumn>
-                                                            <m:MaterialColumn grid="s1">
-                                                                <m:MaterialLabel text="&le;"></m:MaterialLabel>
-                                                            </m:MaterialColumn>
-                                                            <m:MaterialColumn grid="s3">
-                                                                <m:MaterialTextBox marginTop="0" ui:field="vmax"></m:MaterialTextBox>
-                                                            </m:MaterialColumn>
-                                                        </m:MaterialPanel>
-                                                    </m:MaterialRow>
+                                            <m:MaterialRow>
+                                                <m:MaterialButton marginTop="8" marginLeft="8" grid="s4" text="Apply" ui:field="byVariableButton"></m:MaterialButton>
+                                            </m:MaterialRow>
+                                            <m:MaterialRow>
+                                                <m:MaterialPanel addStyleNames="valign-vertical">
+                                                    <m:MaterialColumn grid="s3">
+                                                        <m:MaterialTextBox marginTop="0" ui:field="vmin"></m:MaterialTextBox>
+                                                    </m:MaterialColumn>
+                                                    <m:MaterialColumn grid="s1">
+                                                        <m:MaterialLabel text="&le;"></m:MaterialLabel>
+                                                    </m:MaterialColumn>
+                                                    <m:MaterialColumn grid="s4">
+                                                        <m:MaterialListBox old="true" ui:field="byVariable">
+                                                        </m:MaterialListBox>
+                                                    </m:MaterialColumn>
+                                                    <m:MaterialColumn grid="s1">
+                                                        <m:MaterialLabel text="&le;"></m:MaterialLabel>
+                                                    </m:MaterialColumn>
+                                                    <m:MaterialColumn grid="s3">
+                                                        <m:MaterialTextBox marginTop="0" ui:field="vmax"></m:MaterialTextBox>
+                                                    </m:MaterialColumn>
+                                                </m:MaterialPanel>
+                                            </m:MaterialRow>
                                         </m:MaterialPanel>
                                     </m:MaterialCollapsibleBody>
                                 </m:MaterialCollapsibleItem>
@@ -309,43 +309,49 @@
                 <m:MaterialPanel marginLeft="8" marginTop="8" marginBottom="8">
                     <m:MaterialButton ui:field="advancedSearchLaunch" text="Search"/><m:MaterialButton ui:field="prevAdvancedSearch" text="Prev" display="NONE"/><m:MaterialButton ui:field="nextAdvancedSearch" text="Next" display="NONE"/>
                 </m:MaterialPanel>
-                <m:MaterialCard backgroundColor="WHITE" grid="s12">
-                    <m:MaterialCardContent>
-                        <m:MaterialCardTitle textColor="BLACK" text="Search by Keyword" />
-                        <m:MaterialTextBox paddingLeft="10" marginLeft="8" ui:field="txtSearch2" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1" />
-                    </m:MaterialCardContent>
-                </m:MaterialCard>
-                <m:MaterialCard backgroundColor="WHITE" grid="s12">
-                    <m:MaterialCardContent>
-                        <m:MaterialCardTitle textColor="BLACK" text="Search by Geometry" />
-                        <m:MaterialRow>
-                            <m:MaterialLabel display="INLINE" float="LEFT" lineHeight="24" textColor="BLACK" text="This LAS contains &nbsp;"></m:MaterialLabel>
-                            <m:MaterialLabel lineHeight="24" textColor="BLACK" ui:field="total" text=""></m:MaterialLabel>
-                        </m:MaterialRow>
-                        <m:MaterialCollection lineHeight="22" border="0" padding="0">
-                            <m:MaterialCollectionItem padding="0" border="0">
-                                <m:MaterialCheckBox ui:field="discrete" text=""></m:MaterialCheckBox>
-                            </m:MaterialCollectionItem>
-                               <m:MaterialCollection marginLeft="24" border="0">
-                                   <m:MaterialCollectionItem padding="0" border="0">
-                                       <m:MaterialCheckBox ui:field="profileCount" text=""></m:MaterialCheckBox>
-                                   </m:MaterialCollectionItem>
-                                   <m:MaterialCollectionItem padding="0" border="0">
-                                       <m:MaterialCheckBox ui:field="timeseriesCount" text=""></m:MaterialCheckBox>
-                                   </m:MaterialCollectionItem>
-                                   <m:MaterialCollectionItem padding="0" border="0">
-                                       <m:MaterialCheckBox ui:field="pointCount" text=""></m:MaterialCheckBox>
-                                   </m:MaterialCollectionItem>
-                                   <m:MaterialCollectionItem padding="0" border="0">
-                                       <m:MaterialCheckBox ui:field="trajectoryCount" text=""></m:MaterialCheckBox>
-                                   </m:MaterialCollectionItem>
-                               </m:MaterialCollection>
-                            <m:MaterialCollectionItem padding="0" border="0">
-                                <m:MaterialCheckBox ui:field="grids" text=""></m:MaterialCheckBox>
-                            </m:MaterialCollectionItem>
-                        </m:MaterialCollection>
-                    </m:MaterialCardContent>
-                </m:MaterialCard>
+                <m:MaterialRow>
+                    <m:MaterialColumn grid="s4">
+                        <m:MaterialCard backgroundColor="WHITE" grid="s12">
+                            <m:MaterialCardContent>
+                                <m:MaterialCardTitle textColor="BLACK" text="Search by Geometry" />
+                                <m:MaterialRow>
+                                    <m:MaterialLabel display="INLINE" float="LEFT" lineHeight="24" textColor="BLACK" text="This LAS contains &nbsp;"></m:MaterialLabel>
+                                    <m:MaterialLabel lineHeight="24" textColor="BLACK" ui:field="total" text=""></m:MaterialLabel>
+                                </m:MaterialRow>
+                                <m:MaterialCollection lineHeight="22" border="0" padding="0">
+                                    <m:MaterialCollectionItem padding="0" border="0">
+                                        <m:MaterialCheckBox ui:field="discrete" text=""></m:MaterialCheckBox>
+                                    </m:MaterialCollectionItem>
+                                    <m:MaterialCollection marginLeft="24" border="0">
+                                        <m:MaterialCollectionItem padding="0" border="0">
+                                            <m:MaterialCheckBox ui:field="profileCount" text=""></m:MaterialCheckBox>
+                                        </m:MaterialCollectionItem>
+                                        <m:MaterialCollectionItem padding="0" border="0">
+                                            <m:MaterialCheckBox ui:field="timeseriesCount" text=""></m:MaterialCheckBox>
+                                        </m:MaterialCollectionItem>
+                                        <m:MaterialCollectionItem padding="0" border="0">
+                                            <m:MaterialCheckBox ui:field="pointCount" text=""></m:MaterialCheckBox>
+                                        </m:MaterialCollectionItem>
+                                        <m:MaterialCollectionItem padding="0" border="0">
+                                            <m:MaterialCheckBox ui:field="trajectoryCount" text=""></m:MaterialCheckBox>
+                                        </m:MaterialCollectionItem>
+                                    </m:MaterialCollection>
+                                    <m:MaterialCollectionItem padding="0" border="0">
+                                        <m:MaterialCheckBox ui:field="grids" text=""></m:MaterialCheckBox>
+                                    </m:MaterialCollectionItem>
+                                </m:MaterialCollection>
+                            </m:MaterialCardContent>
+                        </m:MaterialCard>
+                    </m:MaterialColumn>
+                    <m:MaterialColumn grid="s8">
+                        <m:MaterialCard backgroundColor="WHITE" grid="s12">
+                            <m:MaterialCardContent>
+                                <m:MaterialCardTitle textColor="BLACK" text="Search by Keyword" />
+                                <m:MaterialTextBox paddingLeft="10" marginLeft="8" ui:field="txtSearch2" placeholder="search terms e.g. temperature" backgroundColor="WHITE" active="true" shadow="1" />
+                            </m:MaterialCardContent>
+                        </m:MaterialCard>
+                    </m:MaterialColumn>
+                </m:MaterialRow>
                 <m:MaterialCard backgroundColor="WHITE" grid="s12">
                     <m:MaterialCardContent textColor="BLACK">
                         <m:MaterialCardTitle  textColor="BLACK" text="Search by Attribute" />
@@ -355,7 +361,7 @@
                                     <m:MaterialCardContent textColor="BLACK">
                                         <m:MaterialCardTitle textColor="BLACK" text="By Data Set Title"></m:MaterialCardTitle>
                                         <m:MaterialRow>
-                                           <m:MaterialTextBox display="INLINE" placeholder="Dataset Title" grid="s12" ui:field="searchByDatasetTitle"></m:MaterialTextBox>
+                                            <m:MaterialTextBox display="INLINE" placeholder="Dataset Title" grid="s12" ui:field="searchByDatasetTitle"></m:MaterialTextBox>
                                         </m:MaterialRow>
                                     </m:MaterialCardContent>
                                 </m:MaterialCard>
@@ -365,7 +371,7 @@
                                     <m:MaterialCardContent textColor="BLACK">
                                         <m:MaterialCardTitle textColor="BLACK" text="By Variable Title/Long_name"></m:MaterialCardTitle>
                                         <m:MaterialRow>
-                                          <m:MaterialTextBox display="INLINE" placeholder="Variable Title" grid="s12" ui:field="searchByVariableTitle"></m:MaterialTextBox>
+                                            <m:MaterialTextBox display="INLINE" placeholder="Variable Title" grid="s12" ui:field="searchByVariableTitle"></m:MaterialTextBox>
                                         </m:MaterialRow>
                                     </m:MaterialCardContent>
                                 </m:MaterialCard>
@@ -610,13 +616,13 @@
         </ma:window.MaterialWindow>
         <m:MaterialFooter type="FIXED">
             <m:MaterialPanel ui:field="footerPanel">
-<!--                <m:MaterialLink  paddingBottom="15" text="NOAA" href="https://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>-->
-<!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
-<!--                <m:MaterialLink  href="https://www.pmel.noaa.gov/" text="PMEL" target="_blank" textColor="WHITE"></m:MaterialLink>-->
-<!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
-<!--                <m:MaterialLink  href="https://www.noaa.gov/protecting-your-privacy" text="Privacy" target="_blank" textColor="WHITE"></m:MaterialLink>-->
-<!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
-<!--                <m:MaterialLink  href="mailto:roland.schweitzer@noaa.gov" text="Contact Administrator" textColor="WHITE"></m:MaterialLink>-->
+                <!--                <m:MaterialLink  paddingBottom="15" text="NOAA" href="https://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>-->
+                <!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+                <!--                <m:MaterialLink  href="https://www.pmel.noaa.gov/" text="PMEL" target="_blank" textColor="WHITE"></m:MaterialLink>-->
+                <!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+                <!--                <m:MaterialLink  href="https://www.noaa.gov/protecting-your-privacy" text="Privacy" target="_blank" textColor="WHITE"></m:MaterialLink>-->
+                <!--                <m:MaterialLabel  display="INLINE_BLOCK" text="|" paddingLeft="8" paddingRight="8" textColor="WHITE"></m:MaterialLabel>-->
+                <!--                <m:MaterialLink  href="mailto:roland.schweitzer@noaa.gov" text="Contact Administrator" textColor="WHITE"></m:MaterialLink>-->
             </m:MaterialPanel>
         </m:MaterialFooter>
     </m:MaterialPanel>

@@ -1827,6 +1827,7 @@ public class UI implements EntryPoint {
                 layout.navcollapsible.setActive(1, true);
             }
 
+            layout.footerPanel.clear();
             List<FooterLink> footerLinks = site.getFooterLinks();
             Collections.sort(footerLinks);
             for (int i = 0; i < footerLinks.size(); i++) {

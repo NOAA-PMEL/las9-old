@@ -260,11 +260,26 @@ class IngestService {
                         if ( times.length > 1 ) {
                             if (regular) {
                                 // TODO sec, week, year?
-                                if (u.contains("hour")) {
+                                if ( u.contains("second") ) {
+                                    // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
+                                    int seconds = (int) du
+                                    p0 = new Period(0, 0, 0, 0, 0, 0, seconds, 0)
+                                    int hours = p0.normalizedStandard(PeriodType.hours()).getHours();
+                                    int days = p0.normalizedStandard(PeriodType.days()).getDays();
+                                    if ( hours < 24 ) {
+                                        p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0);
+                                    } else if ( days > 27 ) {
+                                        p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0);
+                                    } else {
+                                        p0 = new Period(0, 0, 0, days, 0, 0, 0, 0);
+                                    }
+                                } else if (u.contains("hour")) {
                                     for (int d = 0; d < 27; d++) {
                                         if (du < 23.5 * d && du < 23.5 * d + 1) {
+                                            // The unit is hours and the delta is less than 25 so use the hours delta
                                             // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
-                                            p0 = new Period(0, 0, 0, d, 0, 0, 0, 0)
+                                            int hrs = (int)du;
+                                            p0 = new Period(0, 0, 0, 0, hrs, 0, 0, 0)
                                         }
                                     }
                                     if (p0 == null) {

@@ -101,10 +101,19 @@ class InitializationService {
         if ( ld_library_path )
             cleanenv['ld_library_path'] = ld_library_path
 
-        def ferretEnvironment = new FerretEnvironment(cleanenv)
+
+        def ferretEnvironment = FerretEnvironment.first()
+        if ( !ferretEnvironment ) {
+            ferretEnvironment = new FerretEnvironment(cleanenv)
+        } else {
+            ferretEnvironment.setProperties(cleanenv)
+        }
 
         // This is an attempt to automate the choice of the full path to the python executable by taking it from the pyferret script
-        def ferret = new Ferret()
+        def ferret = Ferret.first();
+        if ( !ferret ) {
+            ferret = new Ferret()
+        }
 
         ferret.setPath(python)
 
@@ -113,10 +122,18 @@ class InitializationService {
         } else {
             ferret.setTempDir("/tmp/las")
         }
+
         ferret.setFerretEnvironment(ferretEnvironment)
-        ferret.addToArguments(new Argument([value: "-cimport sys; import pyferret; (errval, errmsg) = pyferret.init(sys.argv[1:], True)"]))
-        ferret.addToArguments(new Argument([value: "-nodisplay"]))
-        ferret.addToArguments(new Argument([value: "-script"]))
+
+        // These shouldn't change.
+        // If they aren't there, add them.
+        if ( !ferret.arguments ) {
+            ferret.addToArguments(new Argument([value: "-cimport sys; import pyferret; (errval, errmsg) = pyferret.init(sys.argv[1:], True)"]))
+            ferret.addToArguments(new Argument([value: "-nodisplay"]))
+            ferret.addToArguments(new Argument([value: "-script"]))
+        }
+
+
         if ( !ferret.validate() ) {
             ferret.errors.each {
                 log.debug(it)
@@ -266,6 +283,10 @@ class InitializationService {
         }
         out.output(doc, configFileWriter)
     }
+
+    def updateFromExternalConfig() {
+
+    }
     def Element makeEnvVariable(String name, String value) {
         Element fer_variable = new Element("variable")
         Element fer_name = new Element("name")
@@ -339,6 +360,7 @@ class InitializationService {
         Region eastern_seaboard = new Region([title: "Eastern Seaboard", name: "eastern seaboard", southLat: 22.0d, northLat: 55.0d, westLon: -84.0d, eastLon: -41.0d])
         eastern_seaboard.save(failOnError: true)
     }
+
     /**
      * Create the options and save them...
      */
@@ -1190,6 +1212,17 @@ class InitializationService {
 
                 site = new Site([title: "Example LAS Site from Initial Installation"])
                 // No site configured, so build the default site.
+
+                // Add default footer links
+                FooterLink f1 = new FooterLink([url: "https://www.noaa.gov/", text: "NOAA", index: 1])
+                FooterLink f2 = new FooterLink([url: "https://www.pmel.noaa.gov/", text: "PMEL", index: 2])
+                FooterLink f3 = new FooterLink([url: "https://www.noaa.gov/protecting-your-privacy", text: "Privacy", index: 3])
+                FooterLink f4 = new FooterLink([url: "mailto:roland.schweitzer@noaa.gov", text: "Contact Administrator", index: 4])
+
+                site.addToFooterLinks(f1)
+                site.addToFooterLinks(f2)
+                site.addToFooterLinks(f3)
+                site.addToFooterLinks(f4)
 
                 // Turn off toast message by default.
                 site.setToast(false)

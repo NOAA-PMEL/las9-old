@@ -19,22 +19,23 @@ class BootStrap {
         log.info("This is LAS v" + v);
         log.debug("Starting the init bootstrap closure...")
 
-        Ferret ferret = Ferret.first()
-        FerretEnvironment ferretEnvironment = FerretEnvironment.first()
+        // Always init the environment so it can be changed
+        // between restarts.
+        initializationService.initEnvironment()
 
-        if (!ferret || !ferretEnvironment) {
-            initializationService.initEnvironment()
-        }
 
+        // These 3 methods check to see if the objects exist before creating them.
         initializationService.createProducts()
 
         initializationService.createDefaultRegions()
 
-        // TODO this is the default data sets - make sure it's on for distribution
         initializationService.loadDefaultLasDatasets()
 
-        def priv = new Site([title: "Private Data"])
-        priv.save();
+        def priv = Site.findByTitle("Private Data")
+        if ( !priv ) {
+            priv = new Site([title: "Private Data"])
+            priv.save();
+        }
 
         def admin_pw = grailsApplication.config.getProperty('admin.password')
         def adminUser = ShiroUser.findByUsername('admin')

@@ -1153,7 +1153,7 @@ public class Layout extends Composite {
         }
 
         IESafeImage image = panel1.getOutputPanel().getPlotImage();
-        content = content + "<br><img src=\"" + image.getUrl() + "\">";
+        content = content + "<br><br><br><br><img src=\"" + image.getUrl() + "\">";
 
         if ( panelCount == 2 ) {
             content = content + "<P style=\"page-break-before: always\">";
@@ -1212,6 +1212,7 @@ public class Layout extends Composite {
     @UiHandler("formatsDropDown")
     void onFormatChange(SelectionEvent<Widget> event) {
         downloadLink.setDisplay(Display.NONE);
+        downloadError.setDisplay(Display.NONE);
         String title = ((MaterialLink) event.getSelectedItem()).getText();
         formatsButton.setText(title);
     }
@@ -1326,6 +1327,7 @@ public class Layout extends Composite {
     @UiHandler("downloadButton")
     public void onDownload(ClickEvent event) {
         downloadLoader.setDisplay(Display.BLOCK);
+        downloadError.setDisplay(Display.NONE);
         eventBus.fireEventFromSource(new Download(true), downloadButton);
     }
     @UiHandler("animate")

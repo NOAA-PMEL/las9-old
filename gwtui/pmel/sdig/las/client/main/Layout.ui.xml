@@ -79,7 +79,7 @@
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
             <m:MaterialSideNavContent padding="0">
                 <m:MaterialPanel ui:field="dashboardRegions" display="NONE"></m:MaterialPanel>
-                <m:MaterialPanel border="1"><m:MaterialLabel fontSize=".75em" paddingLeft="8">This is beta software. Please report problems using the contact below. We will update frequently. v9.0.10beta04</m:MaterialLabel></m:MaterialPanel>
+                <m:MaterialPanel border="1"><m:MaterialLabel fontSize=".75em" paddingLeft="8">This is beta software. Please report problems using the contact below. We will update frequently. v9.0.10beta05</m:MaterialLabel></m:MaterialPanel>
                 <m:MaterialCollapsible ui:field="navcollapsible" accordion="false" marginLeft="8" marginRight="8">
                     <m:MaterialCollapsibleItem ui:field="dataItem" shadow="1">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">

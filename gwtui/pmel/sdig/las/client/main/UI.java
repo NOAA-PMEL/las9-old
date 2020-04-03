@@ -250,6 +250,9 @@ public class UI implements EntryPoint {
     // Used for both history and for loading a variable from the description page.
     String historyVariable = null;
 
+    // The original history token to be processed after site load.
+    String initialHistory = null;
+
     // Display the info page of the first data set
     boolean info = true;
 
@@ -263,7 +266,7 @@ public class UI implements EntryPoint {
         layout.topMenuEnabled(false);
         layout.animate.setEnabled(false);
 
-        String initialHistory = getAnchor();
+        initialHistory = getAnchor();
         xDataURL = Util.getParameterString("data_url");
 
         animateDateTimeWidget.setTitle("Time Range for Animation");
@@ -978,16 +981,12 @@ public class UI implements EntryPoint {
         });
 
         // Call for the site now
+        if ( toast )
+            MaterialToast.fireToast("Getting initial site information.");
+        siteService.getSite("1.json", siteCallback);
+        layout.showDataProgress();
 
-        if ( initialHistory == null || initialHistory.isEmpty() ) {
-            if ( toast )
-                MaterialToast.fireToast("Getting initial site information.");
-            siteService.getSite("1.json", siteCallback);
-            layout.showDataProgress();
 
-        } else {
-            popHistory(initialHistory);
-        }
 
     }
     private void saveAxes() {
@@ -1851,6 +1850,9 @@ public class UI implements EntryPoint {
                     layout.footerPanel.add(divider);
                 }
             }
+            if ( initialHistory != null && !initialHistory.isEmpty() ) {
+                popHistory(initialHistory);
+            }
         }
 
         public void onFailure(Method method, Throwable exception) {
@@ -2651,7 +2653,7 @@ public class UI implements EntryPoint {
             historyRequestPanel2 = requestCodec.decode(panelTwoRequest);
 
         }
-
+        initialHistory = null;
         // TODO Get Ferret properties
         // TODO Get analysis
         // TODO Get difference

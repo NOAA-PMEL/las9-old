@@ -9,6 +9,7 @@
 ! whether the distance between points is large; if so plot as discrete 
 ! points connected with a thin line.
 ! 4/3/2017 *acm* Additions for point data types
+!   2/2020 Check for existence of global attributes before using global_attnames.
 
 IF `($rowvar"0|*>1") EQ 0` THEN EXIT/SCRIPT
 
@@ -176,9 +177,16 @@ DEFINE SYMBOL nout_lonlat = `nout_lonlat`
 
 ! Is the data pre-decimated?  If so set up things for the annotations and exit.
 
-LET global_attnames = ..attnames
-IF `IS_ELEMENT_OF_STR(global_attnames, "decimation") GT 0` THEN
 
+LET global_attnames = ..attnames
+LET nglobal_atts = ..nattrs
+
+LET deci = 0
+IF `nglobal_atts GT 0` THEN
+  IF `IS_ELEMENT_OF_STR_N(global_attnames, "decimation") ` THEN LET deci = 1
+ENDIF
+
+IF `deci GT 0` THEN
    DEFINE SYMBOL decimation_fraction = ($ferret_decimation_fraction"0.03257")
    DEFINE SYMBOL piecewise_decimation = 1
    LET ngood_sampled = `($ngood_data)`

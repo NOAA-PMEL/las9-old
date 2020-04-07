@@ -208,7 +208,7 @@ DEFINE SYMBOL qualifiers = ($qualifiers)/SYM=19/siz=($psize)/THICK=1/missing=bla
 
 ! Set the palette
 
-DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"rainbow|default>rainbow|*>*")
+DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"default|*>*")
 
 
 SAY _________________ Start line plot: clock seconds:                            ($clock_secs)

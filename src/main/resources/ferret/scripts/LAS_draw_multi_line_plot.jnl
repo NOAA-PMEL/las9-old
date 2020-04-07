@@ -8,10 +8,13 @@
 ! 7/2010    ACM updates for V7.2 multi-variable plots
 ! 11/2017 *acm* Dont label plots with units of "units" or "none"
 ! 12/2017 *acm* Apply positive=down attribute if all variables in a
-*               units-group have that setting.
+!               units-group have that setting.
+! 10/2019 *acm* For time plots if there's a year-label needed, save symbol
+!               to be added to the annotations
+! 10/2019 *acm* Fix use of plot_pos_down_* symbols so vertical axis doesn't
+!               get incorrectly flipped.
 
 set mode ver:always
-
 
 LET xvf = ($1%0.1%)
 LET xvl = ($2%0.9%)
@@ -137,6 +140,14 @@ REPEAT/RANGE=2:`($nunit_grp"1")`/NAME=m (\
    LET maxlablen = `MAX(maxlablen, STRLEN("($PPL$YMIN1)"))`;\
    LET maxlablen = `MAX(maxlablen, STRLEN("($PPL$YMAX1)"))`)
 
+! Set a year-label for the annotations if Ferret has added an upper-left year label
+IF `(($have_year_lab"0|*>1") EQ 0) AND ($labnum_year%0|*>1%)` THEN
+   DEFINE SYMBOL n_left_labels = `($n_left_labels"0") + 1`
+   DEFINE SYMBOL upper_left_($n_left_labels) = ($lab($labnum_year))
+   DEFINE SYMBOL year_lab = ($lab($labnum_year))
+   DEFINE SYMBOL have_year_lab = 1
+ENDIF
+
 ! Draw any other plot axes scaled for each set of variables with common units
 ! Plot axis with first set of units will be on the left.
 ! Draw the plots for other sets of variables as /SYM=dot/COLOR=8 (COLOR=white) so that
@@ -169,7 +180,7 @@ REPEAT/RANGE=1:`($nunit_grp"1")`/NAME=m (\
    GO LAS_get_lines_min_max `vplotnum`;\
    PPL %range `vlimylo`, `vlimyhi`, 10;\
    DEFINE SYMBOL qualifiers_g($vm) = /VLIM=($ppl$range_low):($ppl$range_high);\
-   IF ($plot_pos_down"($vm)|0|1|*>1") THEN DEFINE SYMBOL qualifiers_g($vm) = /VLIM=($ppl$range_high):($ppl$range_low);\
+   IF ($plot_pos_down_($vm)"0|0|1|*>1") THEN DEFINE SYMBOL qualifiers_g($vm) = /VLIM=($ppl$range_high):($ppl$range_low);\
    IF `($vm) GT 0` THEN;\
       PLOT/AXES=0,0,0,1($qualifiers_g($vm))/SYM=dot/COLOR=8/NOLAB {0,1};\
       LET do_lab = ($group_label_($vm)"0|NONE>0|none>0|units>0|*>1");\
@@ -194,6 +205,18 @@ DEFINE VIEWPORT/AXES/TEXT=0.85/x=`xvf`:`xvl`/y=`yvf`:`yvl` v0_dup
 SET VIEW v0_v($vpname)($vm)
 
 IF ($ferret_view"1|t>0|*>1") THEN SET MODE GRATICULE:(DASH,COLOR=($graticuleColor))
+
+! Draw the first line to capture the year-label if any.  Draw again below with /NOLAB and other qualifiers.
+! Set a year-label for the annotations if Ferret has added an upper-left year label
+
+PLOT ($ferret_plot_var_($vm))
+
+IF `(($have_year_lab"0|*>1") EQ 0) AND ($labnum_year%0|*>1%)` THEN
+   DEFINE SYMBOL n_left_labels = `($n_left_labels"0") + 1`
+   DEFINE SYMBOL upper_left_($n_left_labels) = ($lab($labnum_year))
+   DEFINE SYMBOL year_lab = ($lab($labnum_year))
+   DEFINE SYMBOL have_year_lab = 1
+ENDIF
 
 PLOT($qualifiers)($qualifiers_0)($qualifiers_g($vm))($axqual)/COLOR=($leg_color($vm))/NOLAB ($ferret_plot_var_($vm))
 
@@ -247,4 +270,3 @@ DEFINE SYMBOL xaxis_min = ($xax_min_save)
 DEFINE SYMBOL xaxis_max = ($xax_max_save)
 
 ! --------------- End of LAS_draw_multi_line_plot  ---------------------------
-

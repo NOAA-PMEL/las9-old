@@ -6,7 +6,14 @@
 ! Create a new title that includes subsampling info
 
 ! Restart setting plot qualifiers for correlation plot. 
+
+! 3/14/2018  Initial changes to take advantage of PyFerret symbols to replace
+!            use of slow outlined polygons.  Currently only draws triangles,
+!            need to implelement a list of symbol names replacing /sym=triufill
+
 DEFINE SYMBOL qualifiers = /NOLAB
+
+DEFINE SYMBOL py_syms = `($program_name"0|PyFerret>1|*>0") AND ($FERRET_VERSION) GE 7.32`
 
 IF `($data_1_var"0|*>1") EQ 0` THEN
   MESSAGE/ERROR **ERROR Correlation product requires two variables to be selected
@@ -199,6 +206,8 @@ IF ($program_name"0|Ferret>1|*>0") THEN DEFINE SYMBOL qualifiers = ($qualifiers)
 DEFINE SYMBOL poly_command POLY($qualifiers)
 DEFINE SYMBOL line_color = blue
 
+DEFINE SYMBOL pysym_command = PLOT/VS/OVER/NOLAB/NOKEY/ribbon/highlight/PALETTE=($ferret_poly_palette)/siz=0.15
+
 IF `( ($feature_max) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
 
    LET p = XSEQUENCE( subset_mask * data_1_var_c)  ! for regression line
@@ -215,11 +224,15 @@ IF `( ($feature_max) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
 ! See polyshape script for the list of available pre-defined shapes.
 
 ! Set the shapes with the same script as in the script 200symbols.jnl
+! Also sets the names of PyFerret symbols to match those shapes.
+
    GO LAS_pp_set_feature_shapes
 
    LET cmax = `MIN(($feature_max),ncolors)`
    LET c1 = 1
    DEFINE SYMBOL poly_command ($poly_command)/LEVELS=(`c1`,`cmax+1`,1)
+   DEFINE SYMBOL pysym_command ($pysym_command)/LEVELS=(`c1`,`cmax+1`,1)
+
    LET ishape = 1
    LET icolor = 1
 
@@ -259,7 +272,9 @@ IF `( ($feature_max) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
      IF `do_it AND ($connect_dots"0|0|1|*>1")` THEN \
      PLOT/NOAX/VS/OVER/LINE=6/DASH=(0.1,0.04,0.1,0.04)/NOLAB xpolydat, ypolydat ;\
      ;\
-    IF `do_it` THEN GO polymark ($poly_command) plot_x, plot_y, plot_d, ($shape($ishape)), ($poly_scale) ;\
+     DEFINE SYMBOL color_command = GO polymark ($poly_command) plot_x, plot_y, plot_d, ($shape($ishape)), ($poly_scale) ;\
+     IF ($py_syms"0") THEN DEFINE SYMBOL color_command = ($pysym_command)/sym=($pyshape($ishape)) plot_x, plot_y, plot_d;\
+    IF `do_it` THEN ($color_command); \
      ;\
      LET c1 = `c1 + ncolors`;\
      LET cn = `cn + ncolors`;\

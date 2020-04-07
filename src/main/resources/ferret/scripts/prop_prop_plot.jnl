@@ -222,7 +222,7 @@ IF ($ribbon"0|*>1") THEN
    DEFINE SYMBOL plot_end_command = PLOT/OVER
    IF `($data_count"0") GT 2` THEN 
       IF ($color_by_levels"0|*>1") THEN DEFINE SYMBOL ferret_fill_levels = ($color_by_levels)
-      DEFINE SYMBOL plot_command = ($plot_command)/RIBBON/LEVELS=($ferret_fill_levels"v")/pal=rainbow/MISSING=blank
+      DEFINE SYMBOL plot_command = ($plot_command)/RIBBON/LEVELS=($ferret_fill_levels"v")/pal=default/MISSING=blank
       DEFINE SYMBOL plot_end_command = RIBBON/OVER
    ENDIF
 ENDIF
@@ -330,11 +330,10 @@ ELSE
      ENDIF
    
 ! Dont use the palette coming in. Its for variable 0
-     DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"rainbow|default>rainbow|*>*)
+     DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"default|*>*)
 
      IF ($ferret_key_centerlab"0|0|*>1") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY=CONT,CENT
 
-!      IF `($its_trajectory_corr"0|*>1") EQ 0` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=rainbow
      DEFINE SYMBOL color_by_title = `zvar,RETURN=title`
 
    ELSE    ! IF ($color_by)
@@ -469,11 +468,12 @@ IF ($do_rsquare"1|0|*>1) THEN
 ! Label the rsquare and slope of the line. Put this above the plot, 
 ! or for annotated plots, below it.
    IF `rsquare` THEN
+      IF ($program_name"0|PyFerret>1|*>0") THEN SET TEXT/COLOR=blue moveable
       IF ($ferret_annotations"0|*>1") THEN
          DEFINE SYMBOL rsqlab = R^2 = `rsquare,P=3`
          LET wid = `LABWID("($rsqlab)", 0.1)`
-         LABEL/NOUSER -0.5,-0.32,-1, 0, 0.10, @P4@DRR^2 = `rsquare,P=3`
-         LABEL/NOUSER -0.5,-0.50,-1, 0, 0.10, @P4@DRSlope = `slope,P=3`
+         LABEL/NOUSER -0.5,-0.42,-1, 0, 0.10, @P4@DRR^2 = `rsquare,P=3`
+         LABEL/NOUSER -0.5,-0.6,-1, 0, 0.10, @P4@DRSlope = `slope,P=3`
       ELSE
          LABEL/NOUSER `($ppl$xlen)-0.2`,`($ppl$ylen)+0.25`,1, 0, 0.10, @P4@DRR^2 = `rsquare,P=3`
          LABEL/NOUSER `($ppl$xlen)-0.2`,`($ppl$ylen)+0.1`,1, 0, 0.10, @P4@DRSlope = `slope,P=3`

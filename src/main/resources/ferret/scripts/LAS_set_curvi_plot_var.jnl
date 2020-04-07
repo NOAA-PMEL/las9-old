@@ -1,7 +1,9 @@
 ! LAS_set_curvi_plot_var.jnl
 !      4/2013 ACM Implement the Ferret property ferret_start_memory
 !      4/2014 ACM Difference plots needed tweaks to clon_imax and clat_jmax
-
+!     10/2018 ACM With /MODULO qualifier on fill and shade plots, no need
+!                 for m360 or p360 overlay variables. 
+!     10/2018 ACM Redefine $ferret_plot_var  to use index range
 
 ! Unless its a prop/prop plot, label as a native curv plot.
 ! This first section moved from transform_curvi_xy
@@ -83,31 +85,21 @@ IF ($region_($which_var)_zt"0|*>1") THEN DEFINE SYMBOL ferret_plot_base_var = \
 DEFINE SYMBOL ferret_plot_base_var_($which_var) ($ferret_plot_base_var)
 
 DEFINE SYMBOL ferret_plot_var ($expr1)plot_var[d=($data_num)]($expr2), xcoord, ycoord
-DEFINE SYMBOL ferret_plot_var_m360 ($expr1)plot_var[d=($data_num)]($expr2), xcoord-360, ycoord
-DEFINE SYMBOL ferret_plot_var_p360 ($expr1)plot_var[d=($data_num)]($expr2), xcoord+360, ycoord
-IF ($region_zt"0|*>1") THEN 
+IF ($region_zt"0|*>1") THEN \
    DEFINE SYMBOL ferret_plot_var ($expr1)plot_var[d=($data_num)]($expr2), xcoord, ycoord
-   DEFINE SYMBOL ferret_plot_var_m360 ($expr1)plot_var[d=($data_num)]($expr2), xcoord-360, ycoord
-   DEFINE SYMBOL ferret_plot_var_p360 ($expr1)plot_var[d=($data_num)]($expr2), xcoord+360, ycoord
-ENDIF
 
 DEFINE SYMBOL ferret_plot_title "($expr1)($data_title)($expr2) ($data_units) ($native_lab)"
 
 IF ($expr3"0|*>1") THEN
    DEFINE SYMBOL ferret_plot_var ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord, ycoord
-   DEFINE SYMBOL ferret_plot_var_m360 ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord-360, ycoord
-   DEFINE SYMBOL ferret_plot_var_p360 ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord+360, ycoord
-   IF ($region_zt"0|*>1") THEN 
-      DEFINE SYMBOL ferret_plot_var \
-          ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord, ycoord
-      DEFINE SYMBOL ferret_plot_var_m360 \
-          ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord-360, ycoord
-      DEFINE SYMBOL ferret_plot_var_p360 \
-          ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord+360, ycoord
-   ENDIF
+   IF ($region_zt"0|*>1") THEN DEFINE SYMBOL ferret_plot_var \
+     ($expr1)plot_var[d=($data_num)]($expr3)plot_var[d=($data_num)]($expr4), xcoord, ycoord
    DEFINE SYMBOL ferret_plot_title "($expr1)($data_title)($expr3)($data_title)($expr4) ($data_units) ($native_lab)"
 ENDIF
 
-! End of file ------------ LAS_set_curvi_plot_var.jnl-------------------------------
+! Use index limits in 1st argument to curvilinear plot commands not XY world coordinates
 
+DEFINE SYMBOL ferret_plot_var = ($ferret_plot_base_var), xcoord, ycoord
+
+! End of file ------------ LAS_set_curvi_plot_var.jnl-------------------------------
 

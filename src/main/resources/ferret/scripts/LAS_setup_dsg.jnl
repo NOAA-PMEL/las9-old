@@ -3,6 +3,12 @@
 
 SAY _________________ START LAS_setup_dsg: clock seconds:                        ($clock_secs)
 
+
+LET nglobal_atts = ..nattrs
+IF `nglobal_atts EQ 0` THEN
+   GO LAS_error_msg Expecting Distributed Sampling Geometries file. No Global Attributes found.
+ENDIF
+
 LET global_attnames = ..attnames
 LET varnames = ..varnames
 LET nvars = ..nvars

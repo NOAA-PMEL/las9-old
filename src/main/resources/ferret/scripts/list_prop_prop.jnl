@@ -16,6 +16,7 @@
 !  9/2017 If there is a fourth variable, list it too.
 ! 10/2017 Ensure that Time, Longitude, Latitude, Depth are written if available.
 ! 10/2017 List up to the total number of variables in the dataset data_0_var through data_xx_var.
+!  2/2020 Check for existence of global attributes before using global_attnames.
 
 set mode verify:always
 
@@ -100,8 +101,11 @@ IF ($feature_variable"0|*>1") THEN
 
          ! Expand all strings into obs axis
          IF ($is_string"0|*>1") THEN 
-	    LET ($feature_variable)_xpnd = EXPND_BY_LEN_STR(($feature_variable), ($rowvar), `($rowvar)[m=@sum]`)
-	    
+
+!	    set var/name=($feature_variable)_expanding ($feature_variable)
+	    let/like=($feature_variable) ($feature_variable)_expanding = ($feature_variable)
+	    LET ($feature_variable)_xpnd = EXPND_BY_LEN_STR(($feature_variable)_expanding, ($rowvar), `($rowvar)[m=@sum]`)
+	   
 	    LET ii = i[g=($timevar)]
 	    LET iindices = IF constraints_mask THEN ii
 	    LET compress_mask = COMPRESSI(iindices)
@@ -111,8 +115,9 @@ IF ($feature_variable"0|*>1") THEN
 	       DEFINE SYMBOL feature_variable_in = feature_variable_in1
 	    ENDIF
 
-	    LET/TITLE="($feature_variable_in)"  ($feature_variable_in) = SAMPLEI (($feature_variable)_xpnd, compress_mask[i=1:`nok`])
-
+	    LET/TITLE="($feature_type)" ($feature_variable)_ = SAMPLEI (($feature_variable)_xpnd, compress_mask[i=1:`nok`])
+	    DEFINE SYMBOL feature_variable_in = ($feature_variable)_
+	    
 	 ELSE
 	    LET traj_obs = EXPND_BY_LEN(($feature_variable), ($rowvar), `($rowvar)[m=@sum]`)
 	    IF `STRINDEX("($feature_variable_in)", "'") EQ 1` THEN 
@@ -120,7 +125,8 @@ IF ($feature_variable"0|*>1") THEN
 	       DEFINE SYMBOL feature_variable_in = feature_variable_in1
 	    ENDIF
             LET/TITLE="($feature_variable_in)" ($feature_variable_in) = constraints_mask*traj_obs
-         ENDIF
+            LET/TITLE="($feature_type)" ($feature_variable_in) = constraints_mask*traj_obs
+	 ENDIF
    ENDIF
 
 ENDIF
@@ -250,8 +256,15 @@ IF `IS_ELEMENT_OF_STR_N(attnames, "depth") GE 1` THEN define symbol have_depth =
 
 LET global_attnames = ..attnames
 LET nglobal_atts = ..nattrs
+
+
+LET featr = 0
+IF `nglobal_atts GT 0` THEN
+  IF `IS_ELEMENT_OF_STR_N(global_attnames, "featureType") ` THEN LET featr = 1
+ENDIF
+
 DEFINE SYMBOL feature_type = none
-IF `IS_ELEMENT_OF_STR(global_attnames, "featureType") GT 0` THEN DEFINE SYMBOL feature_type = `..featureType`
+IF `featr GT 0` THEN DEFINE SYMBOL feature_type = `..featureType`
 
 DEFINE SYMBOL depthvar = depth
 IF ($depth_done"0|*>1") THEN DEFINE SYMBOL depthvar = depth_

@@ -193,6 +193,15 @@ IF `STRLEN ("($ferret_view)") GT 2 AND STRINDEX("($ferret_view)", "xy") GT 0` TH
 
    DEFINE SYMBOL native_curvilinear_xy = 1
 
+   
+! If the 1-D coordinate axes are modulo, as in the GFDL tri-polar grid, Ferret may 
+! try to do moduloing operations when reading xcoord and ycoord but not on the 
+! variable ferret_plot_var. That can cause errors. We are using just the 2-D 
+! coordinate variables, best to cancel the modulo character of the 1-D coordinates.
+
+cancel axis/modulo ` ($ferret_curvi_coord_lon), return=xaxis`
+
+
 ENDIF
 
 ! End of $RCSfile ------------transform_curvi_xy.jnl-------------------------------

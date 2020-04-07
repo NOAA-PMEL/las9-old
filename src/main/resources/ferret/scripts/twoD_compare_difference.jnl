@@ -11,6 +11,8 @@
 ! 8/2012 ACM Fixing ticket 1337, F-TDS bug. If there no _FillValue, set it 
 !            to a known value that matches the value used in get_datavar.jnl
 ! 10/10/2012 Reverse the sense of the difference; ticket 1377
+! ACM 11/18 (Ferret v7.44) use new OVER/AXES behavior to draw axis and 
+!                          graticule lines on top of everything else
 !
 ! twoD_compare_difference.jnl creates a 2D plot for use with the 
 ! Back End Server code that sits behind a Live Access Server (LAS). 
@@ -156,7 +158,7 @@ IF ($shade_underlay) THEN
 
    PPL SHADE
    IF `($LEV_NUM"0") GT 245/2` THEN PPL SHASET RESET
-   ($plot_type)/NOKEY($qualifiers)/OVER/NOLAB ($ferret_diff_var)
+   ($plot_type)/NOKEY($qualifiers)/OVER($do_axes)/NOLAB ($ferret_diff_var)
 ELSE
    ($plot_type)($qualifiers)/TITLE="($ferret_plot_title)"/SET ($ferret_diff_var)
       GO reset_labels
@@ -172,7 +174,6 @@ ELSE
 
    PPL ($plot_type)
 ENDIF
-
 
 ! Put on the custom e-axis labels
    IF ($ferret_view"0|ze>1|*>0") THEN

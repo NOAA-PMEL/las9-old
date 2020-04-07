@@ -11,6 +11,8 @@
 ! 12/2017 Define varibles for min,max of p and q for efficiency
 !  1/2018 Time will only be the independent variable - no vertical time axis.
 !  2/2018 Make a blank plot and exit immediately on finding a var is all-bad.
+!  2/2018 Label thumbnails var vs time with the variable title.
+!  2/2018 issue #1859 handle super short time ranges. Defining the time axis if < 2 hours
 
 ! Draw the underlying axes of a property-property plot,
 ! formatted as a longitude, latitude or time axis.
@@ -417,15 +419,13 @@ IF `itsa_tim_prop` THEN
    GO LAS_is_range amin amax
    CANCEL SYMBOL is_time
    
-   CANCEL SYMBOL data_1_units
-   DEFINE SYMBOL data_1_title = Time
-
 !     handling case where the time range is zero or very short
-      IF `ax_hi - ax_lo LT 3600 AND ($tunits%|seconds>1|*>0%)` THEN
-         LET ax_hi = `ax_hi + 7200,prec=15`
-	 LET ax_lo = `ax_lo - 7200,prec=15`
-	 LET del_ax = 30
+      IF `ax_hi - ax_lo LT 7200 AND ($tunits%|seconds>1|*>0%)` THEN
+         LET ax_hi = `ax_hi + 1800,prec=15`
+         LET ax_lo = `ax_lo - 1800,prec=15`
+         LET del_ax = 30
       ENDIF
+
       DEFINE AXIS/T=`ax_lo,prec=15`:`ax_hi,prec=15`:`del_ax`/T0="`($data_t_var).time_origin`"/units=($tunits) haxis
       DEFINE AXIS/T=`ax_lo,prec=15`:`ax_hi,prec=15`:`del_ax`/T0="`($data_t_var).time_origin`"/units=($tunits) haxis2k
       DEFINE SYMBOL haxis2k_defined = 1
@@ -570,6 +570,7 @@ IF ($ferret_thumb"0|0|*>1") THEN
 ENDIF
 
 ! Do time underlay as a line plot, so the overlays work consistently
+! Label the y-axis with the variable title; enlarge if its a thumbnail plot.
 
 IF `itsa_tim_prop` THEN
 
@@ -581,8 +582,29 @@ IF `itsa_tim_prop` THEN
    LET is_time = 0
    GO LAS_is_range amin amax
    IF `($haxis2k_defined"0|1") EQ 0` THEN let timplotvar = t[gt=haxis2k] - 1000
-   
-   PLOT/NOLAB/VLIM=`amin`:`amax` timplotvar
+
+   PLOT/NOLAB/VLIM=`ax_lo`:`ax_hi` timplotvar
+
+   ! label location to the left of the left axis
+
+   LET xlab_loc = -0.06
+   IF `MAX(ABS(ax_lo), ABS(ax_hi)) GT 1000` THEN LET xlab_loc = -0.08
+
+   DEFINE SYMBOL yaxis_title = ($ferret_title_1%($data_1_title)%)
+
+   IF `($is_thumb"0") AND ($yaxis_title"0|*>1")` THEN 
+
+      ! use the title w/o units
+       DEFINE SYMBOL yaxis_title = ($data_1_title)
+
+      ! label size: Enlarge if possible depending on its length.
+
+      LET pagefrac = (LABWID("($yaxis_title)", 0.12*labfac) / ($ppl$ylen)) 
+      IF `pagefrac GT 1` THEN LET labfac = `labfac/pagefrac`
+      
+   ENDIF
+   ANNOTATE/NORM/XPOS=`xlab_loc`/YPOS=0.5/HALIGN=0/ANGLE=90/SIZE=`0.12*labfac` "($yaxis_title)"
+    
    EXIT/SCRIPT
 ENDIF
 

@@ -16,6 +16,7 @@
 
 ! The LET ($data_var)_test = '($data_var)' takes care of the possiblity of variables whose
 ! names are pseudo-variables
+! set_add_for_region sets up to add 0*var if needed, so variables have the same grids.
 
 cancel symbol fer_last_error
 LET nc = `($data_count) - 1`
@@ -30,10 +31,8 @@ SET DATA ($test_url); \
 LET ($test_var)_test = '($test_var)';\
 DEFINE SYMBOL shape($ivar) = `($test_var)_test,RETURN=shape`; \
 DEFINE SYMBOL dset($ivar) = `($test_var)_test,RETURN=dsetnum`;\
-CANCEL DATA ($test_url))
-
-! Set up to add 0*var if needed
-REPEAT/RANGE=0:`nc`/NAME=ivar (GO set_add_for_region `ivar`)
+GO set_add_for_region `ivar`;\
+)
 
 ! Now set up to add to the region spec if needed.
 
@@ -97,6 +96,7 @@ IF ($add_region_z"0|*>1") THEN
 ENDIF
 
 !CANCEL DATA/ALL
+CANCEL DATA ($test_url)
 
 IF ($add_region_z"0|*>1") THEN GO LAS_initialize_region
 IF ($add_region_t"0|*>1") THEN GO LAS_initialize_region

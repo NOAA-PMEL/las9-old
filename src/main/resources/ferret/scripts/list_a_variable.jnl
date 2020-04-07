@@ -12,6 +12,9 @@
 !             and don't rename them according to the subset. 
 !             Also write the URL of the original dataset.
 ! 12/2016 set list precision to 7
+!  4/2019 Implement the property ferret_points_zt (e.g. SPURS prawler profiles). 
+!         For plots, it's a graphical ZT plot. For data listings, add the pressure 
+!         variable to the listing or file.
 !
 ! Called by list_data.jnl Initialize and write a single variable, appending 
 ! it to the ascii or netCDF output file.
@@ -90,11 +93,13 @@ SET DATA/SAVE
 SET DATA ($data_num)
 LET attlist = ($data_var_nq).attnames
 
-sh sym ferret_list_var
+! When the Ferret property ferret_points_zt is defined, also list the  
+! pressure variable pointed to by the symbol ($ferret_points_zt)
 
-LET/UNITS="`($ferret_list_var),RETURN=units)`"\
-  the_list_var = ($ferret_list_var)
-!SET ATT/LIKE=($data_var) the_list_var
+IF `($ferret_points_zt%0|*>1%) AND ($frmt%0|/format=cdf>1|*>0%) AND ($data_count%0|1|*>0)` THEN
+   DEFINE SYMBOL ferret_list_var = ($data_0_var), ($ferret_points_zt)
+   CANCEL ATTRIBUTE/OUTPUT (`($data_0_var),return=zaxis`).standard_name
+ENDIF
 
 IF ($data_var_transform"0|*>1") THEN 
     DEFINE attribute ($ferret_list_var).transform_history  "($data_var)($data_var_transform)"

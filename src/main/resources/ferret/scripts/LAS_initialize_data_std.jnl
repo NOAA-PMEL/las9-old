@@ -30,7 +30,9 @@
 ! in the dataset configuration as ferret_init_commands, whose the value is a set
 ! of Ferret commands separated by semicolons.
 !
-! 10/4/2016 fixes so init scripts still work
+! 10/4/2016  fixes so init scripts still work
+!  1/ 2020   improved error messages on initializing dataset
+!  1/20/2020 For multiple variables (e.g. a csv listing of vars) do not run init script multiple times
 !
 GO LAS_initialize_dataset ($1"0")
 
@@ -47,7 +49,13 @@ IF ($error_status"0|ERROR>1|*>1") THEN
    EXIT/PROGRAM
 ENDIF
 
-IF ($ferret_init_script"0|*>1") THEN GO ($ferret_init_script) ($dset($1"0"))
+! Generally don't want to run init scripts more than once; variables 
+! have been renamed.
+
+IF `($ferret_init_script"0|*>1") AND ($init_script_done"0") EQ 0` THEN 
+   GO ($ferret_init_script) ($dset($1"0"))
+   DEFINE SYMBOL init_script_done = 1
+ENDIF
 
 IF ($ferret_init_commands"0|*>1") THEN 
   ($ferret_init_commands)

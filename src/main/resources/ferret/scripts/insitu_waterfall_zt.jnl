@@ -4,6 +4,7 @@
 !
 ! Creates a ZT Waterfall plot 
 ! 10/2017 Fix for different-shaped data. Check that variable time_units defined before using.
+!  4/2018 Ferret updates require that the time-variable has units of seconds since origin.
 !
 ! Set the gif filename, changing it from .gif to the name from this request
 ! Set up to write info to the debug log so that FshowGO can be used
@@ -182,7 +183,7 @@ DEFINE SYMBOL  nk = `nk`
 LET/TITLE="`($data_var),RETURN=title`" varplot = EXPNDI_BY(XSEQUENCE(($data_var)), XSEQUENCE(newrow), ($nk))
 LET/TITLE="Latitude"/UNITS="degrees_north" latplot = EXPNDI_BY(XSEQUENCE(($data_y_var)), XSEQUENCE(newrow), ($nk))
 LET/TITLE="Longitude"/UNITS="degrees_east"  lonplot = EXPNDI_BY(XSEQUENCE(($data_x_var)), XSEQUENCE(newrow), ($nk))
-LET/TITLE="Time"/UNITS="seconds"  timplot = EXPNDI_BY(XSEQUENCE(($data_t_var)), XSEQUENCE(newrow), ($nk))
+LET/TITLE="Time"/UNITS="`($data_t_var),return=units`"  timplot = EXPNDI_BY(XSEQUENCE(($data_t_var)), XSEQUENCE(newrow), ($nk))
 LET/TITLE="Depth"/UNITS="m"  zplot = EXPNDI_BY(($data_z_var), newrow, ($nk))
 
 LET/TITLE="Depth"/UNITS="m"  issurf = EXPNDI_BY(XSEQUENCE(newrow), XSEQUENCE(newrow), ($nk))  ! Surface locations

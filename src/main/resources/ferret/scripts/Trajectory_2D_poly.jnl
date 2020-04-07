@@ -276,7 +276,7 @@ LET/UNITS=degrees_north y_loc_bad = IF MISSING(var_data,missing_flag) EQ missing
 ! defined by ferret_palette, use black.
 
 IF ($ferret_plot_var"0|*>1") THEN
-   DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"rainbow|default>rainbow|*>*")
+   DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"default|*>*")
 ELSE
    DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"black|default>black|*>*")/NOKEY
 ENDIF

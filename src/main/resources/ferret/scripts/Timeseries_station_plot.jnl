@@ -8,6 +8,7 @@
 !  8/2017 *acm* Account for change to expndi_by_m_function
 ! 11/2017 *acm* Handle timeseries data returned with just one point
 ! 11/2017 *acm* Dont label plots with units of "units" or "none"
+! 11/2018 *acm* Fix loop control bug when a timeseries is all missing
 
 ! Plot sets of time series from a Discrete Sampling Geometries timeseries dataset
 !
@@ -458,12 +459,13 @@ ELSE  ! more than 1 station
 
 	 LET row1 = 1
 	 LET rowm = `($rowvar)[m=1]`
+
   
 	 REPEAT/RANGE=1:`nstations`/name=s (\
          DEFINE SYMBOL s = `s`;\
          SET VIEW vp_($s)_g;\
          SET VIEW vp_($s);\
-         LET rowm = `row1+rowsize[m=($s)]-1`;\
+         LET rowm = `row1+($rowvar)[m=($s)]-1`;\
 	 DEFINE AXIS/T/UNITS=seconds/T0="`time.time_origin`" taxis_sta = time[i=`row1`:`rowm`];\
 	 LET tt = t[gt=taxis_sta];\
 	 LET plot_var_tA = RESHAPE(($ferret_plot_var)[i=`row1`:`rowm`], tt);\
@@ -508,8 +510,9 @@ ELSE  ! more than 1 station
 
          REPEAT/RANGE=1:`nstations`/name=s (\
          DEFINE SYMBOL s = `s`;\
-         LET rowm = `row1+rowsize[m=($s)]-1`;\
+         LET rowm = `row1+($rowvar)[m=($s)]-1`;\
          DEFINE AXIS/T/UNITS=seconds/T0="`time.time_origin`" taxis = time[i=`row1`:`rowm`];\
+         let row1 = `rowm+1`;\
          LET tempx = var2d_0[m=($s)];\
          LET colrx = id2d[m=($s)];\
          DEFINE SYMBOL ferret_title_`($s)-1` `($feature_variable)[m=($s)]`;\
@@ -521,8 +524,8 @@ ELSE  ! more than 1 station
 	 let delt = tbox[gt=taxis];\
 	 let maskvar = delt[L=@ave]*1.1;\
 	 let gap_mask = if delt LE `maskvar` then 1;\
-         PLOT/OVER/NOLAB/THICK=1/RIBBON($qualifiers) gap_mask*var_t,colort;\
-	 let row1 = `rowm+1`)
+         IF `($rowvar)[m=($s)] GT 1` THEN PLOT/OVER/NOLAB/THICK=1/RIBBON($qualifiers) gap_mask*var_t,colort;\
+	 )
 		 
 	 IF ($units_0"0|units>0|none>0|NONE>0|*>1") THEN LABEL/NOUSER `-0.6`, `($ppl$ylen)/2`, 0, 90, 0.12, @AC($units_0)
 

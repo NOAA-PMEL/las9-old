@@ -6,6 +6,8 @@
 !      4/2013 ACM Implement the Ferret property ferret_start_memory
 !     12/2013 ACM If the view includes an E direction, list the ensemble member. 
 !      7/20/2017 ACM -- See GitHub issue 3 fix below. 
+!      1/21/2020 ACM As part of issue 1770 skip over variables that duplicate ones 
+!                    already listed.
 !
 ! Called by list_data.jnl 
 ! Write csv data: date/time, X, Y, Z, var1, var2, ...
@@ -200,18 +202,28 @@ IF `STRINDEX("($ferret_view)", "e") GT 0` THEN
    ENDIF
 ENDIF
 
-LET/units="($data_($var_num)_units)"/TITLE="`($data_0_var),RETURN=title`" ($data_0_var_orig) = ($ferret_list_var_($var_num))
+LET/units="($data_($var_num)_units)"/TITLE="`($data_0_var),RETURN=title`" ($data_0_var_orig) = ($ferret_list_var_0)
 DEFINE SYMBOL vars_out = ($tlist) ($xlist) ($ylist) ($zlist) ($elist) ($data_0_var_orig)
 
+LET csv_icount = 1
+DEFINE SYMBOL var_num = 0
+
+! Build up the list of variables to write
+! Skip any that were marked as duplicates of ones already in the list.
+
 IF `($data_count"1") GT 1` THEN
+
    REPEAT/RANGE=1:`($data_count"1")-1`/NAME=outvar \
       (DEFINE SYMBOL var_num = `outvar`; \
+      IF ($csv_skip_($var_num)"0") THEN EXIT/CYCLE ;\
       LET/units="($data_($var_num)_units)"/TITLE="`($data_($var_num)_var),RETURN=title`"  ($data_($var_num)_var_orig) = ($ferret_list_var_($var_num)); \
-      DEFINE SYMBOL vars_out = ($vars_out), ($data_($var_num)_var_orig) )
+      DEFINE SYMBOL vars_out = ($vars_out), ($data_($var_num)_var_orig);\
+      LET csv_icount = `csv_icount+1`)
+
 ENDIF
 
 LET ndims = `STRLEN("($ferret_view)")`
-LET nlist = ndims + ($data_count)
+LET nlist = ndims + csv_icount
 
 ! the default is set under 1/4 of Ferret's memory allowing for LET definitions 
 LET use_size = 1000000*($ferret_memory)/4.

@@ -3,6 +3,7 @@
 ! Find the Obs dimension and get its size
 ! 4/3/2017 *acm* Additions for point data types
 ! 4/3/2017 *acm* Handle datasets where dimensions are not also coordinate variables
+! 11/2018  *acm* Handle datasets where feature-variable is a coordinate variable with numeric feature ids
 
 LET var_attnames = ($vname).attnames
 
@@ -36,6 +37,19 @@ IF `($feature_variable"0|*>1")` THEN
    IF `STRINDEX("($feature_variable)", "(") GT 0` THEN 
       DEF SYM dname = `cnames[i=($q)]`
 
+! are the feature-id's numeric"?  and not just 1,2,3...? 
+! If so make them become the id string.
+      
+      let ee_var = _e[ge=($dname)] + 1
+      let ee_siz = `ee_var,return=msize`
+      IF `ee_var[m=@max] NE ee_siz` THEN
+         LET nlen = INT(1+LOG(ee_var[m=@max]))
+!	 LET/d=($dsetnum"1") feature_name = FLOATSTR(ee_var, "(i`nlen`)")
+	 LET/title="($dname)" feature_name = FLOATSTR(ee_var, "(i`nlen`)")
+
+! otherwise concoct id's based on the location/ time
+      ELSE  
+
       IF `($data_lon_var"0|*>1") + ($data_lat_var"0|*>1") + ($data_time_var"0|*>1") LT 3` THEN
          MESSAGE/ERROR **ERROR Did not find longitude, latitude and time variables in the dataset
          EXIT/PROGRAM
@@ -59,7 +73,7 @@ IF `($feature_variable"0|*>1")` THEN
       LET nm = `($data_lat_var),RETURN=msize`
       IF `nx GT nm` THEN 
          LET nr = `($rowvar),RETURN=msize`
-         LET end_of_traj = xsequence(rowsize[m=@iin])
+         LET end_of_traj = xsequence(($rowvar)[m=@rsum])
          LET start_of_traj = XCAT(1,end_of_traj+1)
          LET lonsample = SAMPLEI (($data_lon_var), start_of_traj)
          LET lonsample360 = IF lonsample GE 0 THEN lonsample ELSE lonsample+360
@@ -75,10 +89,12 @@ IF `($feature_variable"0|*>1")` THEN
          LET xtim_for_name = XSEQUENCE(($data_time_var))
       ENDIF
 
-      LET/d=($dsetnum"1") feature_name = LON_LAT_TIME_STRING(xlon_for_name, \
-          xlat_for_name, xtim_for_name, tt_for_name, "($feature_type%A%)")
+      LET/d=($dsetnum"1") feature_name = RESHAPE(LON_LAT_TIME_STRING(xlon_for_name, \
+          xlat_for_name, xtim_for_name, tt_for_name, "($feature_type%A%)"), ($rowvar))
       DEFINE SYMBOL feature_name_list = 1
-          
+
+      ENDIF ! concoct id's
+
       DEFINE SYMBOL feature_variable = feature_name
 
 ! Is this one of the variables in the plot (color-by?) If so, redefine the symbol

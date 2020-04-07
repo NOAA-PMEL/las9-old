@@ -9,8 +9,19 @@
 !   10/2017 *acm* Make a time-labeled color key for time variables not named "time".
 !   10/2017 *acm* Set up color variable in a more consistent way
 !   11/2017 *acm* Remove any quotes from around variable title and units
+!    3/2018 *acm* If a feature-type plot has a color palette setting, set up to use it
+!    7/2019 *acm* If running DSG-enabled Ferret, set the dataset to ignore DSG type
+!                 for non-upgraded scripts
+!  2/2020 Check for existence of global attributes before using global_attnames.
 
 DEFINE SYMBOL num ($1"0")
+
+! Non-DSG scripts, using a DSG-enabled Ferret
+IF `($ferret_version"0") GE 7.6` THEN 
+  USE /FEATURE=none ($data_0_url)
+ELSE
+  USE ($data_0_url)
+ENDIF
 
 ! The dataset_id should be the ERDDAP dataset ID. Check that it's defined anf
 ! if not set it to the dataset_name
@@ -70,8 +81,16 @@ ENDIF
 ! SET DATA and check for errors
 !!!!  These are sometimes filled in with a tabledap address not the netCDF file.  Keep it using data_0_url.
 !!!! SET DATA "($data_($num)_url)"
+!!
+!!!! When running DSG-enabled Ferret/PyFerret, need the updated scripts to work with DSG files.
+!!!! These scripts are NOT updated
 
 SET DATA "($data_0_url)"
+IF `($ferret_version) GE 7.6` THEN 
+  USE /FEATURE=none "($data_0_url)"
+ELSE
+  USE "($data_0_url)"
+ENDIF
 
 IF ($fer_last_error"0|*>1") THEN
   DEFINE SYMBOL error_status = ERROR
@@ -80,17 +99,33 @@ IF ($fer_last_error"0|*>1") THEN
   EXIT/SCRIPT
 ENDIF
 
-! Get the dataset title
+LET nglobal_atts = ..nattrs
 LET global_attnames = ..attnames
+
+
+! Get the dataset title
+DEFINE SYMBOL dataset_title_att = dataset title
+IF `nglobal_atts GT 0` THEN
 IF `IS_ELEMENT_OF_STR(global_attnames, "title") GT 0` THEN
   DEFINE SYMBOL dataset_title_att = `..title`
 ENDIF
+ENDIF
+
+
+! Is there a custom palette?  This may be reset in custom_dataset_definitions.jnl below
+
+IF `($ferret_insitu_palette"0|*>1")` THEN DEFINE SYMBOL ferret_palette =  ($ferret_insitu_palette)
+IF `($ferret_Point_palette"0|*>1")` THEN DEFINE SYMBOL ferret_palette =  ($ferret_Point_palette)
+IF `($ferret_Profile_palette"0|*>1")` THEN DEFINE SYMBOL ferret_palette =  ($ferret_Profile_palette)
+IF `($ferret_Timeseries_palette"0|*>1")` THEN DEFINE SYMBOL ferret_palette =  ($ferret_Timeseries_palette)
+IF `($ferret_TrajectoryProfile_palette"0|*>1")` THEN DEFINE SYMBOL ferret_palette =  ($ferret_TrajectoryProfile_palette)
+IF `($ferret_Trajectory_palette"0|*>1")` THEN DEFINE SYMBOL ferret_palette =  ($ferret_Trajectory_palette)
+
 
 GO custom_dataset_definitions
 
 ! Did the request return the no-data flag?
-LET global_attnames = ..attnames
-LET nglobal_atts = ..nattrs
+
 IF `nglobal_atts GT 0` THEN
    IF `IS_ELEMENT_OF_STR(global_attnames, "query_result") GT 0` THEN
       DEFINE SYMBOL data_query_string = `..query_result`
@@ -201,7 +236,12 @@ IF `color_by_index EQ 1` THEN let color_by_feature = 1
 
 IF `color_by_feature EQ 1` THEN
 
-   USE "($data_($num)_url)"
+   IF `($ferret_version) GE 7.6` THEN 
+     USE /FEATURE=none "($data_($num)_url)"
+   ELSE
+     USE "($data_($num)_url)"
+   ENDIF
+
 
    DEFINE SYMBOL data_($num)_var = `varnames[i=1]`
    DEFINE SYMBOL is_vid = 1

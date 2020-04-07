@@ -14,25 +14,25 @@ LET epath = "`rose,RETURN=dsetpath`"
 LET eloc = STRINDEX(epath,"etopo")
 LET justpath = SUBSTRING(epath,1,eloc-1)
 
-IF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo2.nc") EQ 0` THEN 
-   DEFINE SYMBOL topo2_url = http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo2.nc
+IF `TEST_OPENDAP("https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo2.nc") EQ 0` THEN 
+   DEFINE SYMBOL topo2_url = https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo2.nc
 ELSE
    LET e2file = STRCAT(justpath, "etopo2.nc")
    IF `TEST_OPENDAP(e2file) EQ 0` THEN DEFINE SYMBOL topo2_url = `e2file`
 ENDIF
 
-IF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo1.nc") EQ 0` THEN 
-   DEFINE SYMBOL topo1_url = http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo1.nc
-ELIF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo01.nc") EQ 0` THEN 
-   DEFINE SYMBOL topo1_url = http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo01.nc
+IF `TEST_OPENDAP("https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo1.nc") EQ 0` THEN 
+   DEFINE SYMBOL topo1_url = https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo1.nc
+ELIF `TEST_OPENDAP("https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo01.nc") EQ 0` THEN 
+   DEFINE SYMBOL topo1_url = https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/etopo01.nc
 ELSE
    LET e1file = STRCAT(justpath, "etopo1.nc")
    IF `TEST_OPENDAP(e2file) EQ 0` THEN DEFINE SYMBOL topo1_url = `e1file`
 ENDIF
 
 
-IF `TEST_OPENDAP("http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc") EQ 0` THEN 
-   DEFINE SYMBOL topo_015_url = http://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc
+IF `TEST_OPENDAP("https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc") EQ 0` THEN 
+   DEFINE SYMBOL topo_015_url = https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc
 ELIF `TEST_OPENDAP("/home/data/topography/topo15_compressed.nc") EQ 0` THEN 
    DEFINE SYMBOL topo_015_url = /home/data/topography/topo15_compressed.nc
 ENDIF

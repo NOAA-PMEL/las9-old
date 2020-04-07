@@ -1,4 +1,9 @@
 ! LAS_set_plot_qualifiers.jnl
+!
+! ACM 11/18 (Ferret v7.44) use new OVER/AXES behavior to draw axis and 
+!                          graticule lines on top of everything else
+!
+
 ! Use Ferret properties to set plot qualifiers for all plots.
 
 ! Get the category of the plot: 1D, 2D non-vector, and vector
@@ -127,7 +132,7 @@ color_filled_contours>FILL|color_filled_plus_lines>FILL|contour_lines>CONTOUR|ra
    ! Color palette
 
    IF ($ferret_palette"0|*>1") THEN DEFINE SYMBOL qualifiers = \
-    ($qualifiers)/PALETTE=($ferret_palette"rainbow|default>rainbow|*>*)
+    ($qualifiers)/PALETTE=($ferret_palette"default|*>*)
 
    ! 2D fill style  (from las_initialize_variable)
 
@@ -157,6 +162,25 @@ color_filled_contours>FILL|color_filled_plus_lines>FILL|contour_lines>CONTOUR|ra
    ENDIF
 
    IF ($ferret_key_centerlab"0|0|*>1") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY=CONT,CENT
+
+! Only draw graticule lines on the last layer drawn, here one of these:
+!  - contour plot, if we're doing a line contour with land outlines
+!  - shade plot, if we're doing a raster plot with land outlines
+!  - color filled contour plot if were doing a fill plot with land outlines,
+!  - land fill, if we're doing any of these with filled land
+
+   IF `($ferret_version"0") GE 7.432` THEN
+   IF `($ferret_view"0|xy>1|*>0") AND \
+    ($ferret_land_type"1|none>0|contour>0|filled>1|shade>1|default>1|*>0")` THEN
+     DEFINE SYMBOL qualifiers = ($qualifiers)/NOAXES
+   ELSE
+     IF ($shade_underlay"0") THEN
+        DEFINE SYMBOL shade_qualifiers = ($shade_qualifiers)/NOAXES
+        DEFINE SYMBOl do_axes = /AXES
+     ENDIF
+   ENDIF
+   ENDIF ! ferret_version
+
 
 ENDIF ! end of options for twoDplot
 

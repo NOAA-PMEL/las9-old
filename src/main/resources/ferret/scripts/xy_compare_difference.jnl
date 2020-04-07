@@ -11,6 +11,8 @@
 ! 8/2012 ACM Fixing ticket 1337, F-TDS bug. If there no _FillValue, set it 
 !            to a known value that matches the value used in get_datavar.jnl
 ! 10/10/2012 Reverse the sense of the difference; ticket 1377
+! ACM 11/18 (Ferret v7.44) use new OVER/AXES behavior to draw axis and 
+!                          graticule lines on top of everything else
 
 ! xy_compare_difference.jnl creates an XY plot for use with the 
 ! Back End Server code that sits behind a Live Access Server (LAS). 
@@ -173,8 +175,8 @@ IF ($shade_underlay) THEN
       ENDIF
    PPL SHADE
    IF `($LEV_NUM"0") GT 245/2` THEN PPL SHASET RESET
-   ($plot_type)($qualifiers)/OVER/NOKEY/NOLAB ($ferret_diff_var)
-   IF ($native_curvilinear_xy"0|*>1") THEN ($plot_type)($qualifiers)/OVER/NOKEY/NOLAB ($ferret_diff_var_m360)
+   ($plot_type)($qualifiers)/OVER($do_axes)/NOKEY/NOLAB ($ferret_diff_var)
+   IF ($native_curvilinear_xy"0|*>1") THEN ($plot_type)($qualifiers)/OVER($do_axes)/NOKEY/NOLAB ($ferret_diff_var_m360)
 ELSE
    ($plot_type)($qualifiers)/TITLE="($ferret_plot_title)"/SET ($ferret_diff_var)
       GO reset_labels

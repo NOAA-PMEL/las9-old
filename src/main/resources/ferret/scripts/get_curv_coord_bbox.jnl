@@ -4,6 +4,9 @@
 ! get_curv_coord_bbox.jnl
 ! Fixing ticket 1732: remove the kludge, returning the whole range
 ! of indices if we don not have a map file.
+!
+! ACM 11/18 When it's a tri-polar grid can use a simple mask to get the box
+!
 
 ! get the I,J range from curvilinear coordinate variables for
 ! the requested output rectangle defined by 
@@ -202,18 +205,6 @@ ENDIF  ! if we have a map
 LET kludge = 1
 
 
-!!!!!!!!!!!!!!!!
-! THE LOGIC BELOW JUST FAILS FOR SOME GRIDS AND REGIONS.
-! RETURN THE WHOLE GRID.
-
-DEFINE SYMBOL clon_imin 1
-DEFINE SYMBOL clon_imax `($ferret_curvi_coord_lon),RETURN=isize`
-DEFINE SYMBOL clat_jmin 1
-DEFINE SYMBOL clat_jmax `($ferret_curvi_coord_lat),RETURN=jsize`
-
-EXIT/SCRIPT
-
-!!!!!!!!!!!!!!!!
 
 
 IF `kludge LT 1` THEN
@@ -222,6 +213,62 @@ IF `kludge LT 1` THEN
 
 ELSE
 
+! This simple method works fine for at least the tri-polar grid. 
+! Maybe not for more elaborate grids
+
+LET is_tripolar = 0
+LET attnames = ..attnames
+IF `IS_ELEMENT_OF_STR_N (attnames, "grid") GT 0` THEN 
+   DEFINE SYMBOL grid_desc = `..grid`
+
+   LET is_tripolar = `STRINDEX("($grid_desc)", "tri") GT 0 AND STRINDEX("($grid_desc)", "polar") GT 0`
+   IF `is_tripolar GT 0` THEN \
+      LET is_tripolar = `STRINDEX("($grid_desc)", "tri") LT STRINDEX("($grid_desc)", "polar")`
+
+ENDIF
+
+IF `is_tripolar GT 0` THEN  
+   let cmin = `($ferret_curvi_coord_lon)[x=@min,y=@min]`
+   let cmax = `($ferret_curvi_coord_lon)[x=@max,y=@max]`
+
+   IF `($REGION_0_X_LO) LT cmin OR ($REGION_0_X_HI) GT cmax` THEN  ! outside the native region. Let Ferret do moduloing
+      LET x_region_mask = IF ($ferret_curvi_coord_lon) THEN 1
+   ELSE
+      LET x_region_mask = IF ($ferret_curvi_coord_lon) GE ($REGION_0_X_LO) AND ($ferret_curvi_coord_lon) LE ($REGION_0_X_HI) then 1
+   ENDIF
+   LET y_region_mask = IF ($ferret_curvi_coord_lat) GE ($REGION_0_y_LO) AND ($ferret_curvi_coord_lat) LE ($REGION_0_y_HI) then 1
+
+   LET xy_region_mask = x_region_mask*y_region_mask
+
+   LET ii = i[gx=($ferret_curvi_coord_lon)] + 0*j[gy=($ferret_curvi_coord_lon)]
+   LET jj = j[gy=($ferret_curvi_coord_lon)] + 0*i[gx=($ferret_curvi_coord_lon)]
+   LET iiregion_mask = ii* xy_region_mask
+   LET jjregion_mask = jj* xy_region_mask
+
+   DEFINE SYMBOL clon_imin = `iiregion_mask[i=@min,j=@min]`
+   DEFINE SYMBOL clon_imax = `iiregion_mask[i=@max,j=@max]`
+
+   DEFINE SYMBOL clat_jmin = `jjregion_mask[i=@min,j=@min]`
+   DEFINE SYMBOL clat_jmax = `jjregion_mask[i=@max,j=@max]`
+
+   EXIT/SCRIPT
+
+ELSE
+
+!!!!!!!!!!!!!!!!
+! THE LOGIC BELOW JUST FAILS FOR SOME GRIDS AND REGIONS.
+! RETURN THE WHOLE GRID.
+
+   DEFINE SYMBOL clon_imin 1
+   DEFINE SYMBOL clon_imax `($ferret_curvi_coord_lon),RETURN=isize`
+   DEFINE SYMBOL clat_jmin 1
+   DEFINE SYMBOL clat_jmax `($ferret_curvi_coord_lat),RETURN=jsize`
+
+   EXIT/SCRIPT
+ENDIF
+
+!!!!!!!!!!!!!!!!
+
 ! When there is no index map, make a coarse map file. Here is a 
 ! VERY KLUDGY way of getting a subset of the data to do this on, 
 ! otherwise its very slow...
@@ -229,7 +276,7 @@ ELSE
    LET nx = `($ferret_curvi_coord_lon)[d=($data_num),j=1,x=@ngd]`
    LET ny = `($ferret_curvi_coord_lon)[d=($data_num),i=1,y=@ngd]`
 
-   LET ns = 50
+   LET ns = 10 !50
    LET dx = MAX(1,`INT(nx/ns)`)
    LET dy = MAX(1,`INT(ny/ns)`)
    LET  box_longitude = ($ferret_curvi_coord_lon)[d=($data_num),i=1:`nx`:`dx`,j=1:`ny`:`dy`]

@@ -12,6 +12,10 @@
 
 SET MODE VERIFY:ALWAYS
 
+! Put into the debug output what PyFerret/Ferret is running, and when.
+
+SHOW SYMBOL ferret_version, ferret_platform, program_name, current_date
+
 DEFINE SYMBOL initialize_script_arg = ($1"2")
 
 ! Make sure to do the SET REDIRECT just once.

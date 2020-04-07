@@ -6,7 +6,7 @@
 DEFINE SYMBOL reshape_var = ($1)
 
 
-DEFINE SYMBOL trajshape = `'($reshape_var)',RETURN=shape`
+DEFINE SYMBOL trajshape = `($reshape_var),RETURN=shape`
 LET shapeit = `($trajshape"0|E>1|POINT>1|*>0)`
 
 IF `shapeit EQ 0` THEN EXIT/SCRIPT

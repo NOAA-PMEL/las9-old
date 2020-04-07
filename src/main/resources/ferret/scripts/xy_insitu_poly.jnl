@@ -82,7 +82,7 @@ ENDIF
 ! defined by ferret_palette, use black.
 
 IF ($ferret_plot_var"0|*>1") THEN
-   DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"rainbow|default>rainbow|*>*)
+   DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"default|*>*)
 ELSE
    DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"black|default>black|*>*)
 ENDIF

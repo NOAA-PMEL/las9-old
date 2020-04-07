@@ -3,6 +3,7 @@
 ! 
 ! $Author: ansley 
 ! $Date: 5/22/2007
+! 3/14/18 changes to use PyFerret pen colors for labels
 !
 ! property_z_insitu_poly.jnl creates an property-depth polygon plot for 
 ! insitu data, for use with the Back End Server code that sits behind a 
@@ -138,6 +139,7 @@ IF `($pstride"0") GT 0` THEN
    LET labsiz = 0.1
    LET labyloc = `($ppl$ylen) + labdel*4 ` 
 
+   IF ($program_name"0|PyFerret>1|*>0") THEN SET TEXT/COLOR=red moveable
    LABEL/NOUSER `labxloc`, `labyloc`, 1, 0.0, `labsiz`, @P2@AC($p_npts) points subsampled at every ($pstride) point
 
    DEFINE SYMBOL note_num = `($note_num"0") + 1`

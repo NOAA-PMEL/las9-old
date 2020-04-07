@@ -6,6 +6,7 @@
 !
 ! 10/17/17 Variables may be on the I or E direction; account for that getting @NGD or @NBD.
 ! 10/17/17 Simplify: this map plot does not do color-by, so no need for any of that setup.
+!  4/ 4/18 Use the nice new PyFerret plot-shapes if running the right version of PyFerret
 
 ! Set the gif filename, changing it from .gif to the name from this request
 ! Set up to write info to the debug log so that FshowGO can be used
@@ -131,8 +132,15 @@ ELSE
    LET ypoints = ($data_y_var)
 ENDIF
 
-PLOT/OVER/NOLAB/VS/THICK=3/SYM=28/SIZ=.08/COLOR=lightblue xpoints, ypoints
-PLOT/OVER/NOLAB/VS/SYM=28/SIZ=.12/COLOR=black xpoints, ypoints
+
+! Draw the locations as a light-blue circle with blue outline.
+IF `($program_name"0|PyFerret>1|*>0") AND ($FERRET_VERSION) GE 7.32` THEN
+  GO LAS_pp_set_feature_shapes
+  PLOT/VS/OVER/NOLAB/NOKEY/ribbon/highlight=blue/PALETTE=cyan/siz=0.15/sym=($pyshape20) xpoints, ypoints, ypoints
+ELSE
+   PLOT/OVER/NOLAB/VS/THICK=3/SYM=28/SIZ=.08/COLOR=lightblue xpoints, ypoints
+   PLOT/OVER/NOLAB/VS/SYM=28/SIZ=.12/COLOR=blue xpoints, ypoints
+ENDIF
 
 ! These are expected by LAS_results
 DEFINE SYMBOL data_plotted_min = 1

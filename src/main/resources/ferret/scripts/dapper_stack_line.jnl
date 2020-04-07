@@ -178,7 +178,14 @@ REPEAT/RANGE=1:`nsection`/NAME=m (  SET VIEW line_`m` ;\
 ! Overall header at the very top
 SET VIEW full
 PLOT/NOY/AX=0,0,0,0/NOLAB/VLIM=100:200 all_zero 
-LABEL/NOUSER `($ppl$xlen)/2`, `($ppl$ylen)+1.2`, 0, 0, 0.12, "LAS 7.+/Ferret ($FERRET_VERSION)     NOAA/PMEL"
+
+IF `($ferret_las_version"0|*>1") EQ 0` THEN \
+   DEFINE SYMBOL ferret_las_version = 8.
+IF ($program_name"0|PyFerret>1|*>0") THEN
+    LABEL/NOUSER `($ppl$xlen)/2`, `($ppl$ylen)+1.2`, 0, 0, 0.12, "LAS ($ferret_las_version)/PyFerret ($FERRET_VERSION)   NOAA/PMEL"
+ELSE
+    LABEL/NOUSER `($ppl$xlen)/2`, `($ppl$ylen)+1.2`, 0, 0, 0.12, "LAS ($ferret_las_version)/Ferret ($FERRET_VERSION)     NOAA/PMEL"
+ENDIF
 
 ! Add the Dataset name and URL
 LABEL/NOUSER 0, `($ppl$ylen)+1.`, -1, 0, 0.10, @AC($data_dataset_name)

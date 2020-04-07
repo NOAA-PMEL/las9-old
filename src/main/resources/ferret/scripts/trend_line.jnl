@@ -49,6 +49,7 @@ IF `($ferret_trend_line"0|1|2|*>0") EQ 1` THEN
 
    PLOT/OVER/LINE/COLOR=BLUE/NOLAB qhat
    ! Label the slope of the line above the plot.
+   IF ($program_name"0|PyFerret>1|*>0") THEN SET TEXT/COLOR=blue moveable
    LABEL/NOUSER `($ppl$xlen)-0.1`,`($ppl$ylen)+0.2`,1, 0, 0.11, @P4@ASSlope = `slope,P=3` ($slope_units)
 
    LET y_title_off = -1.0

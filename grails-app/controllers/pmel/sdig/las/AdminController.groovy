@@ -258,4 +258,7 @@ class AdminController {
             render parent as JSON
         }
     }
+    def start() {
+        ingestService.addVariablesToAll()
+    }
 }

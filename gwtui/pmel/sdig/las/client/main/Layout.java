@@ -1175,12 +1175,13 @@ public class Layout extends Composite {
         openPrintWindow(content);
     }
     native void openPrintWindow(String contents) /*-{
-        var printWindow = window.open("", "PrintWin");
+        var printWindow = window.open("#", "PrintWin");
         if (printWindow && printWindow.top) {
             printWindow.document.write(contents);
         } else {
             alert("The print feature works by opening a popup window, but our popup window was blocked by your browser.  If you can disable the blocker temporarily, you'll be able to print here.");
         }
+        printWindow.document.location = "#";
     }-*/;
     ValueChangeHandler onPlotsDropDown = new ValueChangeHandler() {
         @Override

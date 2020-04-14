@@ -47,7 +47,7 @@ class DatasetController {
                 dataset = Dataset.findByHash(did)
             }
 
-            if ( dataset.variableChildren && (dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) ) {
+            if ( dataset.variableChildren && dataset.getStatus().equals(Dataset.INGEST_NOT_STARTED) ) {
                 dataset.setStatus(Dataset.INGEST_STARTED)
                 dataset.setMessage("This data set has not been ingested by LAS. That process has been started. This may take a while, but you can click again anytime to see if it's finished.")
                 dataset.save(flush: true)

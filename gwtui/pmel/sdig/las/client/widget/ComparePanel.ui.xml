@@ -9,7 +9,7 @@
 
                 <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian" paddingLeft="8" paddingBottom="0" marginTop="8" marginBottom="0" lineHeight="20" >
                     <m:MaterialPanel addStyleNames="valign-wrapper">
-                        <m:MaterialPanel ui:field="breadcrumbs" addStyleNames="valign-wrapper" grid="s11"></m:MaterialPanel>
+                        <m:MaterialPanel display="INLINE_BLOCK" ui:field="breadcrumbs" addStyleNames="valign-wrapper" grid="s11"></m:MaterialPanel>
                         <m:MaterialIcon ui:field="trigger" iconType="EXPAND_MORE" iconSize="LARGE" iconPosition="RIGHT" iconColor="BLUE" float="RIGHT" verticalAlign="MIDDLE" grid="s1"></m:MaterialIcon>
                     </m:MaterialPanel>
                 </m:MaterialCollapsibleHeader>

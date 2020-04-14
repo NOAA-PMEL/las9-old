@@ -770,7 +770,7 @@ Choices are:
         MenuItem sf001 = new MenuItem([value:"raster", title:"Raster"])
         MenuItem sf002 = new MenuItem([value:"color_filled_contours", title:"Color filled"])
         MenuItem sf003 = new MenuItem([value:"raster_plus_lines", title:"Raster and lines"])
-        MenuItem sf004 = new MenuItem([value:"color_filled_contours_plus_lines", title:"Rster and lines"])
+        MenuItem sf004 = new MenuItem([value:"color_filled_plus_lines", title:"Color filled and lines"])
 
         contour_style.addToMenuItems(sf001)
         contour_style.addToMenuItems(sf002)

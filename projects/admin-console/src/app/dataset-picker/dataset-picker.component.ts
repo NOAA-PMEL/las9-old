@@ -57,7 +57,7 @@ export class DatasetPickerComponent implements OnInit {
 
     this.stateChanges = this.applicationStateService.stateChanged.subscribe(state => {
       if (state) {
-        if ( state.parent ) {
+        if ( state.parent && !state.showProgress) {
           this.current_type = state['parent_type'];
           this.current_id = state.parent.id;
           if (state.add_breadcrumb) this.addBreadcrumb(state.parent);
@@ -212,7 +212,6 @@ export class DatasetPickerComponent implements OnInit {
   doPick(indataset: any) {
     if (indataset != null ) {
       if ( indataset.status === "Ingest failed") {
-        this.applicationStateService.setProgress(false);
         this.errorDialogMessage = indataset.message;
         this.error = true;
       } else {

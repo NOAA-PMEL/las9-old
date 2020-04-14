@@ -25,7 +25,7 @@ class ReadMetadataJobService implements StatefulSchwartzJob {
 		triggers <<
 				factory('trigger_metadata').
 				intervalInMinutes(90).
-				startDelay(1000*60*10).  // 10 minutes
+				startDelay(1000*60*5).  // 5 minutes
 				build()
 
 

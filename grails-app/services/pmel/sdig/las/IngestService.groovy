@@ -293,7 +293,7 @@ class IngestService {
                                         int hours = du * 24.0d
                                         p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0)
                                     } else {
-                                        p0 = new Period(0, 0, 0, du, 0, 0, 0, 0)
+                                        p0 = new Period(0, 0, 0, (int) du, 0, 0, 0, 0)
                                     }
 
                                 }
@@ -3117,6 +3117,12 @@ class IngestService {
             Dataset d = needIngest.get(i)
             log.debug("Adding variables to " + d.getUrl() + " which has variableChildren = " + d.variableChildren)
             addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
+            // keep the database from being locked constantly
+            try {
+                java.util.concurrent.TimeUnit.SECONDS.sleep(10)
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt()
+            }
         }
 
         log.debug("FINISHED adding variables to all THREDDS catalogs with OPeNDAP endpoints.")

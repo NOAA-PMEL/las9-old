@@ -1,5 +1,6 @@
 package pmel.sdig.las
 
+import grails.util.Environment
 import org.apache.shiro.authc.credential.PasswordService
 
 /**
@@ -14,6 +15,9 @@ class AdminInterceptor {
     int order = HIGHEST_PRECEDENCE+100
 
     boolean before() {
+        if ( Environment.isDevelopmentMode() ) {
+            return true;
+        }
         def adminUser = ShiroUser.findByUsername('admin')
         if ( credentialMatcher.passwordsMatch('default', adminUser.passwordHash) ) {
             defaultpw = true
@@ -24,6 +28,9 @@ class AdminInterceptor {
         }
     }
     boolean after() {
+        if ( Environment.isDevelopmentMode() ) {
+            return true;
+        }
         if ( defaultpw )
             view = 'default'
         true

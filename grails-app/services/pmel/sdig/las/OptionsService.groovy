@@ -915,7 +915,7 @@ Choices are:
                                                        "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Outline</b> -- draw continent outlines\n" +
                                                        "<li class=\"LAS-helplist LAS-helplist-hover\"><b>Filled</b> -- draw filled continents\n" +
                                                        "</ul>",
-                                               defaultValue: "filled"])
+                                               defaultValue: "contour"])
 
 
 

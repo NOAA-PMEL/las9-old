@@ -20,6 +20,26 @@ class AdminController {
             render site as JSON
         }
     }
+    def status() {
+        List<Dataset> failedDatasets = Dataset.withCriteria{
+            eq("variableChildren", true)
+            eq("status", Dataset.INGEST_FAILED)
+            isEmpty("variables")
+        }
+        render view: "status", model: [failedDatasets: failedDatasets]
+    }
+    def resetFailed() {
+        List<Dataset> failedDatasets = Dataset.withCriteria{
+            eq("variableChildren", true)
+            eq("status", Dataset.INGEST_FAILED)
+            isEmpty("variables")
+        }
+        failedDatasets.each {Dataset d ->
+            d.setStatus(Dataset.INGEST_NOT_STARTED)
+            d.save()
+        }
+        render view: "status", model: [failedDatasets: failedDatasets]
+    }
     def saveDataset() {
         def requestJSON = request.JSON
         def map = requestJSON as Map;

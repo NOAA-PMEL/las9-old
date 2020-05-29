@@ -74,11 +74,8 @@ public class DataItem extends MaterialCollectionItem {
             wrapper.add(link);
             wrapper.add(badge);
 
-            if ( d.getParent() != null && !d.getParent().getTitle().equals("null")) {
-                link.setText(d.getParent().getTitle() + " - " + d.getTitle());
-            } else {
-                link.setText(d.getTitle());
-            }
+            link.setText(d.getTitle());
+
             link.addStyleName("LAS-text-color");
             add(wrapper);
 

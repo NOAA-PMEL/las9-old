@@ -380,13 +380,15 @@ class ProductService {
 
     }
 
-    def ResultSet doRequest(JSONObject requestJSON) {
+    def ResultSet doRequest(JSONObject requestJSON, String temp_dir, String base) {
         def hash = IngestService.getDigest(requestJSON.toString());
         LASRequest lasRequest = new LASRequest(requestJSON);
-        return doRequest(lasRequest, hash)
+        return doRequest(lasRequest, hash, temp_dir, base)
     }
 
-    def ResultSet doRequest(LASRequest lasRequest, String hash) {
+    def ResultSet doRequest(LASRequest lasRequest, String hash, temp_dir, base) {
+
+        // TODO do I really need to drag these out for every request?
 
         Product product = Product.findByName(lasRequest.operation)
         def productName = product.getName()
@@ -674,7 +676,7 @@ class ProductService {
                             String type = a.getTransformation();
 
                             // Make dataset specific directory
-                            String dir = ferret.tempDir + File.separator + "dynamic" + File.separator + dataset_hash + File.separator + varable_hash
+                            String dir = temp_dir + File.separator + "dynamic" + File.separator + dataset_hash + File.separator + varable_hash
                             File ftds_dir = new File(dir)
                             if (!ftds_dir.exists()) {
                                 ftds_dir.mkdirs()

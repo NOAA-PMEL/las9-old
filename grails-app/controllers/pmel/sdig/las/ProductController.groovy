@@ -223,7 +223,7 @@ class ProductController {
         log.debug(requestJSON.toString())
 
         // Start of request
-        ResultSet allResults = productService.doRequest(requestJSON);
+        ResultSet allResults = productService.doRequest(requestJSON, ferret.getTempDir(), base);
         // End of request
         log.debug("Finished product request, rendering response...")
 

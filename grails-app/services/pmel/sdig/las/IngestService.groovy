@@ -75,7 +75,9 @@ class IngestService {
             if ( parent instanceof Dataset) {
                 phash = parent.getHash()
             }
-            return ingestFromThredds(addRequest.getUrl(), phash, null, false)
+            def ingesturl = addRequest.getUrl();
+            if ( ingesturl.endsWith(".html") ) ingesturl = ingesturl.replace(".html", ".xml")
+            return ingestFromThredds(ingesturl, phash, null, false)
         }
     }
 
@@ -162,7 +164,11 @@ class IngestService {
             List<GridDatatype> grids = gridDs.getGrids()
             String m = grids.size() + " variables were found. Processing..."
             ingestStatusService.saveProgress(parentHash, m)
-
+            if ( grids.size() <= 0 ) {
+                dataset.setStatus(Dataset.INGEST_FAILED)
+                dataset.setMessage("No data on a regular grid found. May be a projected data set.");
+                return dataset
+            }
             for (int i = 0; i < grids.size(); i++) {
 
                 GridDatatype gridDatatype = (GridDatatype) grids.get(i);
@@ -3108,14 +3114,20 @@ class IngestService {
 
         List<Dataset> needIngest = Dataset.withCriteria{
             eq("variableChildren", true)
+            eq("status", Dataset.INGEST_NOT_STARTED)
             isEmpty("variables")
         }
 
-        log.debug("STARTED adding variables to all THREDDS catalogs with OPeNDAP endpoints.")
+        // When something goes wrong the transaction rolls back all of the datasets.
+        // Do only a few at a time, but the service will run every 15 minutes.
+        int limit = 25
+        if ( needIngest.size() < 25 ) limit = needIngest.size();
+        log.debug("STARTED adding variables to " + limit + " of " +needIngest.size() + " OPeNDAP endpoints from THREDDS catalogs.")
+        Collections.shuffle(needIngest)
+        for (int i = 0; i < limit; i++) {
 
-        for (int i = 0; i < needIngest.size(); i++) {
             Dataset d = needIngest.get(i)
-            log.debug("Adding variables to " + d.getUrl() + " which has variableChildren = " + d.variableChildren)
+            log.debug(String.format("%03d", i) + ". Adding variables to " + d.getUrl() + " which has variableChildren = " + d.variableChildren)
             addVariablesAndSaveFromThredds(d.getUrl(), d.getHash(), null, true)
             // keep the database from being locked constantly
             try {
@@ -3125,7 +3137,7 @@ class IngestService {
             }
         }
 
-        log.debug("FINISHED adding variables to all THREDDS catalogs with OPeNDAP endpoints.")
+        log.debug("FINISHED adding variables to " + limit + " of " + needIngest.size() + " OPeNDAP endpoints from THREDDS catalogs.")
 
     }
     private static Period getPeriod(CalendarDateUnit cdu, double t0, double t1) {

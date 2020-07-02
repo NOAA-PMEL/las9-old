@@ -55,8 +55,8 @@
         //google.charts.load('current', {'packages':['corechart']})
         google.charts.load('current', {'packages':['annotationchart']})
         google.charts.load('current', {'packages':['table']});
-        google.charts.load('current', {'packages':['map'], 'mapsApiKey': 'AIzaSyBa59XbO0_RHD1zAh14Dyvc2q4lmQ5AA5c'});
-        google.charts.load('current', {'packages':['geomap'], 'mapsApiKey': 'AIzaSyBa59XbO0_RHD1zAh14Dyvc2q4lmQ5AA5c'});
+        google.charts.load('current', {'packages':['map'], 'mapsApiKey': '**REDACTED**'});
+        google.charts.load('current', {'packages':['geomap'], 'mapsApiKey': '**REDACTED**'});
     </script>
 
 

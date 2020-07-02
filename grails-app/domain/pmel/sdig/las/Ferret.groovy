@@ -20,6 +20,10 @@ class Ferret {
         // Whether the configuration has been tested and produced a plot.
         boolean tested
 
+        // External public URL that is the base F-TDS URL, Getting it from tomcat gives the internal URL that is
+        // behind the firewall. Relative URL not possible since external application like PyFerret has to access.
+        String base_url
+
         // Time limit, the maximum number of milliseconds a Ferret process will be allowed to run, default value 5 minutes
         long productServerTimeout = 1000 * 60 * 5;
 

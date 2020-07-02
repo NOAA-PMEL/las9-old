@@ -210,9 +210,8 @@ class ProductController {
     def make() {
 
         Ferret ferret = Ferret.first();
-        // TODO are we really going to have multiple sites? Each request will have to ID it's site. Easy enough...
-        Site site = Site.first()
-        def base = site.getBase()
+
+        def base = ferret.getBase_url()
         if ( !base ) {
             base = request.requestURL.toString()
             base = base.substring(0, base.indexOf("product/make"))

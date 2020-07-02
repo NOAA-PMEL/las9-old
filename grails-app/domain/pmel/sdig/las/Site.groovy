@@ -24,11 +24,9 @@ class Site {
 
     String infoUrl;
 
-    String base // This is the base URL from the point of view of the client.
     static hasMany = [datasets: Dataset, siteProperties: SiteProperty, footerLinks: FooterLink]
     static constraints = {
         siteProperties nullable: true
-        base nullable: true
         infoUrl nullable: true
         trajectory(nullable: true)
         timeseries(nullable: true)

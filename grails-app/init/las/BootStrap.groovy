@@ -25,10 +25,20 @@ class BootStrap {
 
 
         // These 3 methods check to see if the objects exist before creating them.
-        initializationService.createProducts()
+        // Unless reinit is set to true
+        def reinit = false;
+        def property = grailsApplication.config.getProperty('admin.reinit')
+        if ( property ) {
+            reinit = property == "true"
+        }
+        // Pass in reinit = true to remake products and regions
+        if ( !reinit )
+        // TODO implement by dumping stuff at the beginning if reinit = true then proceeding.
+        initializationService.createProducts(reinit)
 
-        initializationService.createDefaultRegions()
+        initializationService.createDefaultRegions(reinit)
 
+        // Not part of reinit, handled by admin interface
         initializationService.loadDefaultLasDatasets()
 
         def priv = Site.findByTitle("Private Data")

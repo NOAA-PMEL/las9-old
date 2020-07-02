@@ -6,6 +6,9 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
@@ -150,6 +153,8 @@ import static pmel.sdig.las.client.util.Constants.navWidth;
 public class UI implements EntryPoint {
 
     int loop = 0;
+
+    boolean advancedSearch = true;
 
     boolean toast = false;
 
@@ -330,6 +335,9 @@ public class UI implements EntryPoint {
                 popHistory(historyToken);
             }
         });
+
+        RootPanel.get().addDomHandler(returnHandler, KeyUpEvent.getType());
+
 
         eventBus.addHandler(ChangeConstraint.TYPE, new ChangeConstraintHandler() {
             @Override
@@ -579,6 +587,7 @@ public class UI implements EntryPoint {
                         layout.panel1.clearAnnotations();
                         layout.removeBreadcrumbs(1);
                         layout.advancedSearch.setDisplay(Display.BLOCK);
+                        advancedSearch = true;
                         layout.clearDatasets();
                         layout.showDataProgress();
 
@@ -669,6 +678,7 @@ public class UI implements EntryPoint {
 
                     layout.infoPanel.setDisplay(Display.NONE);
                     layout.infoHeader.setDisplay(Display.NONE);
+                    advancedSearch = false;
                     layout.advancedSearch.setDisplay(Display.NONE);
                     layout.panel1.setVisible(true);
                     layout.panel1.clearAnnotations();
@@ -899,6 +909,7 @@ public class UI implements EntryPoint {
                 layout.showProgress();
                 layout.infoPanel.setDisplay(Display.NONE);
                 layout.infoHeader.setDisplay(Display.NONE);
+                advancedSearch = false;
                 layout.advancedSearch.setDisplay(Display.NONE);
                 long id = event.getId();
                 layout.setInfoSelect(id);
@@ -1291,6 +1302,7 @@ public class UI implements EntryPoint {
             if ( tp < 5 ) {
                 layout.infoPanel.setDisplay(Display.NONE);
                 layout.infoHeader.setDisplay(Display.NONE);
+                advancedSearch = false;
                 layout.advancedSearch.setDisplay(Display.NONE);
                 layout.panel1.setVisible(true);
                 state.getPanelState(tp).setResultSet(results);
@@ -1642,6 +1654,7 @@ public class UI implements EntryPoint {
             layout.hideProgress();
             layout.panel1.setVisible(false);
             layout.infoPanel.setDisplay(Display.BLOCK);
+            advancedSearch = false;
             layout.advancedSearch.setDisplay(Display.NONE);
             layout.animate.setEnabled(false);
             layout.topMenuEnabled(false);
@@ -1914,6 +1927,16 @@ public class UI implements EntryPoint {
                 // It's been selected, now apply the config and plot.
                 newVariable = layout.getSelectedVariable();
                 applyConfig();
+            }
+        }
+    };
+    KeyUpHandler returnHandler = new KeyUpHandler() {
+        @Override
+        public void onKeyUp(KeyUpEvent keyUpEvent) {
+            if ( keyUpEvent.getNativeKeyCode() == KeyCodes.KEY_ENTER ) {
+                if ( advancedSearch ) {
+                    layout.runAdvancedSearch(0);
+                }
             }
         }
     };

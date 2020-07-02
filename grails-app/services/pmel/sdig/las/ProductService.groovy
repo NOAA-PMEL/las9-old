@@ -717,7 +717,8 @@ class ProductService {
                             // TODO Assign the new title
                             // TODO Redefine the URL that will be used, data_set_hash/variable_hash/jnl_hash.nc
 
-                            variable_url = base + "thredds/dodsC/las/" + dataset_hash + "/" + varable_hash + "/" + sp.getName()
+                            if ( !base.endsWith("/") ) base = base + "/"
+                            variable_url = base + "las/thredds/dodsC/las/" + dataset_hash + "/" + varable_hash + "/" + sp.getName()
 
                         }
 

@@ -75,6 +75,7 @@ class InitializationService {
         def tmp = grailsApplication.config.getProperty('ferret.TMP')
         def python = grailsApplication.config.getProperty('ferret.PYTHON')
         def ld_library_path = grailsApplication.config.getProperty('ferret.LD_LIBRARY_PATH')
+        def ftds_url = grailsApplication.config.getProperty('ferret.EXTERNAL_BASE_URL')
 
         if ( !python ) python = 'python'
 
@@ -115,6 +116,7 @@ class InitializationService {
             ferret = new Ferret()
         }
 
+        ferret.setBase_url(ftds_url)
         ferret.setPath(python)
 
         if ( tmp ) {
@@ -185,6 +187,16 @@ class InitializationService {
     def writeFTDSCatalog(Ferret ferret) {
 
         def dynamicTempDir = ferret.getTempDir()+File.separator+"dynamic"
+        File dynam = new File(dynamicTempDir)
+        if ( !dynam.exists() ) {
+            dynam.mkdirs()
+        }
+        def iospTemp = ferret.getTempDir()+File.separator+"temp"
+        File iospDir = new File(iospTemp)
+        if ( !iospDir.exists() ) {
+            iospDir.mkdirs()
+        }
+
         def catalog = """
  <catalog name="F-TDS for LAS"
          xmlns="http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"
@@ -234,7 +246,7 @@ class InitializationService {
         doc.setRootElement(root)
         Element invoker = new Element("invoker")
         invoker.setAttribute("executable", ferret.getPath())
-        invoker.setAttribute("temp_dir", ferret.getTempDir()+File.separator+"scripts"+File.separator+"temp")
+        invoker.setAttribute("iosp_temp_dir", ferret.getTempDir()+File.separator+"temp")
         for (int i = 0; i < ferret.getArguments().size(); i++) {
             Argument a = ferret.getArguments().get(i)
             Element arg = new Element("arg")
@@ -256,8 +268,7 @@ class InitializationService {
             environment.addContent(makeEnvVariable("FER_EXTERNAL_FUNCTIONS", ferretEnvironment.getFer_external_functions()))
         if ( ferretEnvironment.getFer_fonts() )
             environment.addContent(makeEnvVariable("FER_FONTS", ferretEnvironment.getFer_fonts()))
-        if ( ferretEnvironment.getFer_go() )
-            environment.addContent(makeEnvVariable("FER_GO", ferretEnvironment.getFer_go()))
+        // Add FER_GO below with path to FER_GO for las#thredds
         if ( ferretEnvironment.getFer_grids() )
             environment.addContent(makeEnvVariable("FER_GRIDS", ferretEnvironment.getFer_grids()))
         if ( ferretEnvironment.getFer_libs() )
@@ -275,10 +286,14 @@ class InitializationService {
         FileWriter configFileWriter
         if (Environment.current == Environment.DEVELOPMENT) {
             configFileWriter = new FileWriter(new File("/home/rhs/tomcat/webapps/las#thredds/WEB-INF/classes/FerretConfig.xml"))
+            if ( ferretEnvironment.getFer_go() )
+                environment.addContent(makeEnvVariable("FER_GO", ferretEnvironment.getFer_go()))
         } else {
             File outputFile = Holders.grailsApplication.mainContext.getResource("output").file
             File contextPath = outputFile.getParentFile();
             String webapp = contextPath.getParent();
+            if ( ferretEnvironment.getFer_go() )
+                environment.addContent(makeEnvVariable("FER_GO", ferretEnvironment.getFer_go()+" ${webapp}/las#thredds/WEB-INF/classes/resources/iosp/scripts"))
             configFileWriter = new FileWriter(new File("${webapp}/las#thredds/WEB-INF/classes/resources/iosp/FerretConfig.xml"))
         }
         out.output(doc, configFileWriter)
@@ -301,8 +316,14 @@ class InitializationService {
         fer_variable
     }
 
-    def createDefaultRegions() {
+    def createDefaultRegions(boolean reinit) {
 
+        if ( reinit ) {
+            def regions = Region.findAll()
+            regions.each {
+                it.delete(flush:it==regions.last(), failOnError:true)
+            }
+        }
         // These are s, n, w, e
 
         // For the OSMC Dashboard, don't care about land masses
@@ -365,8 +386,14 @@ class InitializationService {
      * Create the options and save them...
      */
 
-    def createProducts() {
+    def createProducts(boolean reinit) {
 
+        if ( reinit ) {
+            def products = Product.findAll()
+            products.each {
+                it.delete(flush:it==products.last(), failOnError:true)
+            }
+        }
         /*
 
   <operation name="Point Location value Plot" ID="Point_location_value_plot" output_template="zoom" default="true" category="visualization">
@@ -408,7 +435,7 @@ class InitializationService {
 
         Product point_location = Product.findByName("Point_location_value_plot")
         if ( !point_location ) {
-            point_location = new Product([name:"Point_location_value_plot", title: "Location Plot", view: "xy", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.POINT, product_order: "100001"])
+            point_location = new Product([name:"Point_location_value_plot", title: "Location Plot", view: "xyz", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.POINT, product_order: "100001"])
 
             Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
             operation_extract_data.setResultSet(resultsService.getNetcdfFile())

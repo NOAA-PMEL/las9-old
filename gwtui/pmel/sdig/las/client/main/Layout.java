@@ -7,6 +7,8 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
@@ -1536,7 +1538,11 @@ public class Layout extends Composite {
         }
         return sr;
     }
-    private void runAdvancedSearch(int offset) {
+    public void runAdvancedSearch(int offset) {
+        if ( offset == 0 ) {
+            prevAdvancedSearch.setDisplay(Display.NONE);
+            nextAdvancedSearch.setDisplay(Display.NONE);
+        }
         SearchRequest sr = getAdvancedSearchTerms();
         sr.setCount(advancedSearchCount);
         sr.setOffset(offset);
@@ -1544,8 +1550,6 @@ public class Layout extends Composite {
     }
     @UiHandler("advancedSearchLaunch")
     void onAdvancedSearch(ClickEvent event) {
-        prevAdvancedSearch.setDisplay(Display.NONE);
-        nextAdvancedSearch.setDisplay(Display.NONE);
         runAdvancedSearch(0);
     }
     @UiHandler("nextAdvancedSearch")

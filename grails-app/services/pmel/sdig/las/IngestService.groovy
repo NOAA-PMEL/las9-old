@@ -1273,11 +1273,11 @@ class IngestService {
             } else if ( url.endsWith("erddap/") ) {
                 url = url + "tabledap/"
             }
-        } else {
-            if ( !url.endsWith("/") ) {
-                url = url + "/"
-            }
         }
+        if ( !url.endsWith("/") ) {
+            url = url + "/"
+        }
+
         Dataset dsg = new Dataset([title: "Discrete Geometry Data", url: url, hash: getDigest(url)])
         def tsurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/timeseries/"
         Dataset timeseries = new Dataset([title: "Timeseries Data", url: tsurl, hash: getDigest(tsurl)])
@@ -2627,6 +2627,7 @@ class IngestService {
                             zAxis.setMax(max)
                             zAxis.setMin(min)
                             zAxis.setDelta(step)
+                            if ( size < 0.00001d ) size = 1.0d
                             zAxis.setSize(size)
 
                         } else {

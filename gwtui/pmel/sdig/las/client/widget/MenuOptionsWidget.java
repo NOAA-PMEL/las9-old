@@ -38,7 +38,8 @@ public class MenuOptionsWidget extends Composite {
             MenuOption option = moi.getOption();
             String value = moi.getSelectedValue();
             String defaultValue = option.getDefaultValue();
-            if ( value != null && !value.equals(defaultValue) ) {
+            // Always send the land type cause I want it different that the scripts.
+            if ( value != null && !value.equals(defaultValue) || option.getName().equals("land_type") ) {
                 RequestProperty rp = new RequestProperty();
                 rp.setType("ferret");
                 rp.setName(option.getName());

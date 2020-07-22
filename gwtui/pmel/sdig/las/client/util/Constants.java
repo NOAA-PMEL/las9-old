@@ -15,6 +15,7 @@ public class Constants {
     public static final String configJson = base + "config/json";
     public static final String adminAdd = base + "admin/addDataset";
     public static final String productCreate = base + "product/make";
+    public static final String cancelProduct = base + "product/cancel";
     public static final String erddapDataRequest = base + "product/erddapDataRequest";
     public static final String datatable = base + "product/datatable";
     public static final String productsByInterval = base + "config/productsByInterval";

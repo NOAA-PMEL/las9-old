@@ -16,6 +16,7 @@ import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.event.shared.EventHandler;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.Response;
@@ -108,6 +109,8 @@ import pmel.sdig.las.client.widget.YesNoOptionsWidget;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
 import pmel.sdig.las.shared.autobean.Animation;
+import pmel.sdig.las.shared.autobean.Annotation;
+import pmel.sdig.las.shared.autobean.AnnotationGroup;
 import pmel.sdig.las.shared.autobean.AxesSet;
 import pmel.sdig.las.shared.autobean.ConfigSet;
 import pmel.sdig.las.shared.autobean.DataConstraint;
@@ -180,6 +183,9 @@ public class UI implements EntryPoint {
     Resource productResource = new Resource(Constants.productCreate);
     ProductService productService = GWT.create(ProductService.class);
 
+    Resource cancelResource = new Resource(Constants.cancelProduct);
+    CancelService cancelService = GWT.create(CancelService.class);
+
     Resource datatableResource = new Resource(Constants.datatable);
     DatatableService datatableService = GWT.create(DatatableService.class);
 
@@ -214,6 +220,8 @@ public class UI implements EntryPoint {
     OLMapWidget correlationMap;
     DateTimeWidget correlationDateTime = new DateTimeWidget();
     AxisWidget correlationZaxisWidget = new AxisWidget();
+
+    MaterialToast cancelToast = new MaterialToast();
 
     // These are the variables that contain the current state
     double xlo;
@@ -312,6 +320,8 @@ public class UI implements EntryPoint {
         ((RestServiceProxy)configService).setResource(configResource);
 
         ((RestServiceProxy)productService).setResource(productResource);
+
+        ((RestServiceProxy)cancelService).setResource(cancelResource);
 
         ((RestServiceProxy)datatableService).setResource(datatableResource);
 
@@ -1117,6 +1127,10 @@ public class UI implements EntryPoint {
         @POST
         public void getProduct(LASRequest lasRequest, MethodCallback<ResultSet> productRequestCallback);
     }
+    public interface CancelService extends RestService {
+        @POST
+        public void cancelProduct(LASRequest lasRequest, TextCallback cancelMessage);
+    }
     public interface DatatableService extends RestService {
         @POST
         public void datatable(LASRequest datatableRequest, TextCallback data);
@@ -1126,6 +1140,17 @@ public class UI implements EntryPoint {
         public void getData(LASRequest erddapRequest, TextCallback data);
     }
 
+    TextCallback cancelProduct = new TextCallback() {
+        @Override
+        public void onFailure(Method method, Throwable throwable) {
+            MaterialToast.fireToast("Error canceling: "+ throwable.getMessage());
+        }
+
+        @Override
+        public void onSuccess(Method method, String s) {
+            if ( !cancelToast.isOpen() ) cancelToast.toast(s);
+        }
+    };
     TextCallback constraintValuesCallback = new TextCallback() {
         @Override
         public void onFailure(Method method, Throwable throwable) {
@@ -1156,7 +1181,7 @@ public class UI implements EntryPoint {
                 link.addClickHandler(new ClickHandler() {
                     @Override
                     public void onClick(ClickEvent clickEvent) {
-                        eventBus.fireEventFromSource(new ChangeConstraint("add", "variable", sname, "eq", svalue), link);
+                        eventBus.fireEventFromSource(new ChangeConstraint("add", "text", sname, "eq", svalue), link);
                     }
                 });
                 layout.possibleValues.add(link);
@@ -1286,7 +1311,7 @@ public class UI implements EntryPoint {
 
         @Override
         public void onSuccess(Method method, ResultSet results) {
-            if ( products.getSelectedProduct().getView().equals("xy") ) {
+            if (products.getSelectedProduct().getView().equals("xy")) {
                 // Active the animate button for the xy view only for now
                 // TODO animate in other dimensions
                 layout.animate.setEnabled(true);
@@ -1296,9 +1321,61 @@ public class UI implements EntryPoint {
             }
             layout.topMenuEnabled(true);
             layout.setUpdate(Constants.UPDATE_NOT_NEEDED);
-            layout.hideProgress();
-            int tp = results.getTargetPanel();
 
+            int tp = results.getTargetPanel();
+            String e = results.getError();
+            if ( e == null || e.isEmpty()) { // No error so check for pulse
+                Result progress = results.getResultByType("pulse");
+                layout.progressMessage.clear();
+                if (progress != null) {
+                    List<AnnotationGroup> groups = results.getAnnotationGroups();
+                    for (int i = 0; i < groups.size(); i++) {
+                        AnnotationGroup group = groups.get(i);
+                        List<Annotation> annotations = group.getAnnotations();
+                        for (int j = 0; j < annotations.size(); j++) {
+                            Annotation annotation = annotations.get(j);
+                            String message = annotation.getValue();
+                            MaterialLabel progressL = new MaterialLabel();
+                            progressL.setText(message);
+                            progressL.setTextColor(Color.WHITE);
+                            layout.progressMessage.add(progressL);
+                        }
+                    }
+                    MaterialLabel progressL = new MaterialLabel();
+                    progressL.setText("LAS will automatically check on the progress of you product every few seconds.");
+                    progressL.setTextColor(Color.WHITE);
+                    layout.progressMessage.add(progressL);
+                    final LASRequest lasRequest = state.getPanelState(results.getTargetPanel()).getLasRequest();
+                    final Timer t = new Timer() {
+                        @Override
+                        public void run() {
+                            processQueue();
+                        }
+                    };
+                    layout.progressCancel.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent clickEvent) {
+                            requestQueue.clear();
+                            processingQueue = false;
+                            layout.progress.close();
+                            layout.hideProgress();
+                            layout.panel1.clearPlot();
+                            t.cancel();
+                            cancelService.cancelProduct(lasRequest, cancelProduct);
+                        }
+                    });
+                    layout.progress.open();
+                    requestQueue.clear();
+                    requestQueue.offer(lasRequest);
+                    // Resubmit the job after 2 seconds.
+                    t.schedule(4000);
+                } else {
+                    layout.progress.close();
+                    layout.hideProgress();
+                }
+            } else {
+                layout.hideProgress();
+            }
             if ( tp < 5 ) {
                 layout.infoPanel.setDisplay(Display.NONE);
                 layout.infoHeader.setDisplay(Display.NONE);
@@ -1400,7 +1477,6 @@ public class UI implements EntryPoint {
                     }
                 }
             } else if ( tp == 6 ) {
-
                 String error = results.getError();
                 if ( error != null && !error.isEmpty() ) {
 
@@ -2852,7 +2928,7 @@ public class UI implements EntryPoint {
 
         if (useVariable.getVerticalAxis() != null) {
             layout.showVertialAxis();
-            if (view.contains("z") ) {
+            if (view.contains("z") || p.getData_view().contains("z") ) {
                 zAxisWidget.setRange(true);
             } else {
                 zAxisWidget.setRange(false);

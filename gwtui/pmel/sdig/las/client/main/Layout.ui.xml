@@ -614,6 +614,19 @@
                 </m:MaterialRow>
             </m:MaterialPanel>
         </ma:window.MaterialWindow>
+        <ma:window.MaterialWindow ui:field="progress" title="Product Status" toolbarColor="BLUE_LIGHTEN_2">
+            <m:MaterialCard backgroundColor="BLUE_GREY_DARKEN_1">
+                <m:MaterialCardContent>
+                    <m:MaterialPanel textColor="WHITE">
+                        <m:MaterialCardTitle text="Current Status Info"/>
+                        <m:MaterialPanel ui:field="progressMessage"/>
+                    </m:MaterialPanel>
+                </m:MaterialCardContent>
+                <m:MaterialCardAction>
+                    <m:MaterialButton backgroundColor="RED_DARKEN_3" ui:field="progressCancel" text="Cancel Request" iconType="CANCEL" iconPosition="LEFT"/>
+                </m:MaterialCardAction>
+            </m:MaterialCard>
+        </ma:window.MaterialWindow>
         <m:MaterialFooter type="FIXED">
             <m:MaterialPanel ui:field="footerPanel">
                 <!--                <m:MaterialLink  paddingBottom="15" text="NOAA" href="https://www.noaa.gov/" textColor="WHITE" target="_blank"></m:MaterialLink>-->

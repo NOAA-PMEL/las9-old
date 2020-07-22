@@ -58,6 +58,7 @@ import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
 import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
+import pmel.sdig.las.client.event.CancelRequest;
 import pmel.sdig.las.client.event.Download;
 import pmel.sdig.las.client.event.FeatureModifiedEvent;
 import pmel.sdig.las.client.event.PanelCount;
@@ -292,6 +293,13 @@ public class Layout extends Composite {
     MaterialButton nextAdvancedSearch;
     @UiField
     MaterialButton prevAdvancedSearch;
+
+    @UiField
+    MaterialWindow progress;
+    @UiField
+    MaterialPanel progressMessage;
+    @UiField
+    MaterialButton progressCancel;
 
     int advancedSearchTotal;
     int advancedSearchCount = Constants.PAGE;

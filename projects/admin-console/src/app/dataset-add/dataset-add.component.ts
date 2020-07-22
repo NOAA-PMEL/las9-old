@@ -77,8 +77,7 @@ export class DatasetAddComponent implements OnInit {
     this.addDataService.addDataset(addthredds).subscribe(data=>{
         // This should be return the parent and re-show the current list.
         this.applicationStateService.setProgress(false);
-        // Why is this not like the others?
-        (data)
+        this.applicationStateService.setParent(data, this.picker.current_type, false);
       },
       error => {
         if ( error.message.includes("auth/login") ) {

@@ -227,58 +227,57 @@ export class DatasetPickerComponent implements OnInit {
     }
   }
   addSecondaryBreadcrumb(container: any) {
-    if ( this.current_secondary_type === 'site') {
-      this.secondary_breadcrumbs = []
+    let pid = 1;
+    let bc_title = 'Site'
+    this.secondary_breadcrumbs = []
+    if ( container.parent ) {
+      pid = container.parent.id;
+      bc_title = container.parent.title;
     }
+    this.secondary_breadcrumbs.push({label: "Up", command: (event)=> {
+        this.doSecondaryBreadcrumb(bc_title, pid)
+      }})
     this.secondary_breadcrumbs.push({label: container.title, command: (event)=> {
         this.doSecondaryBreadcrumb(container.title, container.id)
       }})
   }
   addBreadcrumb(parent: any) {
-    if ( this.current_type === 'site') {
-      this.breadcrumbs = []
+    // Breadcrubs are going to be the parent and the item (known here as parent)
+    let pid = 1;
+    let bc_title = 'Site'
+    this.breadcrumbs = []
+    if ( parent.parent ) {
+      pid = parent.parent.id;
+      bc_title = parent.parent.title;
     }
+    this.breadcrumbs.push({label: "Up", command: (event)=> {
+        this.doBreadcrumb(bc_title, pid)
+      }})
     this.breadcrumbs.push({label: parent.title, command: (event)=> {
         this.doBreadcrumb(parent.title, parent.id)
       }})
   }
   doSecondaryBreadcrumb(title: string, id: number) {
-    let index = -1;
-    for (let i = 0; i < this.secondary_breadcrumbs.length; i++) {
-      let bc = this.secondary_breadcrumbs[i];
-      if ( bc.label === title) {
-        index = i;
-      }
-    }
     this.applicationStateService.setForRequest();
-    if ( index === 0 ) {
+    if ( title === 'Site' ) {
       this.datasetService.getSite().subscribe(site =>{
         this.applicationStateService.setSecondary(site, 'site', true)
       });
     } else {
       this.datasetService.getDataset(id).subscribe(indataset => {
-        this.secondary_breadcrumbs.splice(index + 1, this.secondary_breadcrumbs.length - (index + 1));
-        this.applicationStateService.setSecondary(indataset, 'dataset', false);
+        this.applicationStateService.setSecondary(indataset, 'dataset', true);
       });
     }
   }
   doBreadcrumb(title: string, id: number) {
-    let index = -1;
-    for (let i = 0; i < this.breadcrumbs.length; i++) {
-      let bc = this.breadcrumbs[i];
-      if ( bc.label === title) {
-        index = i;
-      }
-    }
     this.applicationStateService.setForRequest();
-    if ( index === 0 ) {
-      this.datasetService.getSite().subscribe(site =>{
-        this.applicationStateService.setParent(site, 'site', true);
+    if (title === 'Site') {
+      this.datasetService.getSite().subscribe(site => {
+        this.applicationStateService.setParent(site, 'site', true)
       });
     } else {
       this.datasetService.getDataset(id).subscribe(indataset => {
-        this.breadcrumbs.splice(index + 1, this.breadcrumbs.length - (index + 1));
-        this.applicationStateService.setParent(indataset, 'dataset', false);
+        this.applicationStateService.setParent(indataset, 'dataset', true);
       });
     }
   }

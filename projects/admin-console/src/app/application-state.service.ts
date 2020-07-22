@@ -34,7 +34,7 @@ export class ApplicationStateService extends ObservableStore<ApplicationStateSto
   // Set for request, start the progress meter and clear the previous error.
   setForRequest() {
     this.error = false;
-    this.setState({showProgress: true, errorDialogMessage: ""})
+    this.setState({showProgress: true, errorDialogMessage: "", add_breadcrumb: false})
   }
   setSecondary(container: any, type: string, breadcrumb: boolean) {
     this.setState({showProgress: false, secondary: container, secondary_type: type, add_secondary_breadcrumb: breadcrumb, add_breadcrumb: false, edit_dataset: null}, 'SET_SECONDARY');

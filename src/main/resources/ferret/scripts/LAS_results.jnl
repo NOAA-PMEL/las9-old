@@ -16,6 +16,7 @@
 ! 10/2017   fixes for map-scale file, monthly time axis such as monthly_navy_winds
 ! 11/2017   add report map resolution to the log if this was a map plot
 ! 10/2018   changing animation product to make all the frames in one PyFerret session
+!  5/2020   Define time_map_var to access time units etc without loading so much data.
 ! .......................................................................................
 !
 ! LAS_results.jnl creates the result files. 
@@ -216,7 +217,7 @@ IF ($insitu_blankvar"0|*>1) THEN SHADE/PAL=white/NOLAB/NOKEY/LEV=(0,1,1) ($insit
    ELSE
       IF ($ax_horiz"0|T>1|*>0") THEN
          SET DATA 1
-	 LET time_map_var = ($data_0_var)
+	 LET time_map_var = ($data_0_var)[($region_full)]
 	 IF ($insitu_blankvar"0|*>1) THEN LET time_map_var = ($insitu_blankvar)
          LET tt= t[GT=time_map_var]
 
@@ -278,9 +279,10 @@ IF ($insitu_blankvar"0|*>1) THEN SHADE/PAL=white/NOLAB/NOKEY/LEV=(0,1,1) ($insit
 
 	 DEFINE SYMBOL vaxis_tstart = `TAX_DATESTRING(t1, tt, "seconds")`
          DEFINE SYMBOL vaxis_tend = `TAX_DATESTRING(t2, tt, "seconds")`
-         DEFINE SYMBOL vaxis_tunits = `($data_0_var),RETURN=tunits`
-         DEFINE SYMBOL vaxis_torigin = `($data_0_var),RETURN=t0`
-         DEFINE SYMBOL vaxis_tcalendar = `($data_0_var),RETURN=calendar`
+         LET time_map_var = ($data_0_var)[($region_full)]
+	 DEFINE SYMBOL vaxis_tunits = `time_map_var,RETURN=tunits`
+         DEFINE SYMBOL vaxis_torigin = `time_map_var,RETURN=t0`
+         DEFINE SYMBOL vaxis_tcalendar = `time_map_var,RETURN=calendar`
          LET syms_names = {"VAXIS_TSTART", "VAXIS_TEND", "VAXIS_TUNITS", "VAXIS_TORIGIN", "VAXIS_TCALENDAR"}
          LET syms_vals = {"($VAXIS_TSTART)", "($VAXIS_TEND)", "($VAXIS_TUNITS)", "($VAXIS_TORIGIN)", "($VAXIS_TCALENDAR)"}
          LIST/APPEND/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals

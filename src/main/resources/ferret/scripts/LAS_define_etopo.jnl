@@ -2,7 +2,7 @@
 ! See if there are etopo2 and etopo1 in the same
 ! directory as etopo5
 !      11/2017  Add topo015 as an option, define topo*url symbols
-
+!       7/2020  Do not look for topo50 dataset as a local file.
 
 DEFINE SYMBOL topo20_url = etopo20
 DEFINE SYMBOL topo5_url = etopo5
@@ -33,9 +33,8 @@ ENDIF
 
 IF `TEST_OPENDAP("https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc") EQ 0` THEN 
    DEFINE SYMBOL topo_015_url = https://ferret.pmel.noaa.gov/pmel/thredds/dodsC/data/PMEL/topo15_compressed.nc
-ELIF `TEST_OPENDAP("/home/data/topography/topo15_compressed.nc") EQ 0` THEN 
-   DEFINE SYMBOL topo_015_url = /home/data/topography/topo15_compressed.nc
 ENDIF
 
 CANCEL DATA etopo5
 ! --------------- End of LAS_define_etopo  ---------------------------
+

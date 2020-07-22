@@ -6,6 +6,7 @@
 ! Date: 2006/07/06
 !      11/2017  Add topo015 as an option 
 !      11/2018  (Ferret v7.44) add the /AXES qualifier to draw axis and graticule lines
+!       7/2020  Add the /AXES to draw axis and graticule lines on high-res topo land fill.
 !
 ! LAS_fland.jnl automatically adjusts the resolution
 !
@@ -68,7 +69,7 @@ IF `fland_area LT fland_cutoff` THEN
    IF `($topo_url"0|*>1") EQ 0` THEN DEFINE SYMBOL topo_url = etopo5
    USE ($topo_url)
 
-   SHADE/NOLAB/NOKEY/LEV=($land_levels)/PAL=($fland_palette)/OVERLAY rose($map_reg)
+   SHADE/NOLAB/NOKEY/LEV=($land_levels)/PAL=($fland_palette)/OVERLAY/axes rose($map_reg)
    DEFINE SYMBOL toponame = `rose,return=dset`
 
    CAN DATA ($toponame)
@@ -83,6 +84,5 @@ ENDIF
 
 IF `($fland_done"0|*>1") EQ 0` THEN \
 GO fland ($fland_resolution) ($fland_palette) overlay " " " " " " axes
-
 
 ! End of LAS_fland.jnl --------------------------------------------------

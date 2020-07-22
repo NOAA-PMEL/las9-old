@@ -923,7 +923,8 @@ String filename
             File dlf = new File(downloadFile)
             if ( dlf.exists() ) {
                 def size = dlf.length()
-                pulse.addMessage(size + " bytes of data have been downloaded so far.")
+                def fsize = String.format("%,d", size);
+                pulse.addMessage(fsize + " bytes of data have been downloaded so far.")
             }
         }
         if ( processInfo ) {

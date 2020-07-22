@@ -11,14 +11,12 @@ class Result {
     String filename
     boolean linked = false
 
-    static hasMany = [resultSets: ResultSet]
     static belongsTo = ResultSet
 
     static mapping = {
         url type: "text"
     }
     static constraints = {
-        resultSets nullable: true
         url nullable: true
         filename nullable: true
     }

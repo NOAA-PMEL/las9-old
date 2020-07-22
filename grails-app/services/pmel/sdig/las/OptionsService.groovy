@@ -128,7 +128,7 @@ with the mini-map we don't really need this anymore...
         MenuOption use_graticules = new MenuOption([name        : "use_graticules",
                                                     title       : "Show graticule",
                                                     help        : "Turn on and off graticule lines on the plot, and set their color. None/No tics turns off both graticules and tic marks along the axes.</help>\n",
-                                                    defaultValue: "none"])
+                                                    defaultValue: "gray"])
 
         MenuItem sf001 = new MenuItem([value:"black", title:"Black"])
         MenuItem sf002 = new MenuItem([value:"gray", title:"Gray"])
@@ -496,10 +496,10 @@ at the edges of the plot (WMS-style plots). By default margins are shown.
          */
 
         YesNoOption margins = new YesNoOption([name        : "margins",
-                                               title       : "Show reference map",
+                                               title       : "Use Margins",
                                                help        : "Make the plot with or without margins: when no margins is chosen, the axes are\n" +
                                                        "at the edges of the plot (WMS-style plots). By default margins are shown.",
-                                               defaultValue: "no"])
+                                               defaultValue: "yes"])
 
         margins
     }

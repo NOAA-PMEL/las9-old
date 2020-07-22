@@ -77,14 +77,11 @@ class FerretService {
             "(39.35, 33.33, 27.31)",
             "(0, 0, 45)"
     ]
-    def Map runScript (StringBuffer script) {
+    def Map runScript (StringBuffer script, File sp) {
 
         def result = [:]
 
         def ferret = Ferret.first()
-
-
-        File sp = File.createTempFile("script", ".jnl", new File(ferret.tempDir));
 
         sp.withWriter { out ->
             out.writeLine(script.toString().stripIndent())

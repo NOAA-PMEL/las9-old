@@ -4,7 +4,7 @@ class ResultSet {
 
     // These are in the definitions that are persisted on the server
     String name
-    List results
+    List<Result> results
 
     // These only show up in the traffic between client and server.
     String product
@@ -14,7 +14,7 @@ class ResultSet {
     String error;
     Animation animation
 
-    static hasMany = [results: Result]
+    static hasMany = [results: Result, annotationGroups: AnnotationGroup]
     static belongsTo = [operation: Operation]
 
     static constraints = {
@@ -24,5 +24,8 @@ class ResultSet {
         error nullable: true
         animation nullable: true
         product nullable: true
+    }
+    static mapping = {
+        results lazy: false
     }
 }

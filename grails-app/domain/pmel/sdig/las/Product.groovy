@@ -28,6 +28,7 @@ class Product {
 
     static mapping = {
         operations (cascade: 'all-delete-orphan')
+        operations lazy: false
     }
     static constraints = {
 

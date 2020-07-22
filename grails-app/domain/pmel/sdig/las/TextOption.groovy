@@ -9,7 +9,6 @@ class TextOption {
     String hint;
     String defaultValue
 
-    static hasMany = [operations: Operation]
     static belongsTo = Operation
 
     static constraints = {

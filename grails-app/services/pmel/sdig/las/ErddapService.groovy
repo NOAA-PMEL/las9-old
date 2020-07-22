@@ -33,9 +33,13 @@ import java.nio.charset.StandardCharsets
 class ErddapService {
 
     def lasProxy = new LASProxy()
-    DateTimeService dateTimeService;
+    DateTimeService dateTimeService
+    ProductService productService
 
-    def makeNetcdfFile(LASRequest lasRequest, String productName, Operation operation, Dataset dataset) {
+    def makeNetcdfFile(LASRequest lasRequest, String hash, String outputPath, String productName, Operation operation, Dataset dataset) {
+
+
+        productService.writePulse(hash, outputPath, "Preparing for netCDF file download from ERDDAP.", null, null, null, PulseType.STARTED)
 
         def reason // Special property to help debug dashboard requests
 
@@ -62,11 +66,14 @@ class ErddapService {
             Result file = operation.getResultSet().getResults().find{it.name == "netcdf"}
             log.debug("Got netcdf filename: " + file.getFilename());
 
+
             // TODO maybe in future, this choice of product will be passed in
             def netcdfFilename = file.getFilename()
             def type = ".ncCF"
 
 
+            def cancelFilename = netcdfFilename.replace("netcdf.nc", "cancel.txt")
+            File cancelFile = new File(cancelFilename)
             /*
             Ok, this is a bit awkward. The data set is repeated for each variable.
 
@@ -615,6 +622,11 @@ class ErddapService {
 
 
                 try {
+                    if ( cancelFile.exists() ) {
+                        cancelFile.delete()
+                        throw new Exception("Request canceled.")
+                    }
+                    productService.writePulse(hash, outputPath, "Downloading netCDF file.", null, temp_file.getAbsolutePath(), null, PulseType.STARTED)
                     String q = URLEncoder.encode(query.toString(), "UTF-8").replaceAll("\\+", "%20").replaceAll("%3F", "?");;
                     String dsUrl = url + q;  //don't include ".dods"; readOpendapSequence does that
 
@@ -623,6 +635,7 @@ class ErddapService {
                     log.info("{TableDapTool starting file pull for the only file at "+ dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
                     lasProxy.executeERDDAPMethodAndSaveResult(dsUrl, temp_file, null);
                     dt = new DateTime();
+
 //                                    if (lasBackendRequest.isCanceled()) {
 //                                        lasBackendResponse.setError("ERDDAP data request canceled.");
 //                                        return lasBackendResponse;
@@ -633,7 +646,10 @@ class ErddapService {
 //                                        lasBackendResponse.setError("ERDDAP data request canceled.");
 //                                        return lasBackendResponse;
 //                                    }
-
+                    if ( cancelFile.exists() ) {
+                        cancelFile.delete()
+                        throw new Exception("Request canceled.")
+                    }
                     temp_file.renameTo(new File(netcdfFilename));
                     dt = new DateTime();
                     log.info("Tabledap tool renamed the netcdf file to "+netcdfFilename+" at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
@@ -665,8 +681,16 @@ class ErddapService {
 
                     log.info(reason)
                     log.info(dsUrl1)
-
+                    if ( cancelFile.exists() ) {
+                        cancelFile.delete()
+                        throw new Exception("Request canceled.")
+                    }
+                    productService.writePulse(hash, outputPath, "Downloading netCDF first of two netCDF files.", null, temp_file1.getAbsolutePath(), null, PulseType.STARTED)
                     lasProxy.executeERDDAPMethodAndSaveResult(dsUrl1, temp_file1, null);
+                    if ( cancelFile.exists() ) {
+                        cancelFile.delete()
+                        throw new Exception("Request canceled.")
+                    }
 
                     // TODO Cancel request?
                 } catch (Exception e) {
@@ -685,6 +709,10 @@ class ErddapService {
                 }
                 dt = new DateTime();
                 log.info("{TableDapTool finished file pull for the only file at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
+                if ( cancelFile.exists() ) {
+                    cancelFile.delete()
+                    throw new Exception("Request canceled.")
+                }
                 //was the request canceled?
 //                                if (lasBackendRequest.isCanceled()) {
 //                                    lasBackendResponse.setError("ERDDAP data request canceled.");
@@ -695,6 +723,7 @@ class ErddapService {
                 try {
                     log.info(reason)
                     log.info(dsUrl2)
+                    productService.writePulse(hash, outputPath, "Downloading netCDF second of two netCDF files.", null, temp_file2.getAbsolutePath(), null, PulseType.STARTED)
                     lasProxy.executeERDDAPMethodAndSaveResult(dsUrl2, temp_file2, null);
                 } catch (Exception e) {
                     String message = e.getMessage();
@@ -720,6 +749,10 @@ class ErddapService {
                 } else {
                     dt = new DateTime();
                     log.info("{TableDapTool finished file pull for the only file at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
+                    if ( cancelFile.exists() ) {
+                        cancelFile.delete()
+                        throw new Exception("Request canceled.")
+                    }
                     //was the request canceled?
 //                                    if (lasBackendRequest.isCanceled()) {
 //                                        lasBackendResponse.setError("ERDDAP data request canceled.");
@@ -731,7 +764,7 @@ class ErddapService {
                 }
 
             }
-
+            productService.writePulse(hash, outputPath, "Finished making netCDF file.", null, null, null, PulseType.STARTED)
             netcdfFilename
 
         } catch (Exception e) {

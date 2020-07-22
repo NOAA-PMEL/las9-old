@@ -2,52 +2,25 @@ package pmel.sdig.las
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.visualization.datasource.base.DataSourceException
 import com.google.visualization.datasource.base.ReasonType
-import com.google.visualization.datasource.datatable.ColumnDescription
-import com.google.visualization.datasource.datatable.DataTable
-import com.google.visualization.datasource.datatable.TableRow
-import com.google.visualization.datasource.datatable.value.DateTimeValue
-import com.google.visualization.datasource.datatable.value.NumberValue
-import com.google.visualization.datasource.datatable.value.Value
 import com.google.visualization.datasource.datatable.value.ValueType
-import com.google.visualization.datasource.render.JsonRenderer
-import grails.converters.JSON
+import grails.gorm.transactions.Transactional
+import grails.util.Holders
 import org.grails.web.json.JSONArray
 import org.grails.web.json.JSONObject
-import org.grails.web.json.JSONElement
 import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
-import pmel.sdig.las.tabledap.DataRow
-import pmel.sdig.las.tabledap.DataRowComparator
-import pmel.sdig.las.type.GeometryType
-import ucar.ma2.Array
-import ucar.ma2.ArrayBoolean
-import ucar.ma2.ArrayByte
-import ucar.ma2.ArrayChar
-import ucar.ma2.ArrayDouble
-import ucar.ma2.ArrayFloat
-import ucar.ma2.ArrayInt
-import ucar.ma2.ArrayLong
-import ucar.ma2.ArrayShort
-import ucar.ma2.ArrayString
-import ucar.ma2.InvalidRangeException
-import ucar.nc2.dataset.NetcdfDataset
-import ucar.nc2.Attribute
-import ucar.nc2.Dimension
-import ucar.nc2.NetcdfFile
-import ucar.nc2.NetcdfFileWriter
-import ucar.nc2.time.CalendarDate
-import ucar.nc2.time.CalendarDateUnit
-import ucar.unidata.geoloc.LatLonPoint
-import ucar.unidata.geoloc.LatLonPointImpl
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
+import static grails.async.Promises.task
+
+@Transactional(readOnly = true)
 class ProductController {
 //    static scaffold = Product
     AsyncFerretService asyncFerretService
@@ -58,14 +31,15 @@ class ProductController {
     ResultsService resultsService
     DateTimeService dateTimeService
     ErddapService erddapService
+
     def summary () {
         def webAppDirectory = request.getSession().getServletContext().getRealPath("")
         // Until such time as "-" file names are allowed, deal with it with a link named without the "-"
         // i.e. webapp instead of web-app
-        webAppDirectory = webAppDirectory.replaceAll("-", "");
+        webAppDirectory = webAppDirectory.replaceAll("-", "")
 
         if (!webAppDirectory.endsWith(File.separator)) {
-            webAppDirectory = webAppDirectory + File.separator;
+            webAppDirectory = webAppDirectory + File.separator
         }
         FerretEnvironment fe = FerretEnvironment.first()
         String variable_url
@@ -207,7 +181,7 @@ class ProductController {
             render file: "/tmp/error.png", contentType: 'image/png'
         }
     }
-    def make() {
+    def cancel() {
 
         Ferret ferret = Ferret.first();
 
@@ -221,17 +195,130 @@ class ProductController {
 
         log.debug(requestJSON.toString())
 
-        // Start of request
-        ResultSet allResults = productService.doRequest(requestJSON, ferret.getTempDir(), base);
-        // End of request
-        log.debug("Finished product request, rendering response...")
+        def hash = IngestService.getDigest(requestJSON.toString());
+        LASRequest lasRequest = new LASRequest(requestJSON);
+        File outputFile = Holders.grailsApplication.mainContext.getResource("output").file
+        String outputPath = outputFile.getAbsolutePath()
 
-        JSON.use("deep") {
-            render allResults as JSON
+        def pulse = productService.checkPulse(hash, outputPath)
+        File pfile = new File(pulse.getPulseFile())
+        pfile.delete();
+        File cancelFile = new File("${outputPath}${File.separator}${hash}_cancel.txt")
+        cancelFile.write(requestJSON.toString())
+        if ( pulse.getFerretScript() ) {
+            def kill = 'kill -9 ' + pulse.getPid()
+            def k = kill.execute()
+            if ( k ) {
+                cancelFile.delete();
+            }
+        }
+        render "Product request canceled"
+    }
+    def make() {
+
+        Ferret ferret = Ferret.first();
+
+        def ferret_temp = ferret.tempDir
+
+        def base = ferret.getBase_url()
+        if ( !base ) {
+            base = request.requestURL.toString()
+            base = base.substring(0, base.indexOf("product/make"))
         }
 
-    }
+        def requestJSON = request.JSON
 
+        log.debug(requestJSON.toString())
+
+        def hash = IngestService.getDigest(requestJSON.toString());
+        LASRequest lasRequest = new LASRequest(requestJSON);
+        File outputFile = Holders.grailsApplication.mainContext.getResource("output").file
+        String outputPath = outputFile.getAbsolutePath()
+
+        def pulse = productService.checkPulse(hash, outputPath)
+
+
+        Product product = Product.findByName(lasRequest.operation, [fetch: [operations: 'eager']])
+
+        def operations = product.getOperations()
+        for (int i = 0; i < operations.size(); i++) {
+            Operation operation = operations.get(i)
+            ResultSet rs = operation.getResultSet()
+            List<Result> results = rs.getResults();
+            for (int j = 0; j < results.size(); j++) {
+                Result result = results.get(j)
+                result.setUrl("output${File.separator}${hash}_${result.name}${result.suffix}")
+                result.setFilename("${outputPath}${File.separator}${hash}_${result.name}${result.suffix}")
+            }
+        }
+
+        def resultSet
+        if ( pulse.hasPulse ) {
+            // If it has a pulse, check it status and return the appropriate response
+            if (pulse.getState().equals(PulseType.COMPLETED) ) {
+                Map cacheMap = productService.cacheCheck(product, hash, outputPath)
+                resultSet = cacheMap.resultSet
+                resultSet.setTargetPanel(lasRequest.getTargetPanel())
+                resultSet.setProduct(product.getName())
+                if ( !cacheMap.cache ) {
+                    // Cache was invalid, so start the job again
+                    // TODO NOT DRY see below
+                    // If the current request does not have a pulse, start of request and wait 20 seconds for it to finish
+                    def p = task {
+                        productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
+                    }
+                    try {
+                        resultSet = p.get(10l, TimeUnit.SECONDS)
+                        // End of request
+                        log.debug("Finished product request, rendering response...")
+                    } catch (TimeoutException e) {
+                        resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product)
+                    }
+                }
+            } else if ( pulse.getState().equals(PulseType.ERROR) ) {
+                resultSet = productService.errorResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product);
+                File pulseFile = new File(pulse.getPulseFile())
+                pulseFile.delete()
+            } else {
+                // If there is a download file and no ferret script update download, otherwise
+                // update the ferret progress iff ferretScript
+                String downloadFile = pulse.getDownloadFile()
+                String ferretScript = pulse.getFerretScript()
+                if ( downloadFile && !ferretScript ) {
+                    productService.writePulse(hash, outputPath, "Downloading data from ERDDAP", ferretScript, downloadFile, null, PulseType.STARTED)
+                } else if ( ferretScript ) {
+                    def pinfo = productService.getProcessInfo(ferretScript)
+                    productService.writePulse(hash, outputPath, "PyFerret process is running", ferretScript, null, pinfo, PulseType.STARTED)
+                }
+                resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product)
+            }
+        } else {
+            // If the current request does not have a pulse, start of request and wait 20 seconds for it to finish
+            def p = task {
+                productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
+            }
+            try {
+                // DEBUG always get a response
+                resultSet = p.get(20l, TimeUnit.SECONDS)
+                // End of request
+                log.debug("Finished product request, rendering response...")
+            } catch (TimeoutException e) {
+                String ferretScript = pulse.getFerretScript()
+                if ( ferretScript ) {
+                    def pinfo = productService.getProcessInfo(ferretScript)
+                    productService.writePulse(hash, outputPath, "PyFerret process is running", ferretScript, null, pinfo, PulseType.STARTED)
+                }
+                resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product);
+            }
+        }
+        if (resultSet) {
+            withFormat {
+                json {
+                    respond resultSet // uses the custom templates in views/resultset
+                }
+            }
+        }
+    }
 
     def erddapDataRequest() {
 

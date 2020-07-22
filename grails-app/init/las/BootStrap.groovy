@@ -31,9 +31,8 @@ class BootStrap {
         if ( property ) {
             reinit = property == "true"
         }
+
         // Pass in reinit = true to remake products and regions
-        if ( !reinit )
-        // TODO implement by dumping stuff at the beginning if reinit = true then proceeding.
         initializationService.createProducts(reinit)
 
         initializationService.createDefaultRegions(reinit)

@@ -22,6 +22,8 @@ class Operation {
         menuOptions (cascade: 'all-delete-orphan')
         textOptions (cascade: 'all-delete-orphan')
         yesNoOptions (cascade: 'all-delete-orphan')
+        resultSet lazy: false
+        operations lazy: false
     }
     static constraints = {
         // A compound operation does not need a template or action or a resultSet

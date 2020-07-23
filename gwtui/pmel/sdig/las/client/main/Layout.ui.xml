@@ -64,8 +64,10 @@
                     <m:MaterialLink ui:field="showValuesButton" text="Show values..." waves="LIGHT"></m:MaterialLink>
                     <m:MaterialLink ui:field="saveAsButton" text="Save as..." waves="LIGHT"></m:MaterialLink>
                     <m:MaterialLink ui:field="printButton" text="Print" waves="LIGHT"></m:MaterialLink>
+
                 </m:MaterialNavSection>
                 <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." fontSize="1.3em"/>
+                <m:MaterialLabel text="LAS v9.1.1beta" float="RIGHT" marginRight="16"></m:MaterialLabel>
                 <!--                <m:MaterialPanel addStyleNames="valign-vertical">-->
                 <!--                    <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>-->
                 <!--&lt;!&ndash;                    <m:MaterialButton marginTop="14" ui:field="openAdvancedSearch" text="Advanced Search" float="RIGHT" marginRight="16"></m:MaterialButton>&ndash;&gt;-->
@@ -79,7 +81,6 @@
         <m:MaterialSideNavPush m:id="sidenav" width="400" ui:field="sideNav" withHeader="true" depth="0">
             <m:MaterialSideNavContent padding="0">
                 <m:MaterialPanel ui:field="dashboardRegions" display="NONE"></m:MaterialPanel>
-                <m:MaterialPanel border="1"><m:MaterialLabel fontSize=".75em" paddingLeft="8" paddingRight="8">This is beta software. Please report problems using the contact below. We will update frequently. v9.1.0beta</m:MaterialLabel></m:MaterialPanel>
                 <m:MaterialCollapsible ui:field="navcollapsible" accordion="false" marginLeft="8" marginRight="8">
                     <m:MaterialCollapsibleItem ui:field="dataItem" shadow="1">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">

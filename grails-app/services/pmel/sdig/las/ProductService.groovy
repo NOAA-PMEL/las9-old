@@ -660,6 +660,7 @@ class ProductService {
 
                         ftds_jnl.append("use \"" + variable_url + "\";\n");
 
+                        String allAxis = ""
                         for (int i = 0; i < axes.size(); i++) {
                             AnalysisAxis ax = axes.get(i)
                             String axisType = ax.getType()
@@ -667,15 +668,19 @@ class ProductService {
                             String lo = ax.getLo()
                             String axisString = axisType + "="
                             if (axisType.equals("t")) {
-                                axisString = axisString + "\"" + lo + "\":\"" + hi + "\"";
+                                axisString = axisString + "\"" + lo + "\":\"" + hi + "\""
                             } else {
-                                axisString = axisString + "" + lo + ":" + hi + "";
+                                axisString = axisString + "" + lo + ":" + hi + ""
                             }
-                            ftds_jnl.append("let/d=1 " + variable.getName() + "_transformed = " + variable.getName() + "[d=1," + axisString + "@" + type + "];\n")
-                            variable_title = variable.getName() + "[d=1," + axisString.replace("\"", "") + "@" + type + "]"
-                            variable_name = variable.getName() + "_transformed"
-
+                            if ( allAxis.isEmpty() ) {
+                                allAxis = axisString + "@" + type
+                            } else {
+                                allAxis = allAxis + "," + axisString + "@" + type
+                            }
                         }
+                        ftds_jnl.append("let/d=1 " + variable.getName() + "_transformed = " + variable.getName() + "[d=1," + allAxis  + "];\n")
+                        variable_title = variable.getName() + "[d=1," + allAxis.replace("\"", "")  + "]"
+                        variable_name = variable.getName() + "_transformed"
                         ftds_jnl.append("SET ATT/LIKE=" + variable.getName() + " " + variable.getName() + "_transformed ;\n")
 
                         File sp = File.createTempFile("ftds_" + a.hash() + "_", ".jnl", ftds_dir);

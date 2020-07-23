@@ -1143,7 +1143,7 @@ public class UI implements EntryPoint {
     TextCallback cancelProduct = new TextCallback() {
         @Override
         public void onFailure(Method method, Throwable throwable) {
-            MaterialToast.fireToast("Error canceling: "+ throwable.getMessage());
+            if ( !cancelToast.isOpen() ) cancelToast.toast(throwable.getMessage());
         }
 
         @Override
@@ -1342,7 +1342,7 @@ public class UI implements EntryPoint {
                         }
                     }
                     MaterialLabel progressL = new MaterialLabel();
-                    progressL.setText("LAS will automatically check on the progress of you product every few seconds.");
+                    progressL.setText("LAS will automatically check on the progress of your product every few seconds.");
                     progressL.setTextColor(Color.WHITE);
                     layout.progressMessage.add(progressL);
                     final LASRequest lasRequest = state.getPanelState(results.getTargetPanel()).getLasRequest();

@@ -894,23 +894,31 @@ String filename
         }
 
     }
-    def Pulse checkPulse(String hash, String outputPath) {
+    Pulse checkPulse(String hash, String outputPath) {
         File pulseFile = new File(outputPath + File.separator + hash+"_pulse.json")
         boolean hasPulse = pulseFile.exists()
         def pulse;
         if ( hasPulse ) {
-            def pulseJson = jsonSlurper.parse(pulseFile);
-            pulse = new Pulse(pulseJson)
-            pulse.setHasPulse(hasPulse)
+            try {
+                def pulseJson = jsonSlurper.parse(pulseFile);
+                pulse = new Pulse(pulseJson)
+                pulse.setHasPulse(hasPulse)
+            } catch ( Exception e ) {
+                pulse = initializePulse(pulseFile, hash, outputPath, hasPulse)
+            }
         } else {
-            pulse = new Pulse();
-            pulse.setHasPulse(hasPulse)
-            pulse.setPulseFile(pulseFile.getAbsolutePath())
-            pulse.setState(PulseType.STARTED)
-            pulse.addMessage("LAS has started making your product.")
-            String j = JsonOutput.toJson(pulse)
-            pulseFile.write(j)
+            pulse = initializePulse(pulseFile, hash, outputPath, hasPulse)
         }
+        pulse
+    }
+    Pulse initializePulse(File pulseFile, String hash, String outputPath, boolean hasPulse) {
+        Pulse pulse = new Pulse();
+        pulse.setHasPulse(hasPulse)
+        pulse.setPulseFile(pulseFile.getAbsolutePath())
+        pulse.setState(PulseType.STARTED)
+        pulse.addMessage("LAS has started making your product.")
+        String j = JsonOutput.toJson(pulse)
+        pulseFile.write(j)
         pulse
     }
 
@@ -940,7 +948,9 @@ String filename
             }
             if ( processInfo.MEMORY) {
                 pulse.setMemory(processInfo.MEMORY);
-                pulse.addMessage("PyFerret is using " + processInfo.MEMORY + " bytes of memory.")
+                def s = Long.valueOf(processInfo.MEMORY)
+                def msize = String.format("%,d", s)
+                pulse.addMessage("PyFerret is using " + msize + " bytes of memory.")
             }
         }
         String j = JsonOutput.toJson(pulse)

@@ -31,7 +31,10 @@ class InitializationService {
         log.debug("Setting up Ferret environment from the runtime environment.")
         // We are remaking this every time we start up...
         def old_ferret = Ferret.first()
-        old_ferret.delete(flush: true, failOnError:true)
+        if ( old_ferret ) {
+            // Delete old so we always read the config on startup
+            old_ferret.delete(flush: true, failOnError: true)
+        }
 
         // Get their values from the system environment
         def env = System.getenv()

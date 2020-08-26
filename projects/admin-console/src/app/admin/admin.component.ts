@@ -11,9 +11,9 @@ import {ApplicationStateService} from "../application-state.service";
   styleUrls: ['./admin.component.css']
 })
 export class AdminComponent implements OnInit {
-  constructor(private datasetService: DatasetService,
-              private addDataService: AdminService,
-              private applicationStateService: ApplicationStateService,
+  constructor(public datasetService: DatasetService,
+              public addDataService: AdminService,
+              public applicationStateService: ApplicationStateService,
               ) { }
 
   ngOnInit() {

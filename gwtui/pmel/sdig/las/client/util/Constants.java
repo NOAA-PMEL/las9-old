@@ -13,7 +13,6 @@ public class Constants {
     public static final String datasetJson = base + "dataset/show";  // requests look like dataset/show/{id}.json
     public static final String thumbinfo = base + "dataset/browse"; // Search for the first data set with variable children
     public static final String configJson = base + "config/json";
-    public static final String adminAdd = base + "admin/addDataset";
     public static final String productCreate = base + "product/make";
     public static final String cancelProduct = base + "product/cancel";
     public static final String erddapDataRequest = base + "product/erddapDataRequest";

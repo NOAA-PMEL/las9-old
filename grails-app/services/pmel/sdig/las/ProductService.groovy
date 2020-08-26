@@ -18,7 +18,6 @@ class ProductService {
 
         def products = new ArrayList<Product>();
 
-        // TODO handle the data view for other geometries.
         // For grids the view and data view are the same.
         combos.each {view ->
             List<Product> productsByGeoAndView = Product.findAllByGeometryAndViewAndHidden(grid, view, false)

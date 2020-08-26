@@ -16,6 +16,7 @@ import {ApplicationStateService} from "../application-state.service";
 export class SiteEditComponent implements OnInit {
 
   constructor(private datasetService:DatasetService,
+              private applicationStateService: ApplicationStateService,
               private formService:JsonFormService,
               private adminService:AdminService) { }
   site_properties = [];
@@ -77,9 +78,12 @@ export class SiteEditComponent implements OnInit {
     }
   }
   save() {
+    this.applicationStateService.setForRequest();
     const dirty = this.getDirtyValues(this.siteForm);
     dirty['footerLinks'] = this.footerLinks;
     this.adminService.saveSite(dirty).subscribe(site => {
+      this.applicationStateService.setProgress(false);
+      this.applicationStateService.setParent(site, "site", true);
       this.site_properties = [];
       for (let prop in site) {
         if (site[prop]) {
@@ -97,6 +101,7 @@ export class SiteEditComponent implements OnInit {
     for (let prop in dirty ) {
       this.footerLinkToEdit[prop] = dirty[prop];
     }
+    this.footerLinks.push(this.footerLinkToEdit);
     this.edit_footerLink = false;
   }
   add() {
@@ -110,7 +115,7 @@ export class SiteEditComponent implements OnInit {
     this.footerLinkToEdit['url'] = "";
     this.footerLinkToEdit['test'] = "";
     this.footerLinkToEdit['index'] = 0;
-    this.footerLinks.push(this.footerLinkToEdit);
+    // this.footerLinks.push(this.footerLinkToEdit);
     let fpu: StringProperty = new StringProperty({label: 'url', value: '', key: 'url'})
     this.linkProperties.push(fpu);
     let fpt: StringProperty = new StringProperty({label: 'text', value: '', key: 'text'})

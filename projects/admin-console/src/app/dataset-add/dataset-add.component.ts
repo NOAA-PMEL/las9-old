@@ -32,7 +32,7 @@ export class DatasetAddComponent implements OnInit {
     Validators.required
   ]);
 
-  @ViewChild(DatasetPickerComponent, {static: false}) picker: DatasetPickerComponent;
+  @ViewChild(DatasetPickerComponent) picker: DatasetPickerComponent;
   header = "The dataset will be added to this list.";
   sub_header = "If you want it further down in the hierarchy, select a data set from the list to navigate to where the new data set should appear.";
 
@@ -52,7 +52,11 @@ export class DatasetAddComponent implements OnInit {
     };
     this.applicationStateService.setForRequest();
     this.addDataService.addDataset(addnetdf).subscribe(data=>{
-      this.applicationStateService.setParent(data, 'dataset', false);
+      var type = data.type
+      if ( type == null ) {
+        type = 'site'
+      }
+      this.applicationStateService.setParent(data, type, false);
     },
       error => {
          if ( error.message.includes("auth/login") ) {

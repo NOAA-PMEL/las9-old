@@ -61,8 +61,6 @@ public class ResultsPanel extends Composite {
     @UiField
     MaterialIcon trigger;
 
-    boolean dashboard = false;
-
     int index;
 
     interface ResultsPanelUiBinder extends UiBinder<MaterialColumn, ResultsPanel> {
@@ -76,16 +74,12 @@ public class ResultsPanel extends Composite {
             @Override
             public void onExpand(ExpandEvent<MaterialCollapsibleItem> expandEvent) {
                 trigger.setIconType(IconType.EXPAND_LESS);
-                outputPanel.setVisible(true);
             }
         });
         annotationsCollapse.addCollapseHandler(new CollapseEvent.CollapseHandler<MaterialCollapsibleItem>() {
             @Override
             public void onCollapse(CollapseEvent<MaterialCollapsibleItem> collapseEvent) {
                 trigger.setIconType(IconType.EXPAND_MORE);
-                if ( dashboard ) {
-                    outputPanel.setVisible(false);
-                }
             }
         });
     }
@@ -217,9 +211,6 @@ public class ResultsPanel extends Composite {
             label.getElement().setInnerHTML("&nbsp;");
             annotationPanel.add(label);
         }
-    }
-    public void setDashboard(boolean dashboard) {
-        this.dashboard = dashboard;
     }
     public List<Widget> getAnnotations() {
         return annotationPanel.getChildrenList();

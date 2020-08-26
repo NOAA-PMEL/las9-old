@@ -498,6 +498,7 @@ public class Layout extends Composite {
         return found;
     }
     public List<DataConstraint> getActiveConstraints() {
+        // TODO first group constraints to be applied to the same variable together
         List<DataConstraint> constraints = new ArrayList<>();
         for (int i = 0; i < activeConstraints.getWidgetCount(); i++) {
             Widget w = activeConstraints.getWidget(i);

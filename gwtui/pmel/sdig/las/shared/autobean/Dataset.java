@@ -151,6 +151,16 @@ public class Dataset implements Comparable {
         }
         return null;
     }
+    // Really only save for the standard ERDDAP names of time, latitude, longitude and whatever z is
+    public Variable findVariableByName(String name) {
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i);
+            if ( v.getName().equals(name) ) {
+                return v;
+            }
+        }
+        return null;
+    }
     public Variable findVariableByHash(String hash) {
         for (int i = 0; i < variables.size(); i++) {
             Variable v = variables.get(i);
@@ -177,5 +187,15 @@ public class Dataset implements Comparable {
     }
     public void setVariableChildren(boolean variableChildren) {
         this.variableChildren = variableChildren;
+    }
+
+    public Variable getIdVariable() {
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i);
+            if ( v.isDsgId() ) {
+                return v;
+            }
+        }
+        return null;
     }
 }

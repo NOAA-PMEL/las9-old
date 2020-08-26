@@ -8,6 +8,8 @@ import com.google.visualization.datasource.base.ReasonType
 import com.google.visualization.datasource.datatable.value.ValueType
 import grails.gorm.transactions.Transactional
 import grails.util.Holders
+import org.apache.commons.lang3.tuple.ImmutablePair
+import org.apache.commons.lang3.tuple.Pair
 import org.grails.web.json.JSONArray
 import org.grails.web.json.JSONObject
 import org.joda.time.DateTime
@@ -348,62 +350,76 @@ class ProductController {
         }
 
         String constraint = ""
-        String tlo = lasRequest.getAxesSets().get(0).getTlo();
-        String thi = lasRequest.getAxesSets().get(0).getThi();
+        List<AxesSet> axesSets = lasRequest.getAxesSets()
+        if ( axesSets && axesSets.size() > 0 ) {
+            String tlo = axesSets.get(0).getTlo();
+            String thi = axesSets.get(0).getThi();
 
-        if ( tlo ) {
-            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-            constraint = constraint + "time>=" + tlo;
-        }
-        if ( thi ) {
-            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-            constraint = constraint + "time<=" + thi
-        }
-
-
-        // TODO use names from data set in constraints????
-
-        String xlo = lasRequest.getAxesSets().get(0).getXlo();
-        String xhi = lasRequest.getAxesSets().get(0).getXhi();
-
-        if ( xlo ) {
-            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-            constraint = constraint + "longitude>=" + xlo;
-        }
-        if ( xhi ) {
-            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-            constraint = constraint + "longitude<=" + xhi
-        }
-
-        String ylo = lasRequest.getAxesSets().get(0).getYlo();
-        String yhi = lasRequest.getAxesSets().get(0).getYhi();
-
-        if ( ylo ) {
-            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-            constraint = constraint + "latitude>=" + ylo;
-        }
-        if ( yhi ) {
-            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-            constraint = constraint + "latitude<=" + yhi
-        }
-
-        List<DataQualifier> qualifierList = lasRequest.getDataQualifiers();
-        for (int i = 0; i < qualifierList.size(); i++) {
-            DataQualifier dq = qualifierList.get(i);
-            if ( dq.isDistinct() ) {
-                constraint = constraint+ "&distinct()"
-            } else if ( !dq.getType().isEmpty() ) {
-                constraint = constraint + "&" + dq.getType() + "("
-                List<String> vs = dq.getVariables()
-                for (int j = 0; j < vs.size(); j++) {
-                    constraint = constraint + vs.get(j)
-                    if ( j < vs.size() - 1 )
-                        constraint = constraint + ","
-                }
-                constraint = constraint = + ")"
+            if ( tlo ) {
+                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                constraint = constraint + "time>=" + tlo;
+            }
+            if ( thi ) {
+                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                constraint = constraint + "time<=" + thi
             }
 
+
+            // TODO use names from data set in constraints????
+
+            String xlo = axesSets.get(0).getXlo();
+            String xhi = axesSets.get(0).getXhi();
+
+            if ( xlo ) {
+                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                constraint = constraint + "longitude>=" + xlo;
+            }
+            if ( xhi ) {
+                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                constraint = constraint + "longitude<=" + xhi
+            }
+
+            String ylo = axesSets.get(0).getYlo();
+            String yhi = axesSets.get(0).getYhi();
+
+            if ( ylo ) {
+                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                constraint = constraint + "latitude>=" + ylo;
+            }
+            if ( yhi ) {
+                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                constraint = constraint + "latitude<=" + yhi
+            }
         }
+        List<DataQualifier> qualifierList = lasRequest.getDataQualifiers();
+        if ( qualifierList ) {
+            for (int i = 0; i < qualifierList.size(); i++) {
+                DataQualifier dq = qualifierList.get(i);
+                if (dq.isDistinct()) {
+                    if ( constraint.isEmpty() ) {
+                        constraint = "distinct()"
+                    } else {
+                        constraint = constraint + "&distinct()"
+                    }
+                } else if (!dq.getType().isEmpty()) {
+                    if ( constraint.isEmpty() ) {
+                        constraint = dq.getType() + "("
+                    } else {
+                        constraint = constraint + "&" + dq.getType() + "("
+                    }
+                    List<String> vs = dq.getVariables()
+                    for (int j = 0; j < vs.size(); j++) {
+                        constraint = constraint + vs.get(j)
+                        if (j < vs.size() - 1)
+                            constraint = constraint + ","
+                    }
+                    constraint = constraint = +")"
+                }
+
+            }
+        }
+
+        def afterq = vars;
 
         url = url + URLEncoder.encode(vars + "&" + constraint, StandardCharsets.UTF_8.name())
         try {
@@ -417,8 +433,27 @@ class ProductController {
 
     }
     def datatable () {
-        /*
 
+        dateTimeService.init(null);
+        // N.B. Right now this is only used to make time series so it makes the assumption that the JSON looks like this:
+
+        /*
+        {
+  "table": {
+    "columnNames": ["time", "trajectory", "BARO_PRES_MEAN"],
+    "columnTypes": ["String", "String", "double"],
+    "columnUnits": ["UTC", null, "hPa"],
+    "rows": [
+      ["2018-07-27T00:00:00Z", "1024.0", 1017.58],
+      ["2018-07-27T00:01:00Z", "1024.0", 1017.58],
+      ["2018-07-27T00:02:00Z", "1024.0", 1017.59],
+      ["2018-07-27T00:03:00Z", "1024.0", 1017.59],
+      ["2018-07-27T00:04:00Z", "1024.0", 1017.59],
+      ["2018-07-27T00:05:00Z", "1024.0", 1017.6],
+      ["2018-07-27T00:06:00Z", "1024.0", 1017.61],
+      ["2018-07-27T00:07:00Z", "1024.0", 1017.63],
+
+       There may be more data columns and there will be multiple values for the ID, which will be in column 2
 
         Make something that looks like this:
 
@@ -472,6 +507,13 @@ class ProductController {
                 Variable variable = dataset.variables.find { Variable v -> v.hash == vhash }
                 if ( !varNames.isEmpty() ) varNames = varNames + ",";
                 varNames = varNames + variable.name
+            }
+
+            def idVar = null
+            dataset.getVariables().each{Variable variable ->
+                if ( variable.isDsgId() ) {
+                    idVar = variable
+                }
             }
 
             def latname = dataset.getDatasetPropertyValue("tabledap_access","latitude");
@@ -595,76 +637,140 @@ class ProductController {
             log.info(reason);
             log.info(url);
 
+
+
             String jsonText = lasProxy.executeGetMethodAndReturnResult(url)
+            File dataj = new File("/home/rhs/data.json")
+
+            dataj.write(jsonText)
             JsonElement json = jsonParser.parse(jsonText)
             def table = json.getAsJsonObject().get("table")
+
+            def rows = table.get("rows")
             JsonArray names = table.get("columnNames").asJsonArray
             JsonArray types = table.get("columnTypes").asJsonArray
+
+            /*
+
+            The json looks like:
+
+            Date, ID, parameter, parameter, parameter
+
+            TIME1  ID001  A  B  C
+            TIME2  ID001  D  E  F
+            ...
+            TIME1 ID002  G  H  I
+            TIME3  ID002  J  K  L
+            ...
+            TIME4  ID003  M  N  O
+            TIME1  ID003  P  Q  R
+            TIME5  ID003  S  T  U
+
+            And you want it to look like
+
+            TIME1 A B C TIME1 G H I TIME4 M N O
+            TIME2 D E F TIME3 J K L TIME1 P Q R
+            null x  x x null  x x x TIME5 S T U
+
+             */
+            Map<Pair<String, String>, JsonArray> byPlatformAndTime = new HashMap<Pair<String, String>, JsonArray>()
+            Set<String> platforms = new HashSet<>();
+            Set<String> times = new HashSet<>();
+            def row_size;
+            rows.each { JsonArray row ->
+                def row_time = row.get(0).asString
+                def row_id = row.get(1).asString
+                row_size = row.size()
+                times.add(row_time)
+                platforms.add(row_id)
+                byPlatformAndTime.put(new ImmutablePair(row_id, row_time), row)
+            }
+
+
+            List<String> times_sorted = times.asList();
+            Collections.sort(times_sorted)
+            List<String> platforms_sorted = platforms.asList()
+            Collections.sort(platforms_sorted)
+            List<List<Object>> tableform = new ArrayList<List<Object>>();
+            def index = 0;
+            def column_names = []
+            column_names.add("Time")
+            for (int j = 0; j < times_sorted.size(); j++) {
+                List<Object> table_row = new ArrayList<>();
+                String t = times_sorted.get(j)
+                table_row.add(t)
+                for (int i = 0; i < platforms_sorted.size(); i++) {
+                    Pair<String, String> p = new ImmutablePair<>(platforms_sorted.get(i), t)
+                    JsonArray row = byPlatformAndTime.get(p)
+                    if ( row ) {
+                        for (int k = 2; k < row.size(); k++) {
+                            if ( j == 0 ) {
+                                String n = platforms_sorted.get(i) + " - " + names.get(k).asString
+                                column_names.add(n)
+                            }
+                            JsonElement je = row.get(k);
+                            if (je == null || je.isJsonNull()) {
+                                table_row.add(null)
+                            } else {
+                                table_row.add(new Double(je.asDouble))
+                            }
+                        }
+                    } else {
+                        for (int k = 2; k < row_size; k++) {
+                            if ( j == 0 ) {
+                                String n = platforms_sorted.get(i) + " - " + names.get(k).asString
+                                column_names.add(n)
+                            }
+                            table_row.add(null)
+                        }
+                    }
+                }
+                tableform.add(table_row)
+            }
+
+
             JSONObject datatable = new JSONObject();
             JSONArray cols = new JSONArray();
             datatable.accumulate("cols", cols)
-            for (int i = 0; i < names.size(); i++) {
+            // transform the table_form list of lists into a data table.
+            for (int i = 0; i < column_names.size(); i++) {
                 JSONObject col = new JSONObject();
                 col.accumulate("id", "");
                 col.accumulate("pattern", "")
-                String name = names.get(i).asString
+                String name = column_names.get(i)
                 col.accumulate("label", name)
-                String type = types.get(i).asString
-                ValueType chartColumnType = null;
-                if (type.equals("String") && !name.toLowerCase().equals("time")) {
-                    col.accumulate("type", "string")
-                } else if (type.equals("String") && name.toLowerCase().equals("time")) {
+                if (name.startsWith("Time")) {
                     col.accumulate("type", "datetime")
-                } else if (type.equals("float")) {
-                    col.accumulate("type", "number")
-                } else if (type.equals("double")) {
+                } else {
                     col.accumulate("type", "number")
                 }
                 cols.add(col)
             }
 
-
-            def rows = table.get("rows")
             JSONArray jsonRows = new JSONArray();
             datatable.accumulate("rows", jsonRows)
-            rows.each { JsonArray row ->
+            for (int i = 0; i < tableform.size(); i++) {
+                def table_row = tableform.get(i)
                 JSONObject tableRow = new JSONObject()
                 jsonRows.add(tableRow)
-                for (int i = 0; i < row.size(); i++) {
+                for (int j = 0; j < table_row.size(); j++) {
                     JSONObject rowValues = new JSONObject()
                     tableRow.accumulate("c", rowValues)
-                    String name = names.get(i).asString
-                    String type = types.get(i).asString
-                    if (type.equals("String") && !name.toLowerCase().equals("time")) {
-                        rowValues.accumulate("v", row.get(i).asString)
-                        rowValues.accumulate("f", null)
-                    } else if (type.equals("String") && name.toLowerCase().equals("time")) {
-                        String dtstring = row.get(i).asString
+                    Object jItem = table_row.get(j)
+                    if (jItem != null && jItem instanceof String) {
+                        String dtstring = (String) jItem;
                         DateTime dt = dateTimeService.dateTimeFromIso(dtstring);
                         int year = dt.getYear()
                         int month = dt.getMonthOfYear() - 1
                         int day = dt.getDayOfMonth()
                         rowValues.accumulate("v", "Date("+ year + "," +  month + "," + day + "," + dt.getHourOfDay() + "," + dt.getMinuteOfHour() + "," + dt.getSecondOfMinute() + "," + dt.getMillisOfSecond() +")")
                         rowValues.accumulate("f", null)
-                    } else if (type.equals("float")) {
-                        if (row.get(i).isJsonNull()) {
-                            rowValues.accumulate("v", null)
-                            rowValues.accumulate("f", null)
-                        } else {
-                            rowValues.accumulate("v", row.get(i).asDouble)
-                            rowValues.accumulate("f", null)
-                        }
-                    } else if (type.equals("double")) {
-                        JsonElement je = row.get(i);
-                        if (je == null || je.isJsonNull()) {
-                            rowValues.accumulate("v", null)
-                            rowValues.accumulate("f", null)
-                        } else {
-                            rowValues.accumulate("v", je.asFloat)
-                            rowValues.accumulate("f", null)
-                        }
+                    } else if (jItem != null && jItem instanceof Double) {
+                        double jValue = ((Double) jItem).doubleValue()
+                        rowValues.accumulate("v", jValue)
+                        rowValues.accumulate("f", null)
                     } else {
-                        log.info("Cell value of unknown type encountered: " + type)
+                        rowValues.accumulate("v", null)
                     }
                 }
             }

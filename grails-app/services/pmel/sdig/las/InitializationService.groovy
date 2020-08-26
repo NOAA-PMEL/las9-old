@@ -715,6 +715,29 @@ class InitializationService {
 
          */
 
+        Product traj_time_series = Product.findByName("Trajectory_timeseries_plot")
+        if ( !traj_time_series ) {
+            traj_time_series = new Product([name:"Trajectory_timeseries_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TRAJECTORY, product_order: "100001"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_ts = new Operation([name: "Trajectory_timeseries_plot", service_action: "Timeseries_station_plot", type: "ferret", output_template: "zoom"])
+            operation_plot_ts.setResultSet(resultsService.getPlotResults())
+            operation_plot_ts.addToTextOptions(optionsService.getExpression())
+            operation_plot_ts.addToTextOptions(optionsService.getDep_axis_scale())
+            operation_plot_ts.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_plot_ts.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_ts.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_plot_ts.addToMenuOptions(optionsService.getLine_or_sym())
+            operation_plot_ts.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_ts.addToMenuOptions(optionsService.getLine_thickness())
+
+            traj_time_series.addToOperations(operation_extract_data)
+            traj_time_series.addToOperations(operation_plot_ts)
+
+            traj_time_series.save(failOnError: true)
+        }
+
         Product dsg_time_series = Product.findByName("Timeseries_station_plot")
         if ( !dsg_time_series ) {
             dsg_time_series = new Product([name:"Timeseries_station_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TIMESERIES, product_order: "100001"])
@@ -1055,6 +1078,13 @@ class InitializationService {
 //            timeseries_plot.save(failOnError: true)
 //        }
 
+        Product charts_traj_timeseries_plot = Product.findByNameAndTitle("Charts Traj Timeseries Plot", "Timeseries Plot");
+        if ( !charts_traj_timeseries_plot ) {
+            charts_traj_timeseries_plot = new Product([name: "Charts Traj Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TRAJECTORY, product_order: "100001"])
+            Operation operation_timeseries_plot = new Operation([service_action: "client_plot", type: "client"])
+            charts_traj_timeseries_plot.addToOperations(operation_timeseries_plot)
+            charts_traj_timeseries_plot.save(failOnError: true)
+        }
         Product charts_timeseries_plot = Product.findByNameAndTitle("Charts Timeseries Plot", "Timeseries Plot");
         if ( !charts_timeseries_plot ) {
             charts_timeseries_plot = new Product([name: "Charts Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "100001"])

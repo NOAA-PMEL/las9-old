@@ -52,11 +52,7 @@ public class LASProxy {
 			int rc = httpResponse.getStatusLine().getStatusCode();
 
 			if (rc != HttpStatus.SC_OK) {
-
-			        String message = EntityUtils.toString(httpResponse.getEntity());
-                                message = message.substring(message.indexOf("<h1>")+4, message.indexOf("</h1>"));
-
-                                if ( message == null || message.equals("") ) message = "HTTP Error code: "+rc;
+				String message = EntityUtils.toString(httpResponse.getEntity());
 				log.error(message);
 				if ( response == null ) {
 					throw new IOException(message);

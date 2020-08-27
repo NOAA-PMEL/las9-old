@@ -41,19 +41,10 @@ class ErddapService {
 
         productService.writePulse(hash, outputPath, "Preparing for netCDF file download from ERDDAP.", null, null, null, PulseType.STARTED)
 
-        def reason // Special property to help debug dashboard requests
-
         def variableHashes = lasRequest.getVariableHashes();
         def operations
 
         List<RequestProperty> requestProperties = lasRequest.getRequestProperties();
-        if ( requestProperties ) {
-            requestProperties.each {
-                if ( it.type == "dashboard" && it.name == "request_type" ) {
-                    reason = it.value
-                }
-            }
-        }
 
         //If exception occurs in try/catch block, 'causeOfError' was the cause.
         String causeOfError = "Unexpected error: ";
@@ -679,7 +670,6 @@ class ErddapService {
 
                 try {
 
-                    log.info(reason)
                     log.info(dsUrl1)
                     if ( cancelFile.exists() ) {
                         cancelFile.delete()
@@ -692,7 +682,6 @@ class ErddapService {
                         throw new Exception("Request canceled.")
                     }
 
-                    // TODO Cancel request?
                 } catch (Exception e) {
                     String message = e.getMessage();
                     if ( e.getMessage().contains("com.cohort") ) {
@@ -704,7 +693,7 @@ class ErddapService {
                         empty1 = true;
                     } else {
                         causeOfError = "Data source error: " + message;
-                        throw new Exception(message);
+                        throw new Exception(causeOfError);
                     }
                 }
                 dt = new DateTime();
@@ -721,7 +710,6 @@ class ErddapService {
                 log.debug("TableDapTool query="+dsUrl2);
                 log.info("{TableDapTool starting file pull for file 2 at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
                 try {
-                    log.info(reason)
                     log.info(dsUrl2)
                     productService.writePulse(hash, outputPath, "Downloading netCDF second of two netCDF files.", null, temp_file2.getAbsolutePath(), null, PulseType.STARTED)
                     lasProxy.executeERDDAPMethodAndSaveResult(dsUrl2, temp_file2, null);

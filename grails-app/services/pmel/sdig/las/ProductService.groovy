@@ -5,6 +5,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.jdom.Document
 import org.jdom.Element
+import pmel.sdig.las.type.GeometryType
 
 @Transactional(readOnly = true)
 class ProductService {
@@ -385,6 +386,9 @@ class ProductService {
 
         def productName = product.getName()
         String view = product.getView()
+        if ( !product.getGeometry().equals(GeometryType.GRID) ) {
+            view = product.getData_view()
+        }
         List<RequestProperty> properties = lasRequest.getRequestProperties();
         List<Analysis> analysis = lasRequest.getAnalysis()
 

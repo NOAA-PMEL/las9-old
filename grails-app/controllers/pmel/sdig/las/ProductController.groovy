@@ -640,9 +640,7 @@ class ProductController {
 
 
             String jsonText = lasProxy.executeGetMethodAndReturnResult(url)
-            File dataj = new File("/home/rhs/data.json")
 
-            dataj.write(jsonText)
             JsonElement json = jsonParser.parse(jsonText)
             def table = json.getAsJsonObject().get("table")
 

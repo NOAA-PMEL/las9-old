@@ -1265,7 +1265,9 @@ class IngestService {
     Dataset ingestAllFromErddap(String url, List<AddProperty> ingestProperties) {
 
 
-        def search = "index.json?page=1&itemsPerPage=1000"
+        def search = "?page=1&itemsPerPage=1000"
+        url = url.replace(search, "");
+        if ( url.endsWith("index.html") ) url = url.replace("index.html", "")
         if ( !url.endsWith("tabledap") && !url.endsWith("tabledap/") ) {
             log.warn("Expecting a url of the form https://host.gov/erddap/tabledap/ trying with /tabledap appended.")
             if ( url.endsWith("erddap") ) {
@@ -1288,7 +1290,8 @@ class IngestService {
         def prurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/profile/"
         Dataset profile = new Dataset([title: "Profile Data", url: prurl, hash: getDigest(prurl)])
         log.info("Processing table dap data sets from " + url)
-        url = url + search
+        def tabledap = url;
+        url = url + "index.json"
         InputStream stream = null;
         try {
             stream = lasProxy.executeGetMethodAndReturnStream(url, null);
@@ -1316,15 +1319,40 @@ class IngestService {
 //                String uid = fullurl.substring(fullurl.lastIndexOf("/") + 1);
 
                 Dataset tabledapItem = ingestFromErddap_using_json(fullurl, ingestProperties);
+                def placed = null;
                 if ( tabledapItem ) {
-                    if (tabledapItem.getGeometry() == GeometryType.TIMESERIES) {
-                        timeseries.addToDatasets(tabledapItem)
-                    } else if (tabledapItem.getGeometry() == GeometryType.TRAJECTORY) {
-                        trajectories.addToDatasets(tabledapItem)
-                    } else if (tabledapItem.getGeometry() == GeometryType.POINT) {
-                        point.addToDatasets(tabledapItem)
-                    } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
-                        profile.addToDatasets(tabledapItem)
+                    // First check if there is a container data set with the tabledap URL
+                    Dataset d = Dataset.findByUrl(tabledap)
+                    if ( d ) {
+                        // The top level may contain other containers. One must travel down the hierarchy until the
+                        // matching data set contains only data sets with variable children.
+                        List<Dataset> children = d.getDatasets();
+                        placed = placeDataset(null, tabledapItem, children)
+                        if ( placed ) {
+                            placed.save(flush: true)
+                            d.save(flush: true)
+                        } else {
+                            if (tabledapItem.getGeometry() == GeometryType.TIMESERIES) {
+                                timeseries.addToDatasets(tabledapItem)
+                            } else if (tabledapItem.getGeometry() == GeometryType.TRAJECTORY) {
+                                trajectories.addToDatasets(tabledapItem)
+                            } else if (tabledapItem.getGeometry() == GeometryType.POINT) {
+                                point.addToDatasets(tabledapItem)
+                            } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
+                                profile.addToDatasets(tabledapItem)
+                            }
+                        }
+                    // If not, just use the DSG type
+                    } else {
+                        if (tabledapItem.getGeometry() == GeometryType.TIMESERIES) {
+                            timeseries.addToDatasets(tabledapItem)
+                        } else if (tabledapItem.getGeometry() == GeometryType.TRAJECTORY) {
+                            trajectories.addToDatasets(tabledapItem)
+                        } else if (tabledapItem.getGeometry() == GeometryType.POINT) {
+                            point.addToDatasets(tabledapItem)
+                        } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
+                            profile.addToDatasets(tabledapItem)
+                        }
                     }
                 }
             }
@@ -1342,6 +1370,28 @@ class IngestService {
             }
         }
         dsg
+    }
+    Dataset placeDataset(Dataset incoming_parent, Dataset incoming, List<Dataset> containers) {
+        for (int i = 0; i < containers.size(); i++) {
+            Dataset parent = containers.get(i)
+            if ( incoming.getTitle().contains(parent.getTitle()) ) {
+                // It's a match. It either goes here of in one of the children
+                List<Dataset> children = parent.getDatasets()
+                if ( children.size() == 0 ) {
+                    parent.addToDatasets(incoming)
+                    incoming_parent = parent;
+                } else {
+                    Dataset child = children.get(0);
+                    if ( child.getVariableChildren() ) {
+                        parent.addToDatasets(incoming)
+                        incoming_parent = parent
+                    } else {
+                        return placeDataset(incoming_parent, incoming, children)
+                    }
+                }
+            }
+        }
+        return incoming_parent;
     }
     Dataset ingestFromErddap_using_json(String url, List<AddProperty> properties ) {
 
@@ -1659,6 +1709,33 @@ class IngestService {
                 fsize = (long) c + 1
             }
             double step = (dend - dstart) / (Double.valueOf(fsize) - 1.0d)
+
+            // Maybe we prefer lon360 values because of the wrap...
+            def range = metadata.getAttributeValue("lon360", "actual_range")
+            if ( range ) {
+                // I suspect if lon360 exists we should use it
+                def parts = range.split(",")
+                def min = Double.valueOf(parts[0].trim()).doubleValue()
+                def max = Double.valueOf(parts[1].trim()).doubleValue()
+                if (min > 2.5 && min < 180 && max < 357.5 && max > 180) {
+                    dstart = min
+                    dend = max
+                }
+
+                def r = dend - dstart
+                def fudge = r*0.15d
+
+                if ( (dstart - fudge) > 0.0d ) {
+                    dstart = dstart - fudge
+                } else {
+                    dstart = 0.0d
+                }
+                if ( (dend + fudge) < 360.0d ) {
+                    dend = dend + fudge
+                } else {
+                    dend = 360.0d
+                }
+            }
             geoAxisX.setSize(fsize)
             geoAxisX.setMin(dstart)
             geoAxisX.setMax(dend)
@@ -1709,6 +1786,18 @@ class IngestService {
                 fsize = (long) c + 1
             }
             double step = (dend - dstart) / (Double.valueOf(fsize) - 1.0d)
+            def dr = dend - dstart
+            def fudge = dr*0.15d
+            if ( dstart - fudge > -85.0d ) {
+                dstart = dstart - fudge;
+            } else {
+                dstart = -90.0d
+            }
+            if ( dend + fudge < 85.0d ) {
+                dend = dend + fudge
+            } else {
+                dend = 90.0d
+            }
             geoAxisY.setMin(dstart)
             geoAxisY.setMax(dend)
             geoAxisY.setDelta(step)

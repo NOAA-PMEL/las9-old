@@ -16,6 +16,7 @@ import ucar.ma2.ArrayInt
 import ucar.ma2.ArrayLong
 import ucar.ma2.ArrayShort
 import ucar.ma2.ArrayString
+import ucar.ma2.DataType
 import ucar.ma2.InvalidRangeException
 import ucar.nc2.Attribute
 import ucar.nc2.Dimension
@@ -746,7 +747,7 @@ class ErddapService {
 //                                        lasBackendResponse.setError("ERDDAP data request canceled.");
 //                                        return lasBackendResponse;
 //                                    }
-                    merge(netcdfFilename, temp_file1, temp_file2);
+                    merge(netcdfFilename, temp_file1, temp_file2, cruiseid, lonname, latname, zname, time);
                     temp_file1.delete();
                     temp_file2.delete();
                 }
@@ -763,7 +764,10 @@ class ErddapService {
     }
 
     // Helper methods for dealing with netCDF files when doing a query that crosses the dateline.
-    def merge(String netcdfFilename, File temp_file1, File temp_file2) throws IOException, InvalidRangeException  {
+    def merge(String netcdfFilename, File temp_file1, File temp_file2, String cruiseid, String lonname, String latname, String zname, String time) throws IOException, InvalidRangeException  {
+
+        def all = []
+        def datarows = []
 
         NetcdfFile trajset1 = (NetcdfFile) NetcdfDataset.open(temp_file1.getAbsolutePath());
         NetcdfFile trajset2 = (NetcdfFile) NetcdfDataset.open(temp_file2.getAbsolutePath());
@@ -903,8 +907,8 @@ class ErddapService {
                     Array d2 = var2.read();
                     String name = var1.getShortName();
 
-                    fill(d1, name, 0);
-                    fill(d2, name, d1.getShape()[0]);
+                    fill(d1, name, 0, datarows, cruiseid, time);
+                    fill(d2, name, d1.getShape()[0], datarows, cruiseid, time);
 
 
                 } else {
@@ -948,7 +952,9 @@ class ErddapService {
         int total = 0;
 
         // Create the new data for the sample dimension
-        ArrayInt.D1 counts = new ArrayInt.D1(sortedTraj.size());
+        int[] shape = new int[1]
+        shape[0] = sortedTraj.size()
+        def counts = Array.factory(DataType.INT, shape)
         int index = 0;
         for (Iterator idIt = sortedTraj.iterator(); idIt.hasNext();){
             String id = (String) idIt.next();
@@ -1457,7 +1463,7 @@ class ErddapService {
             return a.getObject(index);
         }
     }
-    private void fill(Array d, String name, int offset) {
+    private void fill(Array d, String name, int offset, List datarows, String cruiseid, String time) {
 
 
         if ( d instanceof ArrayBoolean.D1 ) {

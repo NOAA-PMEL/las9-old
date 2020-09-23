@@ -111,7 +111,7 @@ export class DatasetAddComponent implements OnInit {
         if ( error.message.includes("auth/login") ) {
           this.applicationStateService.setError("Failed to add tabledap data source. Are you logged in as admin. Reload this page to find out.")
         } else {
-          this.applicationStateService.setError("Failed to add tabledap data source.")
+          this.applicationStateService.setError("Failed to add tabledap data source." + error.message)
         }
         this.error = true;
       }

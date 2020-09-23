@@ -14,7 +14,7 @@ import {
   BreadcrumbModule,
   ButtonModule,
   CardModule,
-  DialogModule, DynamicDialogModule, PickListModule, ProgressBarModule,
+  DialogModule, DropdownModule, DynamicDialogModule, PickListModule, ProgressBarModule, RadioButtonModule,
   ScrollPanelModule,
   SlideMenuModule,
   TabViewModule
@@ -26,6 +26,7 @@ import { DatasetOrganizeComponent } from './dataset-organize/dataset-organize.co
 import { DatasetHideComponent } from './dataset-hide/dataset-hide.component';
 import { DatasetDeleteComponent } from './dataset-delete/dataset-delete.component';
 import { SiteEditComponent } from './site-edit/site-edit.component';
+import { DatasetUpdateComponent } from './dataset-update/dataset-update.component';
 
 
 @NgModule({
@@ -41,6 +42,7 @@ import { SiteEditComponent } from './site-edit/site-edit.component';
     DatasetHideComponent,
     DatasetDeleteComponent,
     SiteEditComponent,
+    DatasetUpdateComponent,
   ],
   imports: [
     BrowserModule,
@@ -58,7 +60,9 @@ import { SiteEditComponent } from './site-edit/site-edit.component';
     ScrollPanelModule,
     TabViewModule,
     PickListModule,
-    ProgressBarModule
+    ProgressBarModule,
+    DropdownModule,
+    RadioButtonModule
   ],
   entryComponents: [
     DatasetPickerComponent

@@ -76,9 +76,11 @@ export class DatasetEditComponent implements OnInit {
           if (this.edit_dataset) {
             this.variables = [];
             this.properties = [];
+            let has_url = false;
             for (let prop in this.edit_dataset) {
               if (this.edit_dataset[prop]) {
                 if (this.edit_dataset[prop] instanceof String || typeof this.edit_dataset[prop] === 'string') {
+                  if ( prop == 'url') has_url = true;
                   let sp: StringProperty = new StringProperty({label: prop, value: this.edit_dataset[prop], key: prop})
                   this.properties.push(sp);
                 } else if (Util.isArray(this.edit_dataset[prop])) {
@@ -89,6 +91,10 @@ export class DatasetEditComponent implements OnInit {
                   // Other types of things to show in form
                 }
               }
+            }
+            if ( !has_url ) {
+              let sp: StringProperty = new StringProperty({label: 'url', value: '', key: 'url'})
+              this.properties.push(sp);
             }
             this.jsonForm = this.formService.makeFormGroup(this.properties);
             this.title = "Editing " + this.edit_dataset.title;

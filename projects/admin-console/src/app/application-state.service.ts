@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {ObservableStore} from "@codewithdan/observable-store";
 import {ApplicationStateStore} from "./application-state-store";
-import {Dataset} from "./json/Dataset";
+import {Dataset, DatasetProperty} from "./json/Dataset";
 import {Util} from "./util/Util";
 
 @Injectable({
@@ -50,6 +50,9 @@ export class ApplicationStateService extends ObservableStore<ApplicationStateSto
   }
   setDatasetToEdit(dataset: Dataset) {
     this.setState({showProgress: false, edit_dataset: dataset}, 'EDIT_DATASET');
+  }
+  setDatasetToEditUpdates(dataset: Dataset) {
+    this.setState({showProgress: false, dataset_to_edit_updates: dataset}, 'EDIT_UPDATE_DATASET');
   }
   setDatasetDirty(edit_dataset: Dataset, dataset_dirty: any) {
     let state = this.getState();
@@ -166,5 +169,9 @@ export interface Changes {
   geoAxisY: any,
   verticalAxis: any,
   timeAxis: any
+}
+export interface UpdateSpec {
+  datset: any,
+  cron_spec: string
 }
 

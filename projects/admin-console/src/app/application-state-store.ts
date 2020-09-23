@@ -19,6 +19,7 @@ export interface ApplicationStateStore {
   destination_parent: any;
   destination: any;
   dataset_to_move: Dataset;
+  dataset_to_edit_updates: Dataset;
 
   // Stuff related to the data set selected for editing.
   edit_dataset: Dataset;

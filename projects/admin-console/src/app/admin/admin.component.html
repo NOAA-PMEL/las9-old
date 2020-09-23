@@ -20,6 +20,9 @@
   <p-tabPanel header="Delete Data">
     <app-dataset-delete></app-dataset-delete>
   </p-tabPanel>
+  <p-tabPanel header="Auto Update Data">
+    <app-dataset-update></app-dataset-update>
+  </p-tabPanel>
 </p-tabView>
 <p-dialog [(visible)]="applicationStateService.error" style="width: 40%" header="An error occurred.">
   {{applicationStateService.getErrorMessage()}}

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {AddRequest} from "./add-request";
 import {Observable} from "rxjs";
 import {HttpClient} from "@angular/common/http";
-import {Changes} from "./app/application-state.service";
+import {Changes, UpdateSpec} from "./app/application-state.service";
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +16,9 @@ export class AdminService {
   }
   saveDataset(changes: Changes): Observable<any> {
     return this.httpClient.put<Map<string, Map<number, string>>>('/las/admin/saveDataset', changes);
+  }
+  saveDatasetUpdateSpec(updateSpec: UpdateSpec): Observable<any> {
+    return this.httpClient.post<any>('/las/admin/saveDatasetUpdateSpec', updateSpec);
   }
   saveSite(changes): Observable<any> {
     return this.httpClient.put<any>('/las/admin/saveSite', changes);

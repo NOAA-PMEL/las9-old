@@ -36,6 +36,8 @@ export class DatasetPickerComponent implements OnInit {
   hide: boolean = false;
   @Input()
   delete: boolean = false;
+  @Input()
+  update: boolean = false;
 
   @Input()
   side_by_side: boolean = false;
@@ -122,6 +124,21 @@ export class DatasetPickerComponent implements OnInit {
     },
       error => {
          this.error = true;
+        this.applicationStateService.setProgress(false);
+        if (error.message.includes("auth/login")) {
+          this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."
+        } else {
+          this.errorDialogMessage = "Failed to get data set details to edit. " + error.message;
+        }
+      }
+    );
+  }
+  editUpdate(dataset: Dataset) {
+    this.datasetService.getDataset(dataset.id).subscribe(indataset => {
+        this.applicationStateService.setDatasetToEditUpdates(indataset);
+      },
+      error => {
+        this.error = true;
         this.applicationStateService.setProgress(false);
         if (error.message.includes("auth/login")) {
           this.errorDialogMessage = "Unable to access the admin server. Are you logged in as admin? Reload this page to login."

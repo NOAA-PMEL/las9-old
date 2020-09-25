@@ -3,6 +3,7 @@ package pmel.sdig.las
 import grails.gorm.transactions.Transactional
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+import pmel.sdig.las.latlon.LatLonUtil
 import pmel.sdig.las.tabledap.DataRow
 import pmel.sdig.las.tabledap.DataRowComparator
 import pmel.sdig.las.type.GeometryType
@@ -55,7 +56,7 @@ class ErddapService {
 
             //get the name for the .nc results file
             causeOfError = "Unable to get backend request's resultsAsFile(netcdf): ";
-            Result file = operation.getResultSet().getResults().find{it.name == "netcdf"}
+            Result file = operation.getResultSet().getResults().find { it.name == "netcdf" }
             log.debug("Got netcdf filename: " + file.getFilename());
 
 
@@ -76,7 +77,6 @@ class ErddapService {
             // This is where we are starting to make the variable query string for the ERDDAP request.
 
 
-
             // get url (almost always ending in "/tabledap/")
             causeOfError = "Could not get url from backend request: ";
 
@@ -90,43 +90,41 @@ class ErddapService {
 
             def downloadvars
             def full = false;
-            if ( download != null ) {
-                RequestProperty dall_prop = download.find{it.name == "all_data"};
+            if (download != null) {
+                RequestProperty dall_prop = download.find { it.name == "all_data" };
 
                 def dall = null
-                if ( dall_prop )
+                if (dall_prop)
                     dall_prop.value
 
-                if ( dall != null ) {
+                if (dall != null) {
                     downloadvars = "standard";
                 }
-                def data_varsProperty = download.find{it.name == "data_variables" };
+                def data_varsProperty = download.find { it.name == "data_variables" };
                 def data_vars = null
-                if ( data_varsProperty ) {
+                if (data_varsProperty) {
                     data_vars = data_varsProperty.value
                 }
 
-                if (data_vars && ( "minimal".equals(data_vars) ||
+                if (data_vars && ("minimal".equals(data_vars) ||
                         "standard".equals(data_vars) ||
-                        "everything".equals(data_vars)  ) ) {
+                        "everything".equals(data_vars))) {
                     downloadvars = data_vars;
                 }
             }
-            def full_dataProp = ferret_prop.find{it.name == "full_data"}
+            def full_dataProp = ferret_prop.find { it.name == "full_data" }
             String full_option = null
-            if ( full_dataProp ) {
+            if (full_dataProp) {
                 full_option = full_dataProp.value;
             }
 
-            if ( full_option != null && full_option.equalsIgnoreCase("yes") ) {
+            if (full_option != null && full_option.equalsIgnoreCase("yes")) {
                 full = true;
             }
 
 
-
-
             StringBuilder query = new StringBuilder();
-            StringBuilder query2 = null;
+
             // If there is no need for the second query, just do the thing and carry on...
 
             // This was a method in the old service. We're just chunking along here in-line
@@ -134,36 +132,36 @@ class ErddapService {
             causeOfError = "Could not get trajectory id from backend request: ";
 
             String tid = dataset.getDatasetPropertyValue("tabledap_access", "trajectory_id")
-            String pid = dataset.getDatasetPropertyValue("tabledap_access","profile_id")
-            String sid = dataset.getDatasetPropertyValue("tabledap_access","timeseries_id");
+            String pid = dataset.getDatasetPropertyValue("tabledap_access", "profile_id")
+            String sid = dataset.getDatasetPropertyValue("tabledap_access", "timeseries_id");
 
             def cruiseid = null;
 
-            if ( tid ) {
+            if (tid) {
                 cruiseid = tid
-            } else if ( pid  ) {
+            } else if (pid) {
                 cruiseid = pid
-            } else if ( sid ) {
+            } else if (sid) {
                 cruiseid = sid
             }
 
 
-            String lon_domain = dataset.getDatasetPropertyValue("tabledap_access","lon_domain")
+            String lon_domain = dataset.getDatasetPropertyValue("tabledap_access", "lon_domain")
 
             causeOfError = "Could not get time column name from backend request: ";
-            String time = dataset.getDatasetPropertyValue("tabledap_access","time")
+            String time = dataset.getDatasetPropertyValue("tabledap_access", "time")
             required(time, causeOfError);
 
-            def latname = dataset.getDatasetPropertyValue("tabledap_access","latitude");
-            def lonname = dataset.getDatasetPropertyValue("tabledap_access","longitude");
-            def zname = dataset.getDatasetPropertyValue("tabledap_access","altitude")
+            def latname = dataset.getDatasetPropertyValue("tabledap_access", "latitude");
+            def lonname = dataset.getDatasetPropertyValue("tabledap_access", "longitude");
+            def zname = dataset.getDatasetPropertyValue("tabledap_access", "altitude")
 
-            def orderby = dataset.getDatasetPropertyValue("tabledap_access","orderby");
-            def dummy = dataset.getDatasetPropertyValue("tabledap_access","dummy");
+            def orderby = dataset.getDatasetPropertyValue("tabledap_access", "orderby");
+            def dummy = dataset.getDatasetPropertyValue("tabledap_access", "dummy");
             List<String> modulo_vars = new ArrayList();
 
-            def modulo_vars_comma_list = dataset.getDatasetPropertyValue("tabledap_access","modulo")
-            if ( modulo_vars_comma_list != null ) {
+            def modulo_vars_comma_list = dataset.getDatasetPropertyValue("tabledap_access", "modulo")
+            if (modulo_vars_comma_list != null) {
                 String[] mods = modulo_vars_comma_list.split(",");
 
                 for (int i = 0; i < mods.length; i++) {
@@ -171,48 +169,34 @@ class ErddapService {
                 }
             }
 
-
-            // Not going to use in new system if possible????
-            // ?????
-
-
-//                            //get "debug" file name, may be null or ""
-//                            //if defined, use the "debug" resultsAsFile as the place to save the constraint statement.
-//                            causeOfError = "Unable to getResultAsFile(debug): ";
-//                            String constraintFileName = lasBackendRequest.getResultAsFile("debug");
-//
-//                            // What operation follows this data extract.
-//                            String operationID = lasBackendRequest.getChainedOperation();
-
-
             boolean download_everytime = false;
-            def dletProp = lasRequest.getRequestProperties().find{it.name == "download_everytime"}
+            def dletProp = lasRequest.getRequestProperties().find { it.name == "download_everytime" }
 
             def dlet = null
-            if ( dletProp ) {
+            if (dletProp) {
                 dlet = dletProp.value.trim()
             }
-            if ( dlet != null && !dlet.isEmpty() && dlet.toLowerCase().equals("true") ) {
+            if (dlet != null && !dlet.isEmpty() && dlet.toLowerCase().equals("true")) {
                 download_everytime = true;
             }
 
             ArrayList<String> vars = []
             List<Variable> datasetVariables = dataset.getVariables()
             for (int i = 0; i < variableHashes.size(); i++) {
-                Variable v = datasetVariables.find{it.hash == variableHashes.get(i)}
+                Variable v = datasetVariables.find { it.hash == variableHashes.get(i) }
                 vars.add(v.getName())
             }
             // If the operation is the prop-prop plot, we need all the variables.
-            if ( productName != null && productName.equals("Trajectgory_thumbnails") ) {
-                String all = dataset.getDatasetPropertyValue("tabledap_access","thumbnails")
-                if ( all ) query.append(all.trim());
+            if (productName != null && productName.equals("Trajectgory_thumbnails")) {
+                String all = dataset.getDatasetPropertyValue("tabledap_access", "thumbnails")
+                if (all) query.append(all.trim());
             } else if (productName != null && productName.equals("Trajectgory_correlation") && !download_everytime) {
-                String all = dataset.getDatasetPropertyValue("tabledap_access","all_variables")
+                String all = dataset.getDatasetPropertyValue("tabledap_access", "all_variables")
                 query.append(all);
-            }  else if ( "standard".equals(downloadvars) ) {
-                String all = dataset.getDatasetPropertyValue("tabledap_access","downloadall_variables")
+            } else if ("standard".equals(downloadvars)) {
+                String all = dataset.getDatasetPropertyValue("tabledap_access", "downloadall_variables")
                 // If the custom download all is not set, use the default.
-                if ( all == null || all.equals("") ) {
+                if (all == null || all.equals("")) {
                     all = dataset.getDatasetPropertyValue("tabledap_access", "all_variables")
                 }
 
@@ -220,22 +204,22 @@ class ErddapService {
 
                 for (Iterator varIt = vars.iterator(); varIt.hasNext();) {
                     String v = (String) varIt.next();
-                    if ( !all.contains(v) && !v.equals(latname) && !v.equals(lonname) && !v.equals(zname) && !v.equals(time) ) {
-                        query.append(","+v);
+                    if (!all.contains(v) && !v.equals(latname) && !v.equals(lonname) && !v.equals(zname) && !v.equals(time)) {
+                        query.append("," + v);
                     }
                 }
-            }  else if ( "everything".equals(downloadvars) ) {
+            } else if ("everything".equals(downloadvars)) {
                 String all = dataset.getDatasetePropertyValue("tabledap_access", "all_variables")
 
                 query.append(all);
 
                 for (Iterator varIt = vars.iterator(); varIt.hasNext();) {
                     String v = (String) varIt.next();
-                    if ( !all.contains(v) && !v.equals(latname) && !v.equals(lonname) && !v.equals(zname) && !v.equals(time) ) {
-                        query.append(","+v);
+                    if (!all.contains(v) && !v.equals(latname) && !v.equals(lonname) && !v.equals(zname) && !v.equals(time)) {
+                        query.append("," + v);
                     }
                 }
-            }  else {
+            } else {
 
                 // Apparently ERDDAP gets mad of you include lat, lon, z or time in the list of variables so just list the "data" variables.
 
@@ -243,13 +227,13 @@ class ErddapService {
                 // Only add the extras if the variable list does not come from configuration.
                 // Some things might need something besides x,y,z and t in the file so...
                 String extra_metadata = dataset.getDatasetPropertyValue("tabledap_access", "extra_metadata")
-                if ( extra_metadata != null && !extra_metadata.equals("") ) {
-                    if ( extra_metadata.contains(",") ) {
+                if (extra_metadata != null && !extra_metadata.equals("")) {
+                    if (extra_metadata.contains(",")) {
                         String[] extras = extra_metadata.split(",");
                         for (int i = 0; i < extras.length; i++) {
                             String e = extras[i].trim();
-                            if ( query.indexOf(e) < 0 ) {
-                                if ( query.length() > 0 && !query.toString().endsWith(",") ) {
+                            if (query.indexOf(e) < 0) {
+                                if (query.length() > 0 && !query.toString().endsWith(",")) {
                                     query.append(",");
                                 }
                                 vars.remove(e);
@@ -258,8 +242,8 @@ class ErddapService {
                         }
 
                     } else {
-                        if ( query.indexOf(extra_metadata) < 0 ) {
-                            if ( query.length() > 0 && !query.toString().endsWith(",") ) {
+                        if (query.indexOf(extra_metadata) < 0) {
+                            if (query.length() > 0 && !query.toString().endsWith(",")) {
                                 query.append(",");
                             }
                             vars.remove(extra_metadata);
@@ -275,15 +259,15 @@ class ErddapService {
                 vars.remove(zname);
                 vars.remove(time);
 
-                if ( productName != null && (productName.equals("Profile_2D_poly") || productName.equals("Time_Series_Location_Plot") || productName.equals("Trajectory_2D_poly")) ) {
-                    String mapvars = dataset.getDatasetPropertyValue("tabledap_access","map_variables")
-                    if ( mapvars != null && !mapvars.equals("") ) {
-                        if ( mapvars.contains(",") ) {
+                if (productName != null && (productName.equals("Profile_2D_poly") || productName.equals("Time_Series_Location_Plot") || productName.equals("Trajectory_2D_poly"))) {
+                    String mapvars = dataset.getDatasetPropertyValue("tabledap_access", "map_variables")
+                    if (mapvars != null && !mapvars.equals("")) {
+                        if (mapvars.contains(",")) {
                             String[] extras = mapvars.split(",");
                             for (int i = 0; i < extras.length; i++) {
                                 String e = extras[i].trim();
-                                if ( query.indexOf(e) < 0 ) {
-                                    if ( query.length() > 0 && !query.toString().endsWith(",") ) {
+                                if (query.indexOf(e) < 0) {
+                                    if (query.length() > 0 && !query.toString().endsWith(",")) {
                                         query.append(",");
                                     }
                                     vars.remove(e);
@@ -292,8 +276,8 @@ class ErddapService {
                             }
 
                         } else {
-                            if ( query.indexOf(mapvars) < 0 ) {
-                                if ( query.length() > 0 && !query.toString().endsWith(",") ) {
+                            if (query.indexOf(mapvars) < 0) {
+                                if (query.length() > 0 && !query.toString().endsWith(",")) {
                                     query.append(",");
                                 }
                                 vars.remove(mapvars);
@@ -306,26 +290,26 @@ class ErddapService {
                 for (Iterator varIt = vars.iterator(); varIt.hasNext();) {
                     String variable = (String) varIt.next();
                     // Apparently ERDDAP gets mad if you list the trajectory_id in the request...
-                    if ( cruiseid == null || (cruiseid != null && !variable.equals(cruiseid)) ) {
-                        variables = variables+variable;
+                    if (cruiseid == null || (cruiseid != null && !variable.equals(cruiseid))) {
+                        variables = variables + variable;
                         if (varIt.hasNext()) {
                             variables = variables + ",";
                         }
                     }
                 }
 
-                if ( variables.endsWith(",") ) {
-                    variables = variables.substring(0, variables.length()-1);
+                if (variables.endsWith(",")) {
+                    variables = variables.substring(0, variables.length() - 1);
                 }
 
-                if ( !variables.equals("") ) {
-                    if ( query.length() > 0 && !query.toString().endsWith(",") ) {
+                if (!variables.equals("")) {
+                    if (query.length() > 0 && !query.toString().endsWith(",")) {
                         query.append(",");
                     }
                     variables = variables.replaceAll(" ", "")
                     query.append(variables);
                 } else {
-                    if ( query.length() > 0 && !query.toString().endsWith(",") ) {
+                    if (query.length() > 0 && !query.toString().endsWith(",")) {
                         query.append(",");
                     }
                     query.append(dummy);
@@ -343,7 +327,7 @@ class ErddapService {
             // In the future we may need to distinguish between a sub-set variable constraint and a variable constraint.
             // The two types below should be enough to tell the difference.
 
-            if ( constraintElements && constraintElements.size() > 0 ) {
+            if (constraintElements && constraintElements.size() > 0) {
 
                 Iterator cIt = constraintElements.iterator();
                 while (cIt.hasNext()) {
@@ -369,14 +353,14 @@ class ErddapService {
             List<String> modulo_required = new ArrayList<String>();
             for (Iterator cvarIt = constrained_modulo_vars_lt.keySet().iterator(); cvarIt.hasNext();) {
                 String cvar = (String) cvarIt.next();
-                if ( constrained_modulo_vars_gt.keySet().contains(cvar)) {
+                if (constrained_modulo_vars_gt.keySet().contains(cvar)) {
                     // Potential for min to be > that max requiring a modulo treatment of the query.
                     String max = constrained_modulo_vars_lt.get(cvar).getRhs();
                     String min = constrained_modulo_vars_gt.get(cvar).getRhs();
                     try {
                         double mind = Double.valueOf(min);
                         double maxd = Double.valueOf(max);
-                        if( mind > maxd ) {
+                        if (mind > maxd) {
                             modulo_required.add(cvar);
                         }
                     } catch (Exception e) {
@@ -398,32 +382,32 @@ class ErddapService {
 
             String s = axesSet.getTlo();  //in Ferret format (except for the dashbaord which is from the data set)
             String tlo = s;
-            if ( s.length() > 0 && !s.contains("Z")) {
+            if (s.length() > 0 && !s.contains("Z")) {
                 s = JDOMUtils.decode(s, "UTF-8");
-                s = s.replace("\"","");
+                s = s.replace("\"", "");
                 tlo = dateTimeService.isoFromFerret(s, "proleptic_gregorian")
             }
 
             s = axesSet.getThi();  //in Ferret format
             String thi = s;
-            if ( s.length() > 0 && !s.contains("Z") ) {
+            if (s.length() > 0 && !s.contains("Z")) {
                 s = JDOMUtils.decode(s, "UTF-8");
-                s = s.replace("\"","");
+                s = s.replace("\"", "");
                 thi = dateTimeService.isoFromFerret(s, "proleptic_gregorian")
             }
 
             //add region constraints other than lon
-            if (ylo && ylo.length() > 0) query.append("&"+latname+">=" + ylo);
-            if (yhi && yhi.length() > 0) query.append("&"+latname+"<=" + yhi);
-            if (zlo && zlo.length() > 0) query.append("&"+zname+">=" + zlo);
-            if (zhi && zhi.length() > 0) query.append("&"+zname+"<=" + zhi);
-            if (tlo && tlo.length() > 0) query.append("&"+time+">=" + tlo);
-            if (thi && thi.length() > 0) query.append("&"+time+"<=" + thi);
+            if (ylo && ylo.length() > 0) query.append("&" + latname + ">=" + ylo);
+            if (yhi && yhi.length() > 0) query.append("&" + latname + "<=" + yhi);
+            if (zlo && zlo.length() > 0) query.append("&" + zname + ">=" + zlo);
+            if (zhi && zhi.length() > 0) query.append("&" + zname + "<=" + zhi);
+            if (tlo && tlo.length() > 0) query.append("&" + time + ">=" + tlo);
+            if (thi && thi.length() > 0) query.append("&" + time + "<=" + thi);
 
 
             // TODO get various qualifiers from the request
             List<DataQualifier> qualifierList = lasRequest.getDataQualifiers();
-            if ( qualifierList ) {
+            if (qualifierList) {
                 for (int i = 0; i < qualifierList.size(); i++) {
                     DataQualifier dq = qualifierList.get(i);
                     if (dq.isDistinct()) {
@@ -443,7 +427,7 @@ class ErddapService {
             }
 
             // Leave point data unordered
-            if ( !dataset.getGeometry().equals(GeometryType.POINT) ) {
+            if (!dataset.getGeometry().equals(GeometryType.POINT)) {
                 if (orderby != null) {
                     if (!orderby.equals("") && !orderby.equals("none")) {
                         query.append("&orderBy(\"" + orderby + "\")");
@@ -472,286 +456,132 @@ class ErddapService {
 
             boolean smallarea = false;
 
-            if ( lon_domain.contains("180") ) {
-                if (xlo.length() > 0 && xhi.length() > 0 ) {
 
-                    double xhiDbl = Double.valueOf(xhi).doubleValue();
-                    double xloDbl = Double.valueOf(xlo).doubleValue();
-                    // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
-                    if ( Math.abs(xhiDbl - xloDbl ) < 358.0d ) {
-                        if ( modulo_required.size() > 0 ) {
-                            causeOfError = "Cannot handle two modulo variables in the same request (longitude and "+modulo_required.get(0)+")";
+            // The client applied a constraint in X
+            if (xlo.length() > 0 && xhi.length() > 0) {
+
+                double xhiDbl = Double.valueOf(xhi).doubleValue();
+                double xloDbl = Double.valueOf(xlo).doubleValue();
+
+                double xspan = Math.abs(xhiDbl - xloDbl);
+                double yloDbl = -90.0d;
+                double yhiDbl = 90.0d;
+                if (ylo.length() > 0) {
+                    yloDbl = Double.valueOf(ylo);
+                }
+                if (yhi.length() > 0) {
+                    yhiDbl = Double.valueOf(yhi);
+                }
+                double yspan = Math.abs(yhiDbl - yloDbl);
+
+                double fraction = ((xspan + yspan) / (360.0d + 180.0d));
+
+                if (fraction < 0.1d) {
+                    smallarea = true;
+                }
+
+                // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
+                if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
+                    if (modulo_required.size() > 0) {
+                        causeOfError = "Cannot handle two modulo variables in the same request (longitude and " + modulo_required.get(0) + ")";
+                    }
+
+                    // Going west to east does not cross dateline, normal constraint
+                    if ( xloDbl < xhiDbl ) {
+                        // Going west to east does not cross dateline, normal constraint
+                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
+                            query.append("&" + lonname + ">=" + xloDbl);
+                            query.append("&" + lonname + "<=" + xhiDbl);
+                        // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
+                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
+                            query.append("&lon360>=" + xloDbl);
+                            query.append("&lon360<=" + xhiDbl);
                         }
-
-                        // This little exercise will normalize the x values to -180, 180.
-                        LatLonPoint p = new LatLonPointImpl(0, xhiDbl);
-                        xhiDbl = p.getLongitude();
-                        p = new LatLonPointImpl(0, xloDbl);
-                        xloDbl = p.getLongitude();
-
-                        double xspan = Math.abs(xhiDbl - xloDbl);
-                        double yloDbl = -90.0d;
-                        double yhiDbl = 90.0d;
-                        if (ylo.length() > 0) {
-                            yloDbl = Double.valueOf(ylo);
-                        }
-                        if (yhi.length() > 0) {
-                            yhiDbl = Double.valueOf(yhi);
-                        }
-                        double yspan = Math.abs(yhiDbl - yloDbl);
-
-                        double fraction = ((xspan+yspan)/(360.0d + 180.0d));
-
-                        if ( fraction < 0.1d ) {
-                            smallarea = true;
-                        }
-
-
-                        // Now a wrap around from west to east should be have xhi < xlo;
-                        if ( xhiDbl < xloDbl ) {
-                            if ( xhiDbl < 0 && xloDbl >=0 ) {
-
-
-                                // This should be true, otherwise how would to get into this situation unless you wrapped around the entire world and overlapped...
-
-
-                                query2 = new StringBuilder(query.toString());
-                                // Get the "left" half.  The section between -180 and xhi
-                                xhiDbl = xhiDbl + 360.0d;
+                    } else if ( xloDbl > xhiDbl ) {
+                        // Going west to east
+                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
+                            // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+                            if ( xloDbl > 0 && xhiDbl < 0 ) {
+                                xhiDbl = xhiDbl + 360;
                                 query.append("&lon360>=" + xloDbl);
                                 query.append("&lon360<=" + xhiDbl);
-                                query2.append("&"+lonname+">="+xloDbl+"&"+lonname+"<180");
-
-                            } else if ( xhiDbl < 0 && xloDbl < 0.0d ) {
-                                double t = xhiDbl;
-                                xhiDbl = xloDbl;
-                                xloDbl = t;
-                                query.append("&"+URLEncoder.encode("&"+lonname+">="+xloDbl, StandardCharsets.UTF_8.name()));
-                                query.append("&"+URLEncoder.encode("&"+lonname+"<="+xhiDbl, StandardCharsets.UTF_8.name()));
                             }
-
-                            // the else block is that you overlapped so leave off the longitude constraint all together
-
-                        } else {
-                            // This else block is the case where it a query that does not cross the date line.
-                            // Still have to use the normalized values.
-                            query.append("&"+lonname+">=" + xloDbl);
-                            query.append("&"+lonname+"<=" + xhiDbl);
+                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
+                            // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+                            // switch an convert.
+                            if ( xloDbl > 180 && xhiDbl < 180 ) {
+                                double t = xloDbl;
+                                xloDbl = xhiDbl;
+                                xhiDbl = t;
+                                xloDbl = LatLonUtil.anglePM180(xloDbl);
+                                xhiDbl = LatLonUtil.anglePM180(xhiDbl);
+                                query.append("&" + lonname + ">=" + xloDbl);
+                                query.append("&" + lonname + "<=" + xhiDbl);
+                            }
                         }
-                    }// Span the whole globe so leave off the lon query all together.
-                } else {
-                    //  If they are not both defined, add the one that is...  There will be no difficulties with dateline crossings...
-                    if (xlo.length() > 0) query.append("&"+lonname+">=" + xlo);
-                    if (xhi.length() > 0) query.append("&"+lonname+"<=" + xhi);
-                }
+                    }
+                } // Span the whole globe so leave off the lon query all together.
+                // Any other circumstance, don't bother to constrain lon and deal with the extra on the client (or not).
             } else {
-
-                if (xlo.length() > 0 && xhi.length() > 0 ) {
-
-                    double xhiDbl = Double.parseDouble(xhi);
-                    double xloDbl = Double.parseDouble(xlo);
-
-                    if ( xloDbl < 0 ) xloDbl = xloDbl + 360;
-                    if ( xhiDbl < 0 ) xhiDbl = xhiDbl + 360;
-                    // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
-                    if ( Math.abs(xhiDbl - xloDbl ) < 358.0d ) {
-                        // Now a wrap around from west to east should be have xhi < xlo;
-                        if ( xhiDbl < xloDbl ) {
-                            query2 = new StringBuilder(query.toString());
-                            query2.append("&"+lonname+">"+0);
-                            query2.append("&"+lonname+">="+xhiDbl);
-                            query.append("&"+lonname+">"+xloDbl);
-                        } else {
-                            if (xlo.length() > 0) query.append("&"+lonname+">=" + xloDbl);
-                            if (xhi.length() > 0) query.append("&"+lonname+"<=" + xhiDbl);
-                        }
-                    }
-                    // else it's a global request. Don't constraint on lon at all.
-                } else {
-                    //  If they are not both defined, add the one that is...  There will be no difficulties with dateline crossings...
-                    if (xlo.length() > 0) query.append("&"+lonname+">=" + xlo);
-                    if (xhi.length() > 0) query.append("&"+lonname+"<=" + xhi);
-                }
-
-                if ( qualifierList ) {
-                    for (int i = 0; i < qualifierList.size(); i++) {
-                        DataQualifier dq = qualifierList.get(i);
-                        if (dq.isDistinct()) {
-                            query2.append("&distinct()")
-                        } else if (!dq.getType().isEmpty()) {
-                            query2.append("&" + dq.getType() + "(")
-                            List<String> vs = dq.getVariables()
-                            for (int j = 0; j < vs.size(); j++) {
-                                query2.append(vs.get(j))
-                                if (j < vs.size() - 1)
-                                    query2.append(",")
-                            }
-                            query2.append(")")
-                        }
-
-                    }
-                }
+                //  If they are not both defined, add the one that is...  There will be no difficulties with dateline crossings...
+                if (xlo.length() > 0) query.append("&" + lonname + ">=" + xlo);
+                if (xhi.length() > 0) query.append("&" + lonname + "<=" + xhi);
             }
-
             // This changes the data set to the decimated data set if it exists.
             // We have decided to try all ribbon plots with the decimated data set...
             // so we will remove the !hasConstraints
-            if ( !smallarea && productName.equals("Trajectory_2D_poly") && !decid.equals("") && !full ) {
+            if (!smallarea && productName.equals("Trajectory_2D_poly") && !decid.equals("") && !full) {
                 url = url.replace(id, decid)
             }
 
-            query.insert(0, type+"?");
-
-            if ( query2 != null && query.length() > 0 ) {
-                query2.insert(0, type+"?");
-            }
-
+            query.insert(0, type + "?");
 
             DateTime dt = new DateTime();
 
-            if ( query2 == null || query2.length() == 0 ) {
-                File temp_file = new File(netcdfFilename+".temp");
+            File temp_file = new File(netcdfFilename + ".temp");
 
 
-                try {
-                    if ( cancelFile.exists() ) {
-                        cancelFile.delete()
-                        throw new Exception("Request canceled.")
-                    }
-                    productService.writePulse(hash, outputPath, "Downloading netCDF file.", null, temp_file.getAbsolutePath(), null, PulseType.STARTED)
-                    String q = URLEncoder.encode(query.toString(), "UTF-8").replaceAll("\\+", "%20").replaceAll("%3F", "?");;
-                    String dsUrl = url + q;  //don't include ".dods"; readOpendapSequence does that
-
-                    dt = new DateTime();
-                    log.debug("TableDapTool query="+dsUrl);
-                    log.info("{TableDapTool starting file pull for the only file at "+ dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-                    lasProxy.executeERDDAPMethodAndSaveResult(dsUrl, temp_file, null);
-                    dt = new DateTime();
-
-//                                    if (lasBackendRequest.isCanceled()) {
-//                                        lasBackendResponse.setError("ERDDAP data request canceled.");
-//                                        return lasBackendResponse;
-//                                    }
-                    log.info("{TableDapTool finished file pull for the only file at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-                    //TODO was the request canceled?
-//                                    if (lasBackendRequest.isCanceled()) {
-//                                        lasBackendResponse.setError("ERDDAP data request canceled.");
-//                                        return lasBackendResponse;
-//                                    }
-                    if ( cancelFile.exists() ) {
-                        cancelFile.delete()
-                        throw new Exception("Request canceled.")
-                    }
-                    temp_file.renameTo(new File(netcdfFilename));
-                    dt = new DateTime();
-                    log.info("Tabledap tool renamed the netcdf file to "+netcdfFilename+" at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-                } catch (Exception e) {
-                    String message = e.getMessage();
-                    if ( e.getMessage().contains("com.cohort") ) {
-                        message = message.substring(message.indexOf("com.cohort.util.SimpleException: "), message.length());
-                        message = message.substring(0, message.indexOf(")"));
-                    }
-                    if ( message.toLowerCase(Locale.ENGLISH).contains("query produced no matching") ) {
-                        throw new Exception(message)
-                    }
-                }
-            } else {
-                // We have to build our own netCDF file from the two queries.  In this case we will pull two DSG files make our own DSG ragged array file.
-                boolean empty1 = false;
-                boolean empty2 = false;
-                File temp_file1 = new File(netcdfFilename+".1.temp");
-                File temp_file2 = new File(netcdfFilename+".2.temp");
-                String q1 = URLEncoder.encode(query.toString(), "UTF-8").replaceAll("\\+", "%20").replaceAll("%3F", "?");
-                String dsUrl1 = url + q1;  //don't include ".dods"; readOpendapSequence does that
-                String q2 = URLEncoder.encode(query2.toString(), "UTF-8").replaceAll("\\+", "%20").replaceAll("%3F", "?");
-                String dsUrl2 = url + q2;  //don't include ".dods"; readOpendapSequence does that
-                dt = new DateTime();
-                log.debug("TableDapTool query="+dsUrl1);
-                log.info("{TableDapTool starting file pull for file 1 at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-
-                try {
-
-                    log.info(dsUrl1)
-                    if ( cancelFile.exists() ) {
-                        cancelFile.delete()
-                        throw new Exception("Request canceled.")
-                    }
-                    productService.writePulse(hash, outputPath, "Downloading netCDF first of two netCDF files.", null, temp_file1.getAbsolutePath(), null, PulseType.STARTED)
-                    lasProxy.executeERDDAPMethodAndSaveResult(dsUrl1, temp_file1, null);
-                    if ( cancelFile.exists() ) {
-                        cancelFile.delete()
-                        throw new Exception("Request canceled.")
-                    }
-
-                } catch (Exception e) {
-                    String message = e.getMessage();
-                    if ( e.getMessage().contains("com.cohort") ) {
-                        message = message.substring(message.indexOf("com.cohort.util.SimpleException: "), message.length());
-                        message = message.substring(0, message.indexOf(")"));
-                    }
-                    if ( message.toLowerCase(Locale.ENGLISH).contains("query produced no matching") ) {
-                        // one empty search
-                        empty1 = true;
-                    } else {
-                        causeOfError = "Data source error: " + message;
-                        throw new Exception(causeOfError);
-                    }
-                }
-                dt = new DateTime();
-                log.info("{TableDapTool finished file pull for the only file at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-                if ( cancelFile.exists() ) {
+            try {
+                if (cancelFile.exists()) {
                     cancelFile.delete()
                     throw new Exception("Request canceled.")
                 }
-                //was the request canceled?
-//                                if (lasBackendRequest.isCanceled()) {
-//                                    lasBackendResponse.setError("ERDDAP data request canceled.");
-//                                    return lasBackendResponse;
-//                                }
-                log.debug("TableDapTool query="+dsUrl2);
-                log.info("{TableDapTool starting file pull for file 2 at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-                try {
-                    log.info(dsUrl2)
-                    productService.writePulse(hash, outputPath, "Downloading netCDF second of two netCDF files.", null, temp_file2.getAbsolutePath(), null, PulseType.STARTED)
-                    lasProxy.executeERDDAPMethodAndSaveResult(dsUrl2, temp_file2, null);
-                } catch (Exception e) {
-                    String message = e.getMessage();
-                    if ( e.getMessage().contains("com.cohort") ) {
-                        message = message.substring(message.indexOf("com.cohort.util.SimpleException: "), message.length());
-                        message = message.substring(0, message.indexOf(")"));
-                    }
-                    if ( message.toLowerCase(Locale.ENGLISH).contains("query produced no matching" ) ) {
-                        // two empty searches
-                        empty2 = true;
-                    } else {
-                        causeOfError = "Data source error: " + message;
-                        throw new Exception(message);
-                    }
-                }
-                if ( empty1 && empty2 ) {
-                    // two empty searches, write the empty file
-                    throw new Exception("Files from server contained no data.")
-                } else if ( empty1 && !empty2 ) {
-                    temp_file2.renameTo(new File(netcdfFilename));
-                } else if ( !empty1 && empty2 ) {
-                    temp_file1.renameTo(new File(netcdfFilename));
-                } else {
-                    dt = new DateTime();
-                    log.info("{TableDapTool finished file pull for the only file at "+dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
-                    if ( cancelFile.exists() ) {
-                        cancelFile.delete()
-                        throw new Exception("Request canceled.")
-                    }
-                    //was the request canceled?
+                productService.writePulse(hash, outputPath, "Downloading netCDF file.", null, temp_file.getAbsolutePath(), null, PulseType.STARTED)
+                String q = URLEncoder.encode(query.toString(), "UTF-8").replaceAll("\\+", "%20").replaceAll("%3F", "?"); ;
+                String dsUrl = url + q;  //don't include ".dods"; readOpendapSequence does that
+
+                dt = new DateTime();
+                log.debug("TableDapTool query=" + dsUrl);
+                log.info("{TableDapTool starting file pull for the only file at " + dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
+                lasProxy.executeERDDAPMethodAndSaveResult(dsUrl, temp_file, null);
+                dt = new DateTime();
+
 //                                    if (lasBackendRequest.isCanceled()) {
 //                                        lasBackendResponse.setError("ERDDAP data request canceled.");
 //                                        return lasBackendResponse;
 //                                    }
-                    merge(netcdfFilename, temp_file1, temp_file2, cruiseid, lonname, latname, zname, time);
-                    temp_file1.delete();
-                    temp_file2.delete();
+                log.info("TableDapTool finished file pull for the only file at " + dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
+                //TODO was the request canceled?
+//                                    if (lasBackendRequest.isCanceled()) {
+//                                        lasBackendResponse.setError("ERDDAP data request canceled.");
+//                                        return lasBackendResponse;
+//                                    }
+                if (cancelFile.exists()) {
+                    cancelFile.delete()
+                    throw new Exception("Request canceled.")
                 }
-
+                temp_file.renameTo(new File(netcdfFilename));
+                dt = new DateTime();
+                log.info("Tabledap tool renamed the netcdf file to " + netcdfFilename + " at " + dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));
+            } catch (Exception e) {
+                String message = e.getMessage();
+                if (e.getMessage().contains("com.cohort")) {
+                    message = message.substring(message.indexOf("com.cohort.util.SimpleException: "), message.length());
+                    message = message.substring(0, message.indexOf(")"));
+                }
+                if (message.toLowerCase(Locale.ENGLISH).contains("query produced no matching")) {
+                    throw new Exception(message)
+                }
             }
             productService.writePulse(hash, outputPath, "Finished making netCDF file.", null, null, null, PulseType.STARTED)
             netcdfFilename
@@ -763,7 +593,7 @@ class ErddapService {
         }
     }
 
-    // Helper methods for dealing with netCDF files when doing a query that crosses the dateline.
+// Helper methods for dealing with netCDF files when doing a query that crosses the dateline.
     def merge(String netcdfFilename, File temp_file1, File temp_file2, String cruiseid, String lonname, String latname, String zname, String time) throws IOException, InvalidRangeException  {
 
         def all = []
@@ -789,7 +619,7 @@ class ErddapService {
                 obscount1 = variable;
             }
             Attribute tid = variable.findAttribute("cf_role");
-            if ( tid != null && tid.getStringValue().equals("trajectory_id") ) {
+            if ( tid != null && (tid.getStringValue().equals("trajectory_id") || tid.getStringValue().equals("profile_id") || tid.getStringValue().equals("timeseries_id")) ) {
                 trajdim_org = variable.getDimension(0);
                 trajidname = variable.getShortName();
                 trajids1 = variable.read();
@@ -1435,8 +1265,8 @@ class ErddapService {
         trajset2.close();
 
     }
-    // Make sure to return the correct Java object based on the Array data type.
-    // Assumes the array is D1 (or D2 for CHAR) since these are points.
+// Make sure to return the correct Java object based on the Array data type.
+// Assumes the array is D1 (or D2 for CHAR) since these are points.
     private Object getObject(Array a, int index) {
         if ( a instanceof ArrayBoolean.D1 ) {
             return a.getBoolean(index);
@@ -1525,19 +1355,19 @@ class ErddapService {
         }
     }
 
-   /*
-    * This throws an LASException("Required value wasn't specified: " + id)
-    * if s is null or "".
-    *
-    *
-    * @param s a string which may be null or ""
-    * @param id e.g., "database_access property 'url'"
-    * @return s (for convenience)
-    * @throws LASException("Required value wasn't specified: " + id)
-    * if s is null or "".
-    *
-    * This is Bob's style, but hey
-    */
+/*
+ * This throws an LASException("Required value wasn't specified: " + id)
+ * if s is null or "".
+ *
+ *
+ * @param s a string which may be null or ""
+ * @param id e.g., "database_access property 'url'"
+ * @return s (for convenience)
+ * @throws LASException("Required value wasn't specified: " + id)
+ * if s is null or "".
+ *
+ * This is Bob's style, but hey
+ */
     static String required(String s, String id) throws Exception {
         if (s == null || s.equals(""))
             throw new Exception ("Required value wasn't specified: " + id + ".");

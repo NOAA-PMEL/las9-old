@@ -575,6 +575,7 @@ class InitializationService {
             operation_plot_traj.addToYesNoOptions(optionsService.getDeg_min_sec())
             operation_plot_traj.addToMenuOptions(optionsService.getLine_or_sym())
             operation_plot_traj.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_traj.addToYesNoOptions(optionsService.getSet_aspect())
             operation_plot_traj.addToMenuOptions(optionsService.getLine_thickness())
 
             trajectory.addToOperations(operation_extract_data)
@@ -583,8 +584,80 @@ class InitializationService {
             trajectory.save(failOnError: true)
         }
 
+/*
+  <operation name="Correlation Plot" ID="Trajectory_correlation_extract_and_plot" default="true" category="file" output_template="zoom">
+    <backend_service>
+      <exclude>ferret,propprop</exclude>
+    </backend_service>
+    <operation name="Database Extraction" ID="DBExtract" service_action="Trajectory_correlation_plot">
+      <response ID="DBExtractResponse">
+        <result type="debug" ID="db_debug" file_suffix=".txt"/>
+        <result type="netCDF" ID="netcdf" file_suffix=".nc"/>
+        <result type="cancel" ID="cancel"/>
+      </response>
+      <service>tabledap</service>
+      <properties>
+        <property_group type="backend_request">
+          <property>
+            <name>exclude</name>
+            <value>ferret,prop_hist</value>
+          </property>
+        </property_group>
+      </properties>
+    </operation>
+    <operation chained="true" name="Trajectory Correlation Plot" ID="Trajectgory_correlation" service_action="Trajectory_correlation">
+      <args>
+        <arg chained="true" type="variable" index="1" operation="DBExtract" result="netcdf" file_suffix=".nc"/>
+        <arg type="region" index="1" ID="in-situ-Region"/>
+      </args>
+      <response ID="PlotResp" type="HTML" index="1">
+        <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+        <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+        <result type="debug" ID="debug" file_suffix=".txt"/>
+        <result type="xml" ID="webrowset" file_suffix=".xml"/>
+        <result type="icon_webrowset" ID="icon_webrowset" file_suffix=".xml"/>
+        <result type="cancel" ID="cancel"/>
+      </response>
+      <service>ferret</service>
+    </operation>
+    <region>
+      <intervals name="xyt"/>
+    </region>
+    <grid_types>
+      <grid_type name="trajectory"/>
+    </grid_types>
+  </operation>
+ */
+        Product prop_prop_traj = Product.findByName("trajectory_prop_prop_plot")
+        if (!prop_prop_traj) {
+            prop_prop_traj = new Product([name: "trajectory_prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.TRAJECTORY, product_order: "99999", hidden: "true"])
 
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
 
+            Operation operation_plot_traj = new Operation([name: "Trajectory_correlation_plot", service_action: "Trajectory_correlation", type: "ferret", output_template: "zoom"])
+            operation_plot_traj.setResultSet(resultsService.getPlotResults())
+
+            prop_prop_traj.addToOperations(operation_extract_data)
+            prop_prop_traj.addToOperations(operation_plot_traj)
+            prop_prop_traj.save(failOnError: true)
+        }
+
+        Product prop_prop_ts = Product.findByName("time_series_prop_prop_plot")
+        prop_prop_ts = new Product([name: "time_series_prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.TIMESERIES, product_order: "99999", hidden: "true"])
+
+        if (!prop_prop_ts) {
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            // TODO figure out what this is supposed to be
+            Operation operation_plot_traj = new Operation([name: "Timeseries_correlation_plot", service_action: "UNKNOWN-UNKNOWN", type: "ferret", output_template: "zoom"])
+            operation_plot_traj.setResultSet(resultsService.getPlotResults())
+
+            prop_prop_ts.addToOperations(operation_extract_data)
+            prop_prop_ts.addToOperations(operation_plot_traj)
+            prop_prop_ts.save(failOnError: true)
+        }
 /*
     <response ID="PlotResp" type="HTML" index="1">
       <result type="map_scale" ID="map_scale" file_suffix=".xml"/>

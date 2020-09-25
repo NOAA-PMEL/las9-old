@@ -3,16 +3,15 @@ package las
 import grails.core.GrailsApplication
 import grails.util.Holders
 import org.apache.shiro.authc.credential.PasswordService
+import org.hibernate.sql.Update
 import pmel.sdig.las.*
 
 class BootStrap {
 
     InitializationService initializationService
-    IngestService ingestService
-    AsyncIngestService asyncIngestService
-    AsyncFerretService asyncFerretService
     PasswordService credentialMatcher
     GrailsApplication grailsApplication
+    UpdateDatasetJobService updateDatasetJobService;
 
     def init = { servletContext ->
         def v = Holders.grailsApplication.metadata['app.version']
@@ -62,6 +61,23 @@ class BootStrap {
         } else if ( admin_pw ) {
             adminUser.setPasswordHash(credentialMatcher.encryptPassword(admin_pw))
             adminUser.save()
+        }
+
+        List<Dataset> updates = Dataset.createCriteria().listDistinct {
+            datasetProperties {
+                eq("type", "update")
+            }
+        }
+        for (int i = 0; i < updates.size(); i++) {
+            Dataset d = updates.get(i);
+            def ds_properties = d.getDatasetProperties();
+            Iterator<DatasetProperty> it = ds_properties.iterator();
+            while ( it.hasNext() ) {
+                DatasetProperty p = it.next();
+                if ( p.getType() == "update" && !p.getValue().isEmpty()) {
+                    updateDatasetJobService.addDatasetUpdate(d.id, p.getValue())
+                }
+            }
         }
 
     }

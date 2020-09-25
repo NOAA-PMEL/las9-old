@@ -482,7 +482,7 @@ public class ComparePanel extends Composite {
 
     }
 
-    public void initializeAxes(String view, Variable variable) {
+    public void initializeAxes(String view, String mapView, Variable variable) {
 
         // Turn them all on
         mapPanel.setDisplay(Display.BLOCK);
@@ -505,7 +505,7 @@ public class ComparePanel extends Composite {
         double ymin = variable.getGeoAxisY().getMin();
         double ymax = variable.getGeoAxisY().getMax();
         refMap.setDataExtent(ymin, ymax, xmin, xmax, variable.getGeoAxisX().getDelta());
-        refMap.setTool(view);
+        refMap.setTool(mapView);
 
         if ( tAxis != null ) {
             String display_hi = tAxis.getDisplay_hi();
@@ -628,7 +628,7 @@ public class ComparePanel extends Composite {
         }
 
         // newVariable was set before rpc to get config.
-        initializeAxes(view, newVariable);
+        initializeAxes(view, view, newVariable);
 
         // Put the values back if we've been here before
         if ( variable != null ) {
@@ -689,5 +689,8 @@ public class ComparePanel extends Composite {
     }
     public List<Widget> getAnnotations() {
         return annotationPanel.getChildrenList();
+    }
+    public void setZRange(boolean range) {
+        zAxisWidget.setRange(range);
     }
 }

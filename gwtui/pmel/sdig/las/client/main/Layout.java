@@ -94,7 +94,10 @@ import pmel.sdig.las.shared.autobean.VariableProperty;
 import pmel.sdig.las.shared.autobean.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -451,6 +454,12 @@ public class Layout extends Composite {
                 variableConstraints.clear();
             }
         });
+        showValuesWindow.addCloseHandler(new CloseHandler<Boolean>() {
+            @Override
+            public void onClose(CloseEvent<Boolean> closeEvent) {
+                showValuesWindow.clear();
+            }
+        });
     }
     public void scale(int navWidth) {
         State state = panel1.getOutputPanel().getState();
@@ -508,6 +517,37 @@ public class Layout extends Composite {
             }
         }
         return constraints;
+    }
+    public List<DataConstraint> getGroupedConstraints() {
+        List<DataConstraint> constraintList = getActiveConstraints();
+        Map<String, DataConstraint> groupedByLHS = new HashMap<>();
+        for (int i = 0; i < constraintList.size(); i++) {
+            DataConstraint dc = constraintList.get(i);
+            DataConstraint groupConstraint = groupedByLHS.get(dc.getLhs());
+            if ( groupConstraint != null ) {
+                groupConstraint.setOp("like");
+                String rhs = groupConstraint.getRhs();
+                if ( !rhs.startsWith("(") ) {
+                    rhs = "("+rhs;
+                }
+                if ( !rhs.endsWith(")") ) {
+                    rhs = rhs + "_ns_" + dc.getRhs() + ")";
+                } else {
+                    rhs = rhs.replace(")", "");
+                    rhs =  rhs + "_ns_" + dc.getRhs() + ")";
+                }
+                groupConstraint.setRhs(rhs);
+            } else {
+                DataConstraint gdc = new DataConstraint(dc.getType(), dc.getLhs(), dc.getOp(), dc.getRhs());
+                groupedByLHS.put(gdc.getLhs(), gdc);
+            }
+        }
+        List<DataConstraint> groupedConstraints = new ArrayList<>();
+        Iterator<String> g = groupedByLHS.keySet().iterator();
+        while(g.hasNext()) {
+            groupedConstraints.add(groupedByLHS.get(g.next()));
+        }
+        return groupedConstraints;
     }
     public boolean isAnalysisActive() {
         return analysisSwitch.getValue();
@@ -1311,6 +1351,7 @@ public class Layout extends Composite {
         downloadWindow.setLeft(0.0);
         downloadWindow.setTop(0.0);
         downloadWindow.open();
+        formatsDropDown.clear();
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem d = (DataItem) datasets.getWidget(i);
             DataItem dd = new DataItem(d.getSelection(), 10);

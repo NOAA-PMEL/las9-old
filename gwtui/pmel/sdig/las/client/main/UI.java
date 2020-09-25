@@ -142,6 +142,8 @@ import java.util.Map;
 import java.util.Queue;
 
 import static pmel.sdig.las.client.util.Constants.GRID;
+import static pmel.sdig.las.client.util.Constants.TIMESERIES;
+import static pmel.sdig.las.client.util.Constants.TRAJECTORY;
 import static pmel.sdig.las.client.util.Constants.navWidth;
 
 /**
@@ -504,14 +506,16 @@ public class UI implements EntryPoint {
                 ProductButton pb = (ProductButton) event.getSource();
                 Product p = pb.getProduct();
 
+                if ( !p.isClientPlot() ) layout.panel1.getChart().setVisible(false);
+                setTopLevel(p);
+
                 if ( p.getMaxArgs() > 1 ) {
                     layout.toDatasetChecks();
                 } else {
-                    layout.plotsDropdown.setEnabled(true);
                     // Potentially going from a multi-variable situation to a single variable
                     // so clear it and re-add the selected variable.
                     variables.clear();
-                    layout.toDatasetRadios(); // TODO this is not working
+                    layout.toDatasetRadios();
                     newVariable = layout.getSelectedVariable();
                     if ( newVariable != null ) {
                         variables.add(newVariable);
@@ -527,7 +531,11 @@ public class UI implements EntryPoint {
                 }
 
                 if ( state.getPanelCount() == 2 ) {
-                    layout.panel2.initializeAxes(p.getView(), newVariable);
+                    String mapView = p.getView();
+                    if ( !newVariable.equals(GRID) ) {
+                        mapView = "xy";
+                    }
+                    layout.panel2.initializeAxes(p.getView(), mapView, newVariable);
                     layout.panel2.setMapSelection(refMap.getYlo(), refMap.getYhi(), refMap.getXlo(), refMap.getXhi());
                     if ( variables.get(0).getVerticalAxis() != null ) {
                         layout.panel2.setZlo(zAxisWidget.getLo());
@@ -838,9 +846,26 @@ public class UI implements EntryPoint {
         eventBus.addHandler(ShowValues.TYPE, new ShowValuesHandler() {
             @Override
             public void onShowValues(ShowValues event) {
-                LASRequest lasRequest = makeRequest(6, "Data_Extract");
-                requestQueue.add(lasRequest);
-                processQueue();
+                String op = "Data_extract";
+                if ( variables.size() > 0 ) {
+                    Variable v = variables.get(0);
+                    if ( v.getGeometry().equals(TRAJECTORY) ) {
+                        op = "Data_extract_trajectory";
+                    } else if ( v.getGeometry().equals(TIMESERIES) ) {
+                        op = "Data_extract_timeseries";
+                    }
+                }
+                if ( op.equals("Data_extract") ) {
+                    LASRequest lasRequest = makeRequest(6, op);
+                    requestQueue.add(lasRequest);
+                    processQueue();
+                } else {
+                    String url = makeERDDAP_url(".xhtml");
+                    Frame frame = new Frame(url);
+                    frame.setWidth("100%");
+                    frame.setHeight("98%");
+                    layout.showValuesWindow.add(frame);
+                }
             }
         });
         eventBus.addHandler(Download.TYPE, new DownloadHandler() {
@@ -848,23 +873,66 @@ public class UI implements EntryPoint {
             public void onDownload(Download event) {
                 Widget s = (Widget) event.getSource();
                 if ( s instanceof MaterialButton) {
-                    if ( layout.formatsButton.getText().toLowerCase().equals("netcdf") ) {
-                        LASRequest lasRequest = makeRequest(7, "Data_Extract_netCDF");
-                        requestQueue.add(lasRequest);
-                    } else if ( layout.formatsButton.getText().toLowerCase().equals("csv") ) {
-                        LASRequest lasRequest = makeRequest(7, "Data_Extract_CSV");
-                        RequestProperty ff = new RequestProperty("ferret", "data_format", "csv");
-                        lasRequest.addProperty(ff);
-                        requestQueue.add(lasRequest);
-                    } else if ( layout.formatsButton.getText().toLowerCase().equals("ascii") ) {
-                        LASRequest lasRequest = makeRequest(7, "Data_Extract_File");
-                        RequestProperty ff = new RequestProperty("ferret", "data_format", "tsv");
-                        lasRequest.addProperty(ff);
-                        requestQueue.add(lasRequest);
+                    Variable v = variables.get(0);
+                    if (v.getGeometry().equals(GRID)) {
+                        if (layout.formatsButton.getText().toLowerCase().equals("netcdf")) {
+                            LASRequest lasRequest = makeRequest(7, "Data_Extract_netCDF");
+                            requestQueue.add(lasRequest);
+                        } else if (layout.formatsButton.getText().toLowerCase().equals("csv")) {
+                            LASRequest lasRequest = makeRequest(7, "Data_Extract_CSV");
+                            RequestProperty ff = new RequestProperty("ferret", "data_format", "csv");
+                            lasRequest.addProperty(ff);
+                            requestQueue.add(lasRequest);
+                        } else if (layout.formatsButton.getText().toLowerCase().equals("ascii")) {
+                            LASRequest lasRequest = makeRequest(7, "Data_Extract_File");
+                            RequestProperty ff = new RequestProperty("ferret", "data_format", "tsv");
+                            lasRequest.addProperty(ff);
+                            requestQueue.add(lasRequest);
+                        }
+                        processQueue();
+                    } else {
+                        String suffix = "." + layout.formatsButton.getText();
+                        String url = makeERDDAP_url(suffix);
+                        layout.downloadLink.setText("Request sucessful. Click to download...");
+                        layout.downloadLoader.setDisplay(Display.NONE);
+                        layout.downloadLink.setDisplay(Display.BLOCK);
+                        layout.downloadLink.setTarget("_blank");
+                        layout.downloadLink.setHref(url);
                     }
-                    processQueue();
                 } else {
 
+                    Variable v = variables.get(0);
+                    layout.formatsDropDown.clear();
+                    if ( v.getGeometry().equals(GRID) ) {
+                        MaterialLink netCDF = new MaterialLink();
+                        netCDF.setText("netCDF");
+                        layout.formatsDropDown.add(netCDF);
+                        MaterialLink ascii = new MaterialLink();
+                        ascii.setText("ASCII");
+                        layout.formatsDropDown.add(ascii);
+                        MaterialLink csv = new MaterialLink();
+                        csv.setText("CSV");
+                        layout.formatsDropDown.add(csv);
+                    } else {
+                        MaterialLink netCDF = new MaterialLink();
+                        netCDF.setText("ncCF");
+                        layout.formatsDropDown.add(netCDF);
+                        MaterialLink ascii = new MaterialLink();
+                        ascii.setText("asc");
+                        layout.formatsDropDown.add(ascii);
+                        MaterialLink csv = new MaterialLink();
+                        csv.setText("csv");
+                        layout.formatsDropDown.add(csv);
+                        MaterialLink csvp = new MaterialLink();
+                        csvp.setText("csvp");
+                        layout.formatsDropDown.add(csvp);
+                        MaterialLink csv0 = new MaterialLink();
+                        csv0.setText("csv0");
+                        layout.formatsDropDown.add(csv0);
+                        MaterialLink geoJson = new MaterialLink();
+                        geoJson.setText("geoJson");
+                        layout.formatsDropDown.add(geoJson);
+                    }
                     String view = products.getSelectedProduct().getView();
                     if (event.isOpen()) {
                         if (view.equals("xy")) {
@@ -961,7 +1029,19 @@ public class UI implements EntryPoint {
                 if ( !event.isSetX() && !event.isSetY() && !event.isSetC() && !event.isRemoveConstraint()) {
                     layout.correlationProgress.setDisplay(Display.BLOCK);
                     // If not opening or changing variables, then just submit the product request to update the plot
-                    LASRequest lasRequest = makeRequest(8, "prop_prop_plot");
+                    String geom = GRID;
+                    if ( variables.size() > 0 ) {
+                        Variable v = variables.get(0);
+                        geom = v.getGeometry();
+                    }
+                    LASRequest lasRequest;
+                    if ( geom.equals(Constants.GRID) ) {
+                        lasRequest = makeRequest(8, "prop_prop_plot");
+                    } else if ( geom.equals(Constants.TRAJECTORY) ) {
+                        lasRequest = makeRequest(8, "trajectory_prop_prop_plot");
+                    } else {
+                        lasRequest = makeRequest(8, "prop_prop_plot");
+                    }
                     requestQueue.add(lasRequest);
                     processQueue();
                 }
@@ -1003,6 +1083,22 @@ public class UI implements EntryPoint {
 
 
 
+    }
+    private void setTopLevel(Product p) {
+        if ( p.isClientPlot() ) {
+            layout.printButton.setEnabled(false);
+            layout.animate.setEnabled(false);
+            layout.plotsDropdown.setEnabled(false);
+            layout.setPanels(1);
+            eventBus.fireEventFromSource(new PanelCount(1), layout.plotsDropdown);
+        } else {
+            layout.topMenuEnabled(true);
+            if (p.getView().equals("xy")) {
+                layout.animate.setEnabled(true);
+            } else {
+                layout.animate.setEnabled(false);
+            }
+        }
     }
     private void saveAxes() {
         xlo = refMap.getXlo();
@@ -1203,6 +1299,8 @@ public class UI implements EntryPoint {
             LineChartOptions options = new LineChartOptions();
             LineChartOptions.Explorer explorer = new LineChartOptions.Explorer();
             explorer.setAxis("horizontal");
+            explorer.setMaxZoomIn(.001);
+            explorer.setMaxZoomOut(1.0);
             options.setExplorer(explorer);
             options.setTitle(dataset.getTitle() + " -- " + variables.get(2).getTitle());
             layout.panel1.getChart().setWidth((Window.getClientWidth() - navWidth)+"px");
@@ -1211,6 +1309,11 @@ public class UI implements EntryPoint {
 
             LineChart annChart = new LineChart(layout.panel1.getChart().getElement());
             annChart.draw(dataTable, options);
+            if ( historyRequest != null ) {
+                layout.panel1.openAnnotations();
+            }
+            historyRequest = null;
+            historyVariable = null;
         }
 
     };
@@ -1226,15 +1329,7 @@ public class UI implements EntryPoint {
 
         @Override
         public void onSuccess(Method method, ResultSet results) {
-            if (products.getSelectedProduct().getView().equals("xy")) {
-                // Active the animate button for the xy view only for now
-                // TODO animate in other dimensions
-                layout.animate.setEnabled(true);
-                layout.animate.setTextColor(Color.WHITE);
-            } else {
-                layout.animate.setEnabled(false);
-            }
-            layout.topMenuEnabled(true);
+            setTopLevel(products.getSelectedProduct());
             layout.setUpdate(Constants.UPDATE_NOT_NEEDED);
 
             int tp = results.getTargetPanel();
@@ -1485,22 +1580,7 @@ public class UI implements EntryPoint {
             setUpForProduct(p, true);
             // Could be setting up after turning it off so check
             if ( layout.isAnalysisActive() ) {
-                String type = layout.getAnalysis().getTransformation();
-                String over = layout.getAnalysis().getOver();
-                if (!type.equals("Compute") && !over.equals("Over")) {
-                    // Analysis is active, take first variable.
-                    if (over.equals("Area")) {
-                        refMap.setTool("xy");
-                    } else if (over.equals("Longitude")) {
-                        refMap.setTool("x");
-                    } else if (over.equals("Latitude")) {
-                        refMap.setTool("y");
-                    } else if (over.equals("Z")) {
-                        zAxisWidget.setRange(true);
-                    } else if (over.equals("Time")) {
-                        dateTimeWidget.setRange(true);
-                    }
-                }
+                setAnalysisRanges();
             }
             layout.setProducts(products);
             layout.setUpdate(Constants.UPDATE_NEEDED);
@@ -1741,6 +1821,10 @@ public class UI implements EntryPoint {
                     Window.alert("Data set ingested with unknown status. May not display correctly.");
                 }
                 if (dataset.hasVariableChildren() && dataset.getStatus() != null && dataset.getStatus().equals(Dataset.INGEST_FINISHED)) {
+                    // Changed data sets, don't retain previous variables or state associated with them.
+                    variables.clear();
+                    // Clear active constraints too.
+                    layout.activeConstraints.clear();
                     if (layout.loadDialog.isOpen())
                         layout.loadDialog.close();
                     configService.getConfig(dataset.getId(), configCallback);
@@ -2027,7 +2111,7 @@ public class UI implements EntryPoint {
         }
 
         // State has been set to work with new variable,
-        // now restore previous settings if possible if a previous variable exists
+        // now restore previous settings if possible if a previous variable exists and the data set has not changed
         // and it's not a request to go back in history (which dictates all the settings to get to previous state).
 
         if (variables.size() > 0 && historyRequest == null && historyVariable == null) {
@@ -2178,6 +2262,24 @@ public class UI implements EntryPoint {
             pbis.getProductsByInterval(variables.get(0).getGeometry(), intervals, pbisCallback);
         }
     }
+    private void setAnalysisRanges() {
+        String type = layout.getAnalysis().getTransformation();
+        String over = layout.getAnalysis().getOver();
+        if (!type.equals("Compute") && !over.equals("Over")) {
+            // Analysis is active, take first variable.
+            if (over.equals("Area")) {
+                refMap.setTool("xy");
+            } else if (over.equals("Longitude")) {
+                refMap.setTool("x");
+            } else if (over.equals("Latitude")) {
+                refMap.setTool("y");
+            } else if (over.equals("Z")) {
+                zAxisWidget.setRange(true);
+            } else if (over.equals("Time")) {
+                dateTimeWidget.setRange(true);
+            }
+        }
+    }
     private void turnOffAnalysis() {
         String intervals = variables.get(0).getIntervals();
         pbis.getProductsByInterval(variables.get(0).getGeometry(), intervals, pbisCallback);
@@ -2185,11 +2287,10 @@ public class UI implements EntryPoint {
     private void update(Product p) {
         layout.showProgress();
         if (p.isClientPlot()) {
-                layout.advancedSearch.setDisplay(Display.NONE);
-                layout.panel1.getOutputPanel().setVisible(false);
-                layout.panel1.getOutputPanel().clearPlot();
-                layout.panel1.clearAnnotations();
-                makeDataRequest(variables, p);
+            layout.advancedSearch.setDisplay(Display.NONE);
+            layout.panel1.getOutputPanel().setVisible(false);
+            layout.panel1.getOutputPanel().clearPlot();
+            makeDataRequest(variables, p);
         } else {
             for (int i = 1; i <= state.getPanelCount(); i++) {
 
@@ -2215,8 +2316,7 @@ public class UI implements EntryPoint {
 
         state.getPanelState(1).setLasRequest(timeseriesReqeust);
         pushHistory();
-        // Always get the data table from LAS to avoid same origin problem
-        datatableService.datatable(timeseriesReqeust, makeGoogleChartFromDataTable);
+
 
         layout.panel1.clearAnnotations();
         layout.panel1.addAnnotation(new MaterialLabel("Dataset: " +dataset.getTitle()));
@@ -2228,7 +2328,72 @@ public class UI implements EntryPoint {
         layout.panel1.addAnnotation(new MaterialLabel("Latitude: " + timeseriesReqeust.getAxesSets().get(0).getYlo()+" : " + timeseriesReqeust.getAxesSets().get(0).getYlo() ));
         layout.panel1.addAnnotation(new MaterialLabel("Longitue: " + timeseriesReqeust.getAxesSets().get(0).getXlo()+" : " + timeseriesReqeust.getAxesSets().get(0).getXhi() ));
 
+        // Always get the data table from LAS to avoid same origin problem
+        datatableService.datatable(timeseriesReqeust, makeGoogleChartFromDataTable);
 
+    }
+    private String makeERDDAP_url(String suffix) {
+        String constraints = "&";
+        Variable v = variables.get(0);
+        String url = v.getUrl();
+        url = url.substring(0, url.indexOf("#"));
+        url = url + suffix;
+        String vars = v.getName();
+        if ( !v.getName().equals("time") && !v.getName().equals("latitude") && !v.getName().equals("longitude") && !v.isDsgId() ) {
+            constraints = constraints + v.getName() + "!=NaN";
+        }
+        for (int i = 1; i < variables.size(); i++) {
+            Variable vvv = variables.get(i);
+            vars = vars + "," + vvv.getName();
+            if ( !vvv.getName().equals("time") && !vvv.getName().equals("latitude") && !vvv.getName().equals("longitude") && !vvv.isDsgId() ) {
+                if ( !constraints.endsWith("&") ) constraints = constraints + "&";
+                constraints = constraints + vvv.getName() + "!=NaN";
+            }
+        }
+        if ( v.getGeometry().equals(TIMESERIES)) {
+            if ( !vars.contains("longitude")) vars = "longitude," + vars;
+            if ( !vars.contains("latitude") ) vars = "latitude," + vars;
+            double[] exts = refMap.getDataExtent();
+            if (!constraints.endsWith("&")) constraints = constraints + "&";
+            constraints = constraints + "longitude>=" + exts[2] + "&longitude<=" + exts[3];
+            constraints = constraints + "&latitude>=" + exts[0] + "&latitude<=" + exts[1];
+        } else {
+            if ( !vars.contains("longitude")) vars = "longitude," + vars;
+            if ( !vars.contains("latitude") ) vars = "latitude," + vars;
+            if (!constraints.endsWith("&")) constraints = constraints + "&";
+            constraints = constraints + "longitude>=" + refMap.getXlo() + "&longitude<=" + refMap.getXhi();
+            constraints = constraints + "&latitude>=" + refMap.getYlo() + "&latitude<=" + refMap.getYhi();
+        }
+        if (v.getVerticalAxis() != null) {
+            if (zAxisWidget.isRange()) {
+                if ( !vars.contains("depth") ) vars = vars + ",depth";
+                if (!constraints.endsWith("&")) constraints = constraints + "&";
+                constraints = constraints + "depth>=" + zAxisWidget.getLo();
+                constraints = constraints + "depth<=" + zAxisWidget.getHi();
+            } else {
+                if ( !vars.contains("depth") ) vars = vars + ",depth";
+                constraints = constraints + "depth=" + zAxisWidget.getLo();
+            }
+        }
+        if (v.getTimeAxis() != null) {
+            if (dateTimeWidget.isRange()) {
+                if ( !vars.contains("time") ) vars = "time," + vars;
+                if (!constraints.endsWith("&")) constraints = constraints + "&";
+                constraints = constraints + "time>=" + dateTimeWidget.getISODateLo();
+                constraints = constraints + "&time<=" + dateTimeWidget.getISODateHi();
+            } else {
+                if ( !vars.contains("time") ) vars = "time," + vars;
+                if (!constraints.endsWith("&")) constraints = constraints + "&";
+                constraints = constraints + "time=" + dateTimeWidget.getISODateLo();
+            }
+        }
+
+        List<DataConstraint> groupedConstraints = layout.getGroupedConstraints();
+        for (int i = 0; i < groupedConstraints.size(); i++) {
+            DataConstraint dc = groupedConstraints.get(i);
+            constraints = constraints + "&" + dc.getRhs() + dc.getOpAsSymbol() + dc.getRhs();
+        }
+        return url + "?" + vars + URL.encode(constraints);
     }
     private LASRequest makeRequest(int panel, String productName) {
         LASRequest lasRequest = new LASRequest();
@@ -2269,7 +2434,8 @@ public class UI implements EntryPoint {
         AxesSet a1 = new AxesSet();
         lasRequest.getAxesSets().add(a1);
 
-        if (productName.toLowerCase().contains("timeseries")) {
+        Variable v = variables.get(0);
+        if (v.getGeometry().equals(TIMESERIES)) {
             double[] exts = refMap.getDataExtent();
             lasRequest.getAxesSets().get(0).setXlo(String.valueOf(exts[2]));
             lasRequest.getAxesSets().get(0).setXhi(String.valueOf(exts[3]));
@@ -2290,34 +2456,7 @@ public class UI implements EntryPoint {
 
         if ( ! variables.get(0).getGeometry().equals(GRID) ) {
             // Apply any active constraints.
-            List<DataConstraint> constraintList = layout.getActiveConstraints();
-            Map<String, DataConstraint> groupedByLHS = new HashMap<>();
-            for (int i = 0; i < constraintList.size(); i++) {
-                DataConstraint dc = constraintList.get(i);
-                DataConstraint groupConstraint = groupedByLHS.get(dc.getLhs());
-                if ( groupConstraint != null ) {
-                    groupConstraint.setOp("like");
-                    String rhs = groupConstraint.getRhs();
-                    if ( !rhs.startsWith("(") ) {
-                        rhs = "("+rhs;
-                    }
-                    if ( !rhs.endsWith(")") ) {
-                        rhs = rhs + "_ns_" + dc.getRhs() + ")";
-                    } else {
-                        rhs = rhs.replace(")", "");
-                        rhs =  rhs + "_ns_" + dc.getRhs() + ")";
-                    }
-                    groupConstraint.setRhs(rhs);
-                } else {
-                    DataConstraint gdc = new DataConstraint(dc.getType(), dc.getLhs(), dc.getOp(), dc.getRhs());
-                    groupedByLHS.put(gdc.getLhs(), gdc);
-                }
-            }
-            List<DataConstraint> groupedConstraints = new ArrayList<>();
-            Iterator<String> g = groupedByLHS.keySet().iterator();
-            while(g.hasNext()) {
-                groupedConstraints.add(groupedByLHS.get(g.next()));
-            }
+            List<DataConstraint> groupedConstraints = layout.getGroupedConstraints();
             lasRequest.setDataConstraints(groupedConstraints);
         }
         // TODO ask ferret to accept ISO Strings
@@ -2730,7 +2869,12 @@ public class UI implements EntryPoint {
             String pview = products.getSelectedProduct().getView();
             layout.panel2.setVariable(variable);
             // Initialize the Axes and Hide axes that are in the view
-            layout.panel2.initializeAxes(pview, variable);
+            String mapView = pview;
+            if ( !variable.getGeometry().equals(GRID) ) {
+                // DSG selections always require X and Y in the view
+                mapView = "xy";
+            }
+            layout.panel2.initializeAxes(pview, mapView, variable);
 
             // set them to match the left nav
             //TODO - this needs logic to get from the left nav and the history and decide which to use based on the
@@ -2789,12 +2933,13 @@ public class UI implements EntryPoint {
                     if ( v_zhi != null ) {
                         layout.panel2.setZhi(v_zhi);
                     }
-
                 }
+                layout.panel2.setZRange(zAxisWidget.isRange());
             }
             if ( variable.getTimeAxis() != null ) {
                 layout.panel2.setFerretDateLo(dateTimeWidget.getFerretDateLo());
                 layout.panel2.setFerretDateHi(dateTimeWidget.getFerretDateHi());
+                layout.panel2.dateTimeWidget.setRange(dateTimeWidget.isRange());
             }
 
             if (variable.getGeometry().equals(Constants.GRID)) {
@@ -2830,48 +2975,45 @@ public class UI implements EntryPoint {
             useVariable = newVector.getU();
         }
 
-        // Only do this if analysis is not actitve
-        if ( !layout.isAnalysisActive() ) {
-            // TODO Use data view maybe
-            if ( useVariable.getGeometry().equals(GRID) ) {
-                refMap.setTool(view);
-                downloadMap.setTool(view);
-                correlationMap.setTool(view);
-                layout.constraints.setDisplay(Display.NONE);
-            } else {
-                refMap.setTool("xy");
-                downloadMap.setTool("xy");
-                correlationMap.setTool("xy");
-                layout.constraints.setDisplay(Display.BLOCK);
-                layout.subsetColumn.clear();
-                layout.byVariable.clear();
-                for (int i = 0; i < dataset.getVariables().size(); i++) {
-                    Variable v = dataset.getVariables().get(i);
 
-                    if ( v.isSubset() || v.isDsgId() ) {
-                        if ( clearConstraints) layout.activeConstraints.clear();
-                        MaterialRow r = new MaterialRow();
-                        r.addStyleName("radioHeight");
-                        MaterialRadioButton rb = new MaterialRadioButton();
-                        rb.addClickHandler(new ClickHandler() {
-                            @Override
-                            public void onClick(ClickEvent clickEvent) {
-                                eventBus.fireEventFromSource(new SubsetValues(v), rb);
-                            }
-                        });
-                        rb.setName("byIdConstraint");
-                        rb.setText(v.getTitle());
-                        rb.setFormValue(v.getName());
-                        r.add(rb);
-                        layout.subsetColumn.add(r);
-                    } else {
-                        layout.byVariable.addItem(v.getName(), v.getTitle());
-                    }
+        if ( useVariable.getGeometry().equals(GRID) ) {
+            refMap.setTool(view);
+            downloadMap.setTool(view);
+            correlationMap.setTool(view);
+            layout.constraints.setDisplay(Display.NONE);
+        } else {
+            refMap.setTool("xy");
+            downloadMap.setTool("xy");
+            correlationMap.setTool("xy");
+            layout.constraints.setDisplay(Display.BLOCK);
+            layout.subsetColumn.clear();
+            layout.byVariable.clear();
+            for (int i = 0; i < dataset.getVariables().size(); i++) {
+                Variable v = dataset.getVariables().get(i);
+
+                if ( v.isSubset() || v.isDsgId() ) {
+                    if ( clearConstraints) layout.activeConstraints.clear();
+                    MaterialRow r = new MaterialRow();
+                    r.addStyleName("radioHeight");
+                    MaterialRadioButton rb = new MaterialRadioButton();
+                    rb.addClickHandler(new ClickHandler() {
+                        @Override
+                        public void onClick(ClickEvent clickEvent) {
+                            eventBus.fireEventFromSource(new SubsetValues(v), rb);
+                        }
+                    });
+                    rb.setName("byIdConstraint");
+                    rb.setText(v.getTitle());
+                    rb.setFormValue(v.getName());
+                    r.add(rb);
+                    layout.subsetColumn.add(r);
+                } else {
+                    layout.byVariable.addItem(v.getName(), v.getTitle());
                 }
             }
+
+
         }
-
-
         if (useVariable.getTimeAxis() != null) {
 
             layout.showDateTime();
@@ -2895,6 +3037,10 @@ public class UI implements EntryPoint {
             layout.hideVerticalAxis();
         }
 
+        if ( layout.isAnalysisActive() ) {
+            // Amend the range settings based on the analysis settings.
+            setAnalysisRanges();
+        }
 
         List<Operation> operations = p.getOperations();
         layout.clearOptions();

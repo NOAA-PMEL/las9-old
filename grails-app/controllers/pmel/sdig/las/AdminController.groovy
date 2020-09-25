@@ -7,6 +7,7 @@ import groovy.json.JsonSlurper
 @Transactional
 class AdminController {
     IngestService ingestService
+    UpdateDatasetJobService updateDatasetJobService;
     def index() {
         respond "You logged in."
     }
@@ -15,7 +16,7 @@ class AdminController {
         def map = requestJSON as Map
         def site = Site.get(1);
         site.properties = map;
-        site.save(flush : true, failOnError: true);
+        site.save(flush: true, failOnError: true);
         JSON.use("deep") {
             render site as JSON
         }
@@ -36,9 +37,68 @@ class AdminController {
         }
         failedDatasets.each {Dataset d ->
             d.setStatus(Dataset.INGEST_NOT_STARTED)
-            d.save()
+            d.save(flush: true)
         }
         render view: "status", model: [failedDatasets: failedDatasets]
+    }
+    def saveDatasetUpdateSpec() {
+        def requestJSON = request.JSON
+        def map = requestJSON as Map;
+        /*
+         This payload is a map with the following keys:
+                dataset - is a the ID of the data set to be modified.
+                property - is a object that looks like a DatasetProperty that should be of the form:
+                type: "update"
+                name: "cron"
+                value: some string of the cron spec for frequency of updates e.g. "30 * * * *" thirty past the hour, every hour
+         */
+        def id = map.get("dataset")
+        def cron_spec = map.get("cron_spec")
+
+        Dataset d = Dataset.get(id)
+        def done = false;
+        if ( d.datasetProperties ) {
+            Iterator<DatasetProperty> it = d.datasetProperties.iterator()
+            while (it.hasNext()) {
+                def p = it.next()
+                if ( p.type == "update") {
+                    done = true
+                    p.type = "update"
+                    p.name = "cron_spec"
+                    p.value = cron_spec
+                    p.save(flush: true)
+                    d.save(flush: true)
+                    if ( !p.value.isEmpty() ) {
+                        updateDatasetJobService.addDatasetUpdate(d.id, p.value)
+                    } else {
+                        updateDatasetJobService.unscheuleUpdate(d.id)
+                    }
+                }
+            }
+        }
+        if ( !done ) {
+            DatasetProperty p = new DatasetProperty()
+            p.type = "update"
+            p.name = "cron_spec"
+            p.value = cron_spec
+            d.addToDatasetProperties(p)
+            d.save(flush: true)
+            if ( !p.value.isEmpty() ) {
+                updateDatasetJobService.addDatasetUpdate(d.id, p.value)
+            } else {
+                updateDatasetJobService.unscheuleUpdate(d.id)
+            }
+        }
+
+        def parent
+        if ( d.parent == null ) {
+            parent = Site.get(1)
+        } else {
+            parent = Dataset.get(d.parent.id);
+        }
+        JSON.use("deep") {
+            render parent as JSON
+        }
     }
     def saveDataset() {
         def requestJSON = request.JSON
@@ -65,7 +125,7 @@ class AdminController {
             log.debug("Saving a change for data set " + id)
             Dataset d = Dataset.get(id)
             d.properties = datasetChanges;
-            d.save(flush: true, failOnError: true)
+            d.save(failOnError: true)
             if ( d.parent == null ) {
                 parent = Site.get(1)
             } else {
@@ -266,12 +326,13 @@ class AdminController {
             if (!dead.parent) {
                 parent = Site.get(1)
                 parent.removeFromDatasets(dead)
-                parent.save()
+                parent.save(flush: true)
             } else {
                 parent = dead.getParent()
                 parent.removeFromDatasets(dead)
-                parent.save()
+                parent.save(flush: true)
             }
+            updateDatasetJobService.unscheuleUpdate(dead.id)
             dead.delete()
         }
         JSON.use("deep") {

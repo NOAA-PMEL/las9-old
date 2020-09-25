@@ -89,7 +89,7 @@ class IngestService {
 
         def url = addRequest.getUrl()
 
-        Dataset dataset = ingestFromErddap(url, properties)
+        Dataset dataset = ingestFromErddap_using_json(url, properties)
 
         dataset
 
@@ -112,6 +112,35 @@ class IngestService {
         minmax[0] = min
         minmax[1] = max
         return minmax
+    }
+    void updateTime(long id) {
+        Dataset dataset = Dataset.get(id)
+        log.info("Updating time axis information for " + dataset.getTitle())
+        Dataset nd = null;
+        if ( dataset.geometry == GeometryType.GRID ) {
+            nd = ingest(null, dataset.getUrl())
+        } else {
+            nd = ingestFromErddap_using_json(dataset.getUrl(), new ArrayList<AddProperty>())
+        }
+        if ( nd ) {
+            List<Variable> nvariables = nd.getVariables();
+            List<Variable> ovariables = dataset.getVariables();
+            for (int i = 0; i < nvariables.size(); i++) {
+                Variable nv = nvariables.get(i)
+                for (int j = 0; j < ovariables.size(); j++) {
+                    Variable ov = ovariables.get(j)
+                    if ( nv.name == ov.name ) {
+                        TimeAxis ot = ov.getTimeAxis();
+                        TimeAxis nt = nv.getTimeAxis();
+                        ot.setEnd(nt.getEnd())
+                        ot.save(flush: true)
+                    }
+                }
+            }
+            dataset.save(flush: true)
+            log.info("Finished updating time information axis for " + dataset.getTitle())
+        }
+
     }
     Dataset ingest(String parentHash, String url) {
 
@@ -1717,7 +1746,7 @@ class IngestService {
                 def parts = range.split(",")
                 def min = Double.valueOf(parts[0].trim()).doubleValue()
                 def max = Double.valueOf(parts[1].trim()).doubleValue()
-                if (min > 2.5 && min < 180 && max < 357.5 && max > 180) {
+                if ((min > 2.5 && min < 180 && max < 357.5 && max > 180) || (min >= 180.0d && max >= 180.0d) ) {
                     dstart = min
                     dend = max
                 }
@@ -2091,6 +2120,9 @@ class IngestService {
         dataset
     }
 
+    /*
+    @Deprecated
+     */
     Dataset ingestFromErddap(String url, List<AddProperty> properties) {
 
         AddProperty plots = properties.find { it.name == "mapandplot" }

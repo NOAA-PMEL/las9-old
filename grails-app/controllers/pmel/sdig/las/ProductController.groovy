@@ -15,6 +15,7 @@ import org.grails.web.json.JSONObject
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
+import pmel.sdig.las.latlon.LatLonUtil
 
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
@@ -370,13 +371,17 @@ class ProductController {
             String xlo = axesSets.get(0).getXlo();
             String xhi = axesSets.get(0).getXhi();
 
+            // Direct ERDDAP request, must convert to -180 to 180
+            double dxlo = LatLonUtil.anglePM180(Double.valueOf(xlo).doubleValue())
+            double dxhi = LatLonUtil.anglePM180(Double.valueOf(xhi).doubleValue())
+
             if ( xlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "longitude>=" + xlo;
+                constraint = constraint + "longitude>=" + String.valueOf(dxlo);
             }
             if ( xhi ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + "longitude<=" + xhi
+                constraint = constraint + "longitude<=" + String.valueOf(dxhi)
             }
 
             String ylo = axesSets.get(0).getYlo();
@@ -489,6 +494,7 @@ class ProductController {
         // it is a request that contains the ERDDAP URL as a query parameter called "url"
         def url = null
         def reason = ""
+        String constraint = ""
         if (requestJSON) {
             def lasRequest = new LASRequest(requestJSON);
 
@@ -502,25 +508,30 @@ class ProductController {
             }
 
             Dataset dataset = Dataset.findByHash(lasRequest.getDatasetHashes().get(0))
-            def varNames = ""
-            lasRequest.getVariableHashes().each { String vhash ->
-                Variable variable = dataset.variables.find { Variable v -> v.hash == vhash }
-                if ( !varNames.isEmpty() ) varNames = varNames + ",";
-                varNames = varNames + variable.name
-            }
-
             def idVar = null
             dataset.getVariables().each{Variable variable ->
                 if ( variable.isDsgId() ) {
                     idVar = variable
                 }
             }
+            def varNames = ""
+            lasRequest.getVariableHashes().each { String vhash ->
+                Variable variable = dataset.variables.find { Variable v -> v.hash == vhash }
+                if ( !varNames.isEmpty() ) varNames = varNames + ",";
+                varNames = varNames + variable.name
+                if ( variable.name != "time" && variable.name != "latitude" && variable.name != "longitude" && variable.name != idVar.name ) {
+                    if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                    constraint = constraint + variable.name + "!=NaN"
+                }
+            }
+
+
 
             def latname = dataset.getDatasetPropertyValue("tabledap_access","latitude");
             def lonname = dataset.getDatasetPropertyValue("tabledap_access","longitude");
             def zname = dataset.getDatasetPropertyValue("tabledap_access","altitude")
 
-            String constraint = ""
+
             String tlo = lasRequest.getAxesSets().get(0).getTlo();
             String thi = lasRequest.getAxesSets().get(0).getThi();
 
@@ -536,13 +547,77 @@ class ProductController {
             String xlo = lasRequest.getAxesSets().get(0).getXlo()
             String xhi = lasRequest.getAxesSets().get(0).getXhi()
 
+            if (xlo.length() > 0 && xhi.length() > 0) {
+
+                double xhiDbl = Double.valueOf(xhi).doubleValue();
+                double xloDbl = Double.valueOf(xlo).doubleValue();
+
+                // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
+                if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
+                    // Going west to east does not cross dateline, normal constraint
+                    if ( xloDbl < xhiDbl ) {
+                        // Going west to east does not cross dateline, normal constraint
+                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
+                            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                            constraint = constraint + lonname + ">=" + xloDbl
+                            constraint = constraint + "&" +lonname + "<=" + xhiDbl
+                            // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
+                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
+                            if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                            constraint = constraint + "lon360>=" + xloDbl;
+                            constraint = constraint + "&lon360<=" + xhiDbl;
+                        }
+                    } else if ( xloDbl > xhiDbl ) {
+                        // Going west to east
+                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
+                            // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+                            if ( xloDbl > 0 && xhiDbl < 0 ) {
+                                xhiDbl = xhiDbl + 360;
+                                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                                constraint = constraint + "lon360>=" + xloDbl;
+                                constraint = constraint + "&lon360<=" + xhiDbl;
+                            }
+                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
+                            // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+                            // switch an convert.
+                            if ( xloDbl > 180 && xhiDbl < 180 ) {
+                                double t = xloDbl;
+                                xloDbl = xhiDbl;
+                                xhiDbl = t;
+                                xloDbl = LatLonUtil.anglePM180(xloDbl);
+                                xhiDbl = LatLonUtil.anglePM180(xhiDbl);
+                                if ( !constraint.isEmpty() ) constraint = constraint + "&"
+                                constraint = constraint + lonname + ">=" + xloDbl;
+                                constraint = constraint + "&" + lonname + "<=" + xhiDbl;
+                            }
+                        }
+                    }
+                } // Span the whole globe so leave off the lon query all together.
+                // Any other circumstance, don't bother to constrain lon and deal with the extra on the client (or not).
+            } else {
+                //  If they are not both defined, add the one that is...  There will be no difficulties with dateline crossings...
+                if (xlo.length() > 0) {
+                    if (!constraint.isEmpty()) constraint = constraint + "&"
+                    constraint = constraint + lonname + ">=" + xlo;
+                }
+                if (xhi.length() > 0) {
+                    if (!constraint.isEmpty()) constraint = constraint + "&"
+                    constraint = constraint + lonname + "<=" + xhi
+                }
+            }
+
+
+            // Direct ERDDAP request, must convert to -180 to 180
+            double dxlo = LatLonUtil.anglePM180(Double.valueOf(xlo).doubleValue())
+            double dxhi = LatLonUtil.anglePM180(Double.valueOf(xhi).doubleValue())
+
             if ( xlo ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + lonname + ">=" + xlo;
+                constraint = constraint + lonname + ">=" + String.valueOf(dxlo)
             }
             if ( xhi ) {
                 if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + lonname + "<=" + xhi
+                constraint = constraint + lonname + "<=" + String.valueOf(dxhi)
             }
 
             String ylo = lasRequest.getAxesSets().get(0).getYlo()

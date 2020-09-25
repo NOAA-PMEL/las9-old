@@ -127,6 +127,7 @@ public class OutputPanel extends AbsolutePanel {
             double h = (y/x)*newx;
             imageScaleRatio = h/y_plot_size;
         }
+
         scale(plotImage, imageScaleRatio);
     }
     public void setStateForPanelCount(State state) {

@@ -386,9 +386,7 @@ class ProductService {
 
         def productName = product.getName()
         String view = product.getView()
-        if ( !product.getGeometry().equals(GeometryType.GRID) ) {
-            view = product.getData_view()
-        }
+
         List<RequestProperty> properties = lasRequest.getRequestProperties();
         List<Analysis> analysis = lasRequest.getAnalysis()
 

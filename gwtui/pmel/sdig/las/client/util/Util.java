@@ -12,6 +12,7 @@ public class Util {
 	public Util() {
 
 	}
+
 	public static String padRight(String s, int n) {
 		int pad = n = s.length();
 		for ( int i = 0; i < pad; i++ ) {

@@ -606,20 +606,6 @@ class ProductController {
                 }
             }
 
-
-            // Direct ERDDAP request, must convert to -180 to 180
-            double dxlo = LatLonUtil.anglePM180(Double.valueOf(xlo).doubleValue())
-            double dxhi = LatLonUtil.anglePM180(Double.valueOf(xhi).doubleValue())
-
-            if ( xlo ) {
-                if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + lonname + ">=" + String.valueOf(dxlo)
-            }
-            if ( xhi ) {
-                if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                constraint = constraint + lonname + "<=" + String.valueOf(dxhi)
-            }
-
             String ylo = lasRequest.getAxesSets().get(0).getYlo()
             String yhi = lasRequest.getAxesSets().get(0).getYhi()
 

@@ -846,17 +846,9 @@ public class UI implements EntryPoint {
         eventBus.addHandler(ShowValues.TYPE, new ShowValuesHandler() {
             @Override
             public void onShowValues(ShowValues event) {
-                String op = "Data_extract";
-                if ( variables.size() > 0 ) {
-                    Variable v = variables.get(0);
-                    if ( v.getGeometry().equals(TRAJECTORY) ) {
-                        op = "Data_extract_trajectory";
-                    } else if ( v.getGeometry().equals(TIMESERIES) ) {
-                        op = "Data_extract_timeseries";
-                    }
-                }
-                if ( op.equals("Data_extract") ) {
-                    LASRequest lasRequest = makeRequest(6, op);
+                Variable v = variables.get(0);
+                if ( v.getGeometry().equals("GRID") ) {
+                    LASRequest lasRequest = makeRequest(6, "Data_extract");
                     requestQueue.add(lasRequest);
                     processQueue();
                 } else {
@@ -929,6 +921,9 @@ public class UI implements EntryPoint {
                         MaterialLink csv0 = new MaterialLink();
                         csv0.setText("csv0");
                         layout.formatsDropDown.add(csv0);
+                        MaterialLink esriCsv = new MaterialLink();
+                        esriCsv.setText("esriCsv");
+                        layout.formatsDropDown.add(esriCsv);
                         MaterialLink geoJson = new MaterialLink();
                         geoJson.setText("geoJson");
                         layout.formatsDropDown.add(geoJson);
@@ -2355,23 +2350,71 @@ public class UI implements EntryPoint {
             if ( !vars.contains("latitude") ) vars = "latitude," + vars;
             double[] exts = refMap.getDataExtent();
             if (!constraints.endsWith("&")) constraints = constraints + "&";
-            constraints = constraints + "longitude>=" + exts[2] + "&longitude<=" + exts[3];
+            constraints = constraints + "longitude>=" + Util.anglePM180(exts[2]) + "&longitude<=" + Util.anglePM180(exts[3]);
             constraints = constraints + "&latitude>=" + exts[0] + "&latitude<=" + exts[1];
         } else {
             if ( !vars.contains("longitude")) vars = "longitude," + vars;
             if ( !vars.contains("latitude") ) vars = "latitude," + vars;
+            double xloDbl = refMap.getXlo();
+            double xhiDbl = refMap.getXhi();
+
+            // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
+            if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
+                // Going west to east does not cross dateline, normal constraint
+                if ( xloDbl < xhiDbl ) {
+                    // Going west to east does not cross dateline, normal constraint
+                    if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
+                        if ( !constraints.isEmpty() ) constraints = constraints + "&";
+                        constraints = constraints + "longitude>=" + xloDbl;
+                        constraints = constraints + "&longitude<=" + xhiDbl;
+                        // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
+                    } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
+                        if ( !constraints.isEmpty() ) constraints = constraints + "&";
+                        constraints = constraints + "lon360>=" + xloDbl;
+                        constraints = constraints + "&lon360<=" + xhiDbl;
+                    }
+                } else if ( xloDbl > xhiDbl ) {
+                    // Going west to east
+                    if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
+                        // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+                        if ( xloDbl > 0 && xhiDbl < 0 ) {
+                            xhiDbl = xhiDbl + 360;
+                            if ( !constraints.isEmpty() ) constraints = constraints + "&";
+                            constraints = constraints + "lon360>=" + xloDbl;
+                            constraints = constraints + "&lon360<=" + xhiDbl;
+                        }
+                    } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
+                        // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+                        // switch an convert.
+                        if ( xloDbl > 180 && xhiDbl < 180 ) {
+                            double t = xloDbl;
+                            xloDbl = xhiDbl;
+                            xhiDbl = t;
+                            xloDbl = Util.anglePM180(xloDbl);
+                            xhiDbl = Util.anglePM180(xhiDbl);
+                            if ( !constraints.isEmpty() ) constraints = constraints + "&";
+                            constraints = constraints + "longitude>=" + xloDbl;
+                            constraints = constraints + "&longitude<=" + xhiDbl;
+                        }
+                    }
+                }
+            }
+
+
+
             if (!constraints.endsWith("&")) constraints = constraints + "&";
-            constraints = constraints + "longitude>=" + refMap.getXlo() + "&longitude<=" + refMap.getXhi();
-            constraints = constraints + "&latitude>=" + refMap.getYlo() + "&latitude<=" + refMap.getYhi();
+            constraints = constraints + "latitude>=" + refMap.getYlo() + "&latitude<=" + refMap.getYhi();
+
         }
         if (v.getVerticalAxis() != null) {
             if (zAxisWidget.isRange()) {
                 if ( !vars.contains("depth") ) vars = vars + ",depth";
                 if (!constraints.endsWith("&")) constraints = constraints + "&";
                 constraints = constraints + "depth>=" + zAxisWidget.getLo();
-                constraints = constraints + "depth<=" + zAxisWidget.getHi();
+                constraints = constraints + "&depth<=" + zAxisWidget.getHi();
             } else {
                 if ( !vars.contains("depth") ) vars = vars + ",depth";
+                if (!constraints.endsWith("&")) constraints = constraints + "&";
                 constraints = constraints + "depth=" + zAxisWidget.getLo();
             }
         }
@@ -2391,7 +2434,14 @@ public class UI implements EntryPoint {
         List<DataConstraint> groupedConstraints = layout.getGroupedConstraints();
         for (int i = 0; i < groupedConstraints.size(); i++) {
             DataConstraint dc = groupedConstraints.get(i);
-            constraints = constraints + "&" + dc.getRhs() + dc.getOpAsSymbol() + dc.getRhs();
+            String rhs = dc.getRhs();
+            if ( rhs.contains("_ns_") ) {
+                rhs = rhs.replaceAll("\\(", "");
+                rhs = rhs.replaceAll("\\)", "");
+                String[] parts = rhs.split("_ns_");
+                rhs = "\"(" + String.join("|", parts) + ")\"";
+            }
+            constraints = constraints + "&" + dc.getLhs() + dc.getOpAsSymbol() + rhs;
         }
         return url + "?" + vars + URL.encode(constraints);
     }

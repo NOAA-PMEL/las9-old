@@ -29,17 +29,22 @@ class UpdateDatasetJobService implements StatefulSchwartzJob {
 	}
 
 	void addDatasetUpdate(long id, String cron_spec) {
-		JobDataMap jobDataMap = new JobDataMap()
-		jobDataMap.put("id", id)
-		def trigger_name = "Dataset " + id;
-		TriggerKey key = new TriggerKey(String.valueOf(id), "dataset");
-		def trigger =  factory(trigger_name)
-				.jobDataMap(jobDataMap)
-		        .key(key)
-				.cronSchedule(cron_spec)
-				.build()
-		schedule(trigger)
-		log.info("Started updates for data set id=" + id + " for cron spec "+ cron_spec)
+		try {
+			JobDataMap jobDataMap = new JobDataMap()
+			jobDataMap.put("id", id)
+			def trigger_name = "Dataset " + id;
+			TriggerKey key = new TriggerKey(String.valueOf(id), "dataset");
+			def trigger = factory(trigger_name)
+					.jobDataMap(jobDataMap)
+					.key(key)
+					.cronSchedule(cron_spec)
+					.build()
+			schedule(trigger)
+			log.info("Started updates for data set id=" + id + " for cron spec "+ cron_spec)
+		} catch (Exception e ) {
+			log.error("Update job setup failed. " + e.getMessage())
+		}
+
 	}
 
 	void unscheuleUpdate(long id) {

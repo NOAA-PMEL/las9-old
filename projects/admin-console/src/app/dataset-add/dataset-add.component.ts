@@ -105,7 +105,7 @@ export class DatasetAddComponent implements OnInit {
     this.applicationStateService.setForRequest();
     this.addDataService.addDataset(addtabledap).subscribe(data=>{
         console.log("Returned from add data method.");
-        this.applicationStateService.setParent(data, 'dataset', false);
+        this.applicationStateService.setParent(data, this.picker.current_type, false);
       },
       error => {
         if ( error.message.includes("auth/login") ) {
@@ -128,7 +128,7 @@ export class DatasetAddComponent implements OnInit {
     };
     this.applicationStateService.setForRequest();
     this.addDataService.addDataset(adddsg).subscribe(data=>{
-      this.applicationStateService.setParent(data, 'dataset', false);
+      this.applicationStateService.setParent(data, this.picker.current_type, false);
     },
       error => {
         if ( error.message.includes("auth/login") ) {

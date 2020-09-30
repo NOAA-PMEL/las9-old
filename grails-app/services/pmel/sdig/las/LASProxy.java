@@ -28,6 +28,7 @@ import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.params.HttpConnectionParams;
@@ -42,8 +43,15 @@ public class LASProxy {
 	public int streamBufferSize = 8196;
 	private static Logger log = LoggerFactory.getLogger(LASProxy.class.getName());
 	public void executeERDDAPMethodAndSaveResult(String url, File outfile, HttpServletResponse response) throws IOException, HttpException {
-		HttpClient client = HttpClientBuilder.create().build();
-		RequestConfig config =  RequestConfig.custom().setCircularRedirectsAllowed(true).build();
+		int timeout = 600;
+		RequestConfig config = RequestConfig.custom()
+				.setConnectTimeout(timeout * 1000)
+				.setConnectionRequestTimeout(timeout * 1000)
+				.setSocketTimeout(timeout * 1000)
+				.setCircularRedirectsAllowed(true).build();
+		CloseableHttpClient client =
+				HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+
 		HttpGet method = new HttpGet(url);
 		method.setConfig(config);
 		try {
@@ -54,25 +62,33 @@ public class LASProxy {
 			if (rc != HttpStatus.SC_OK) {
 				String message = EntityUtils.toString(httpResponse.getEntity());
 				log.error(message);
-				if ( response == null ) {
+				if (response == null) {
 					throw new IOException(message);
 				} else {
 					response.sendError(rc);
 				}
-			} 
+			}
 			InputStream input = httpResponse.getEntity().getContent();
 			OutputStream output = new FileOutputStream(outfile);
 			stream(input, output);
+		} catch (Exception e) {
+			log.error("Trouble downloading ERDDAP data set." + e.getMessage());
 		} finally {
-
 			method.releaseConnection();
 		}
 		
 
 	}
 	public void executeGetMethodAndSaveResult(String url, File outfile, HttpServletResponse response) throws IOException, HttpException {
-		HttpClient client = HttpClientBuilder.create().build();
-		RequestConfig config =  RequestConfig.custom().setCircularRedirectsAllowed(true).build();
+		int timeout = 120;
+		RequestConfig config = RequestConfig.custom()
+				.setConnectTimeout(timeout * 1000)
+				.setConnectionRequestTimeout(timeout * 1000)
+				.setSocketTimeout(timeout * 1000)
+				.setCircularRedirectsAllowed(true).build();
+		CloseableHttpClient client =
+				HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+
 		HttpGet method = new HttpGet(url);
 		method.setConfig(config);
 		try {
@@ -100,9 +116,16 @@ public class LASProxy {
 
 	}
 	public String executeGetMethodAndReturnResult(String url, HttpServletResponse response) throws IOException, HttpException {
-		
-		HttpClient client = HttpClientBuilder.create().build();
-		RequestConfig config =  RequestConfig.custom().setCircularRedirectsAllowed(true).build();
+
+		int timeout = 15;
+		RequestConfig config = RequestConfig.custom()
+				.setConnectTimeout(timeout * 1000)
+				.setConnectionRequestTimeout(timeout * 1000)
+				.setSocketTimeout(timeout * 1000)
+				.setCircularRedirectsAllowed(true).build();
+		CloseableHttpClient client =
+				HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+
 		HttpGet method = new HttpGet(url);
 		method.setConfig(config);
 
@@ -117,16 +140,18 @@ public class LASProxy {
                 if ( response == null ) {
                 	throw new IOException("Failed RC="+rc + " on URL=" + url);
                 } else {
-				    response.sendError(rc);
+				    log.error("Error getting data from " + url + " http status code: " + rc);
                 }
 
 				return null;
 
 			}
 			return EntityUtils.toString(httpResponse.getEntity());
+		} catch (Exception e) {
+			log.error("Error getting data from " + url + " " + e.getMessage());
+			return null;
 		}
 		finally {
-
 			method.releaseConnection();
 		}
 	}
@@ -146,7 +171,6 @@ public class LASProxy {
 		RequestConfig config =  RequestConfig.custom().setCircularRedirectsAllowed(true).setConnectionRequestTimeout(timeout*1000).setConnectTimeout(timeout*1000).build();
 		HttpGet method = new HttpGet(request);
 		method.setConfig(config);
-		
 
 	    method.setHeader("Connection", "close");
 
@@ -185,8 +209,15 @@ public class LASProxy {
 	 * @throws HttpException
 	 */
 	public void executeGetMethodAndStreamResult(String request, HttpServletResponse response) throws IOException, HttpException {
-		HttpClient client = HttpClientBuilder.create().build();
-		RequestConfig config =  RequestConfig.custom().setCircularRedirectsAllowed(true).build();
+		int timeout = 15;
+		RequestConfig config = RequestConfig.custom()
+				.setConnectTimeout(timeout * 1000)
+				.setConnectionRequestTimeout(timeout * 1000)
+				.setSocketTimeout(timeout * 1000)
+				.setCircularRedirectsAllowed(true).build();
+		CloseableHttpClient client =
+				HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+
 		HttpGet method = new HttpGet(request);
 		method.setConfig(config);
 		method.setHeader("Connection", "close");
@@ -221,8 +252,15 @@ public class LASProxy {
 	 */
 	public void executeGetMethodAndStreamResult(String request, OutputStream output) throws IOException, HttpException {
 
-		HttpClient client = HttpClientBuilder.create().build();
-		RequestConfig config =  RequestConfig.custom().setCircularRedirectsAllowed(true).build();
+		int timeout = 15;
+		RequestConfig config = RequestConfig.custom()
+				.setConnectTimeout(timeout * 1000)
+				.setConnectionRequestTimeout(timeout * 1000)
+				.setSocketTimeout(timeout * 1000)
+				.setCircularRedirectsAllowed(true).build();
+		CloseableHttpClient client =
+				HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+
 		HttpGet method = new HttpGet(request);
 		method.setConfig(config);
 		method.setHeader("Connection", "close");

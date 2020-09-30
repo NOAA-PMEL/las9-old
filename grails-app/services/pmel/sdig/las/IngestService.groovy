@@ -1,6 +1,7 @@
 package pmel.sdig.las
 
 import com.google.gson.*
+import grails.converters.JSON
 import grails.gorm.transactions.Transactional
 import grails.web.context.ServletContextHolder
 import opendap.dap.AttributeTable
@@ -1337,6 +1338,9 @@ class IngestService {
 
             int total = 0;
             int limit = rows.size();
+            int dscount = limit - 1
+            log.debug(dscount + " datasets availble to be ingested.")
+
             // The first one is a listing of all data sets, not the first tabledap data set.
             for (int i = 1; i < limit; i++) {
                 total++;
@@ -1424,8 +1428,23 @@ class IngestService {
     }
     Dataset ingestFromErddap_using_json(String url, List<AddProperty> properties ) {
 
+
+        def dsg_url = url;
+
         // For now if the metadata is missing we're just going to punt for now and return a null.
-        JsonMetadata metadata = new JsonMetadata(url)
+
+        if ( !url.endsWith("/") ) {
+            url = url + "/"
+        }
+        url = url + "index.json"
+        url = url.replace("tabledap", "info")
+        String json = lasProxy.executeGetMethodAndReturnResult(url)
+        JsonMetadata metadata
+        if ( json ) {
+            metadata = new JsonMetadata(json)
+        } else {
+            return null;
+        }
 
         List<String> subsetNames = new ArrayList<String>()
 
@@ -1465,9 +1484,9 @@ class IngestService {
 
         int timeout = 400
 
-        def hash = getDigest(url)
+        def hash = getDigest(dsg_url)
 
-        Dataset dataset = new Dataset([url: url, hash: hash])
+        Dataset dataset = new Dataset([url: dsg_url, hash: hash])
 
         DateTime date = new DateTime()
         log.info("Processing: " + url + " at "+date.toString() )

@@ -16,7 +16,7 @@ export class DatasetOrganizeComponent implements OnInit {
 
   stateChanges: Subscription;
   header:string = "Navigate to the data set you want to move.";
-  sub_header = "Click on the move button of data set you want to move and select the new location in the popup window.";
+  sub_header = "Click on the move button of data set(s) you want to move.";
   ngOnInit() {
   }
 

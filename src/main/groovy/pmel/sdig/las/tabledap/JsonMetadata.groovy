@@ -11,14 +11,8 @@ class JsonMetadata {
 
     JSONObject metadata
 
-    JsonMetadata(String url) {
-        if ( !url.endsWith("/") ) {
-            url = url + "/"
-        }
-        url = url + "index.json"
-        url = url.replace("tabledap", "info")
-        String json = lasProxy.executeGetMethodAndReturnResult(url)
-        metadata = JSON.parse(json)
+    JsonMetadata(String json) {
+        metadata = JSON.parse(json);
     }
     String getAssociatedVariable(String attribute, String value) {
         JSONArray rows = metadata.get("table").get("rows")

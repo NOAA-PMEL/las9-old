@@ -570,6 +570,10 @@ class ErddapService {
                     cancelFile.delete()
                     throw new Exception("Request canceled.")
                 }
+                if ( !temp_file.exists() ) {
+                    log.error("ERDDAP download failed.")
+                    throw new Exception("Unable to download ERDDAP data set.")
+                }
                 temp_file.renameTo(new File(netcdfFilename));
                 dt = new DateTime();
                 log.info("Tabledap tool renamed the netcdf file to " + netcdfFilename + " at " + dt.toString(ISODateTimeFormat.dateHourMinuteSecondMillis()));

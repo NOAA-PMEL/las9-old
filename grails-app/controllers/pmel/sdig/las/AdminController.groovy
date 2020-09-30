@@ -313,8 +313,12 @@ class AdminController {
 
         parent.save(flush: true, failOnError: true);
 
-        JSON.use("deep") {
-            render parent as JSON
+        if ( parent instanceof Site ) {
+            respond parent
+        } else {
+            JSON.use("deep") {
+                render parent as JSON
+            }
         }
 
     }

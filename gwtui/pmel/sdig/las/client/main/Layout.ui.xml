@@ -67,7 +67,7 @@
 
                 </m:MaterialNavSection>
                 <m:MaterialNavBrand marginLeft="8" ui:field="brand" text="LAS title will go here." fontSize="1.3em"/>
-                <m:MaterialLabel text="LAS v9.1.5beta" float="RIGHT" marginRight="16"></m:MaterialLabel>
+                <m:MaterialLink text="LAS v9.1.6beta" float="RIGHT" marginRight="16" href="https://github.com/NOAA-PMEL/las9/wiki" target="_blank"></m:MaterialLink>
                 <!--                <m:MaterialPanel addStyleNames="valign-vertical">-->
                 <!--                    <m:MaterialLink ui:field="btnSearch" iconType="SEARCH" iconColor="WHITE" float="RIGHT"/>-->
                 <!--&lt;!&ndash;                    <m:MaterialButton marginTop="14" ui:field="openAdvancedSearch" text="Advanced Search" float="RIGHT" marginRight="16"></m:MaterialButton>&ndash;&gt;-->
@@ -486,6 +486,7 @@
             </m:MaterialRow>
         </ma:window.MaterialWindow>
         <ma:window.MaterialWindow ui:field="showValuesWindow" title="Values" maximize="false" height="100%" width="100%">
+            <m:MaterialProgress ui:field="showValuesProgress" type="INDETERMINATE" color="PINK_DARKEN_4" display="NONE"></m:MaterialProgress>
         </ma:window.MaterialWindow>
         <ma:window.MaterialWindow ui:field="downloadWindow" title="Data Download" maximize="false" height="100%" width="100%">
             <m:MaterialPanel paddingTop="16">

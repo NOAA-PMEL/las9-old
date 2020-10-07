@@ -644,14 +644,15 @@ class InitializationService {
         }
 
         Product prop_prop_ts = Product.findByName("time_series_prop_prop_plot")
-        prop_prop_ts = new Product([name: "time_series_prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.TIMESERIES, product_order: "99999", hidden: "true"])
-
         if (!prop_prop_ts) {
+
+            prop_prop_ts = new Product([name: "time_series_prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.TIMESERIES, product_order: "99999", hidden: "true"])
+
             Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
             operation_extract_data.setResultSet(resultsService.getNetcdfFile())
 
             // TODO figure out what this is supposed to be
-            Operation operation_plot_traj = new Operation([name: "Timeseries_correlation_plot", service_action: "UNKNOWN-UNKNOWN", type: "ferret", output_template: "zoom"])
+            Operation operation_plot_traj = new Operation([name: "Timeseries_correlation_plot", service_action: "Trajectory_correlation", type: "ferret", output_template: "zoom"])
             operation_plot_traj.setResultSet(resultsService.getPlotResults())
 
             prop_prop_ts.addToOperations(operation_extract_data)

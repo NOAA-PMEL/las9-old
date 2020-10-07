@@ -583,16 +583,12 @@ class ErddapService {
                     message = message.substring(message.indexOf("com.cohort.util.SimpleException: "), message.length());
                     message = message.substring(0, message.indexOf(")"));
                 }
-                if (message.toLowerCase(Locale.ENGLISH).contains("query produced no matching")) {
-                    throw new Exception(message)
-                }
+                throw new Exception(message)
             }
             productService.writePulse(hash, outputPath, "Finished making netCDF file.", null, null, null, PulseType.STARTED)
             netcdfFilename
 
         } catch (Exception e) {
-            log.debug("Failed to make product " + e.getMessage())
-            e.printStackTrace()
             throw e;
         }
     }

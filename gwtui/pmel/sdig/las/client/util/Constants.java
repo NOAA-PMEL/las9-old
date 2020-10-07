@@ -22,6 +22,7 @@ public class Constants {
     public static final String regions = base + "config/regions";
     public static final String datasetSuggestSearch = base + "dataset/oracle";
     public static final String variableSuggestSearch = base + "variable/oracle";
+    public static final String stream = base + "product/stream";
 
     public final static int navWidth = 400;
     public final static int imageBorderFactor = 200;

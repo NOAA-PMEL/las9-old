@@ -226,7 +226,10 @@ public class OutputPanel extends AbsolutePanel {
     };
 
     public void clearPlot() {
-        imageCanvasContext.clearRect(0, 0, imageCanvas.getCoordinateSpaceWidth(), imageCanvas.getCoordinateSpaceHeight());
+        int w = imageCanvas.getCoordinateSpaceWidth();
+        int h = imageCanvas.getCoordinateSpaceHeight();
+        scaledImage = null;
+        imageCanvasContext.clearRect(0, 0, w, h);
     }
     public void clearOverlay() {
         drawingCanvasContext.clearRect(0, 0, drawingCanvas.getCoordinateSpaceWidth(), drawingCanvas.getCoordinateSpaceHeight());

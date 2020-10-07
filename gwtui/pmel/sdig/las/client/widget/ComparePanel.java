@@ -383,16 +383,26 @@ public class ComparePanel extends Composite {
         annotationPanel.add(w);
     }
     public void setState(State state) {
-        outputPanel.setState(state);
-        List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
+        String error = state.getPanelState(this.getTitle()).getResultSet().getError();
         annotationPanel.clear();
-        for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
-            AnnotationGroup ag = gIt.next();
-            for (Iterator<Annotation> aIt = ag.getAnnotations().iterator(); aIt.hasNext(); ) {
-                MaterialLabel l = new MaterialLabel();
-                Annotation a = aIt.next();
-                l.setText(a.getValue());
-                annotationPanel.add(l);
+        if ( error != null && !error.equals("") ) {
+            MaterialLabel l = new MaterialLabel();
+            l.setText(error);
+            annotationPanel.add(l);
+            outputPanel.plotImage = null;
+            outputPanel.clearPlot();
+        } else {
+            outputPanel.setState(state);
+            List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
+            annotationPanel.clear();
+            for (Iterator<AnnotationGroup> gIt = groups.iterator(); gIt.hasNext(); ) {
+                AnnotationGroup ag = gIt.next();
+                for (Iterator<Annotation> aIt = ag.getAnnotations().iterator(); aIt.hasNext(); ) {
+                    MaterialLabel l = new MaterialLabel();
+                    Annotation a = aIt.next();
+                    l.setText(a.getValue());
+                    annotationPanel.add(l);
+                }
             }
         }
         annotationsCollapse.open(1);
@@ -628,7 +638,11 @@ public class ComparePanel extends Composite {
         }
 
         // newVariable was set before rpc to get config.
-        initializeAxes(view, view, newVariable);
+        String mapView = view;
+        if ( !newVariable.getGeometry().equals(Constants.GRID) ) {
+            mapView = "xy";
+        }
+        initializeAxes(view, mapView, newVariable);
 
         // Put the values back if we've been here before
         if ( variable != null ) {

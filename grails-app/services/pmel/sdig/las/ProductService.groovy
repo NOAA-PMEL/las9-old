@@ -775,6 +775,11 @@ class ProductService {
 //        jnl.append("DEFINE SYMBOL ferret_land_type = shade\n")
                 jnl.append("DEFINE SYMBOL ferret_service_action = ${product.operations.get(0).service_action}\n")
                 jnl.append("DEFINE SYMBOL ferret_size = 1.0\n")
+                // TODO this is a hack.
+                // For some reason a view of "t" causes all the time series trajectory lines to be the same color
+                if ( product.name == "Trajectory_timeseries_plot" || product.name == "Timeseries_station_plot") {
+                    view = product.getData_view()
+                }
                 jnl.append("DEFINE SYMBOL ferret_view = " + view + "\n")
                 jnl.append("DEFINE SYMBOL las_debug = false\n")
                 jnl.append("DEFINE SYMBOL las_output_type = xml\n")
@@ -830,12 +835,12 @@ String filename
 
                 def error = ferretResult["error"];
                 if (error) {
-                    writePulse(hash, outputPath, ferretResult["message"], null, null, null, PulseType.ERROR)
                     log.error(ferretResult["message"]);
                     ResultSet errorSet = new ResultSet();
                     errorSet.setTargetPanel(lasRequest.getTargetPanel())
                     errorSet.setProduct(product.getName())
                     errorSet.setError(ferretResult["message"])
+                    removePulse(hash, outputPath);
                     return errorSet
                 }
 
@@ -856,6 +861,7 @@ String filename
                     ResultSet errorSet = new ResultSet();
                     errorSet.setError(e.getMessage())
                     errorSet.setTargetPanel(lasRequest.getTargetPanel())
+                    removePulse(hash, outputPath)
                     return errorSet;
                 }
 
@@ -894,6 +900,10 @@ String filename
             return [cache: cache, resultSet: cacheResultSet]
         }
 
+    }
+    void removePulse(String hash, String outputPath) {
+        File pulseFile = new File(outputPath + File.separator + hash+"_pulse.json")
+        pulseFile.delete();
     }
     Pulse checkPulse(String hash, String outputPath) {
         File pulseFile = new File(outputPath + File.separator + hash+"_pulse.json")

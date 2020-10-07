@@ -90,6 +90,8 @@ class IngestService {
 
         def url = addRequest.getUrl()
 
+        if ( url.endsWith(".html") ) url = url.replace(".html", "")
+
         Dataset dataset = ingestFromErddap_using_json(url, properties)
 
         dataset
@@ -2079,7 +2081,7 @@ class IngestService {
 
             Variable vb = new Variable()
             vb.setName(dataVar)
-            vb.setUrl(url+"#"+dataVar)
+            vb.setUrl(dsg_url+"#"+dataVar)
             vb.setHash(getDigest(vb.getUrl()))
             vb.setGeometry(grid_type)
             String units = metadata.getAttributeValue(dataVar, "units")

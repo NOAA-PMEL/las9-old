@@ -200,6 +200,8 @@ public class Layout extends Composite {
     MaterialLink showValuesButton;
     @UiField
     MaterialWindow showValuesWindow;
+    @UiField
+    MaterialProgress showValuesProgress;
 
     @UiField
     MaterialWindow downloadWindow;
@@ -1296,44 +1298,59 @@ public class Layout extends Composite {
         cVariableListBox.clear();
         variableConstraintListBox.clear();
         variableConstraints.clear();
+        panel8.clearPlot();
+        panel8.clearAnnotations();
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem di = (DataItem) datasets.getWidget(i);
             Object s = di.getSelection();
             if ( s instanceof Variable ) {
 
                 Variable v = (Variable)s;
-                xVariableListBox.addItem(v.getName(), v.getTitle());;
-                yVariableListBox.addItem(v.getName(), v.getTitle());
                 cVariableListBox.addItem(v.getName(), v.getTitle());
+                if ( !v.isSubset() && !v.isDsgId() ) {
+                    xVariableListBox.addItem(v.getName(), v.getTitle());
+                    yVariableListBox.addItem(v.getName(), v.getTitle());
+                }
+
 
                 // Add all variables to the menu to add a varible constraint, but disable
                 // variables in the plot
 
                 variableConstraintListBox.addItem(v.getName(), v.getTitle());
+                OptionElement o = variableConstraintListBox.getOptionElement(i);
+                o.setDisabled(true);
 
-                // TODO, need an event to set the defaults from config
-                if ( i == 0 ) {
-                    ySelectedVariable = v;
-                    xSelectedVariable = v;
-                    cSelectedVariable = v;
-                    xVariableListBox.setSelectedIndex(i);
-                    yVariableListBox.setSelectedIndex(i);
-                    cVariableListBox.setSelectedIndex(i);
-                    OptionElement o = variableConstraintListBox.getOptionElement(i);
-                    o.setDisabled(true);
-                } else if ( i == 1 ) {
-                    xSelectedVariable = v;
-                    cSelectedVariable = v;
-                    xVariableListBox.setSelectedIndex(i);
-                    cVariableListBox.setSelectedIndex(i);
-                    OptionElement o = variableConstraintListBox.getOptionElement(i);
-                    o.setDisabled(true);
-                } else if ( i == 2 ) {
-                    cSelectedVariable = v;
-                    cVariableListBox.setSelectedIndex(i);
-                }
             }
+
+
         }
+
+
+        // Use the set event to update the default selections.
+        yVariableListBox.setSelectedIndex(0);
+        String yvar = yVariableListBox.getSelectedValue();
+        OptionElement yoptionElement = xVariableListBox.getOptionElement(xVariableListBox.getIndex(yvar));
+        eventBus.fireEventFromSource(new Correlation(false, false, true, false, false), yoptionElement);
+
+        xVariableListBox.setSelectedIndex(0);
+        String xvar = xVariableListBox.getSelectedValue();
+        if ( xVariableListBox.getItemCount() > 1 ) {
+            xVariableListBox.setSelectedIndex(1);
+            xvar = xVariableListBox.getSelectedValue();
+        }
+        OptionElement xoptionElement = xVariableListBox.getOptionElement(xVariableListBox.getIndex(yvar));
+        eventBus.fireEventFromSource(new Correlation(false, true, false, false, false), xoptionElement);
+
+        cVariableListBox.setSelectedIndex(0);
+        String cvar = cVariableListBox.getSelectedValue();
+        if ( cVariableListBox.getItemCount() > 2 ) {
+            cVariableListBox.setSelectedIndex(2);
+            cvar = cVariableListBox.getSelectedValue();
+        }
+        OptionElement coptionElement = cVariableListBox.getOptionElement(cVariableListBox.getIndex(yvar));
+        eventBus.fireEventFromSource(new Correlation(false, false, false, true, false), coptionElement);
+
+        // Make the first plot...
         eventBus.fireEventFromSource(new Correlation(true, false, false, false, false), correlationLink);
         correlationWindow.open();
     }

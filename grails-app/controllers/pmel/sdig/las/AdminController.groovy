@@ -314,7 +314,9 @@ class AdminController {
         parent.save(flush: true, failOnError: true);
 
         if ( parent instanceof Site ) {
-            respond parent
+            withFormat {
+                json {respond parent}
+            }
         } else {
             JSON.use("deep") {
                 render parent as JSON

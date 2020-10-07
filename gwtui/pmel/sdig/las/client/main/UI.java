@@ -9,6 +9,8 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.event.dom.client.LoadEvent;
+import com.google.gwt.event.dom.client.LoadHandler;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
@@ -847,15 +849,23 @@ public class UI implements EntryPoint {
             @Override
             public void onShowValues(ShowValues event) {
                 Variable v = variables.get(0);
-                if ( v.getGeometry().equals("GRID") ) {
+                layout.showValuesProgress.setDisplay(Display.BLOCK);
+                if ( v.getGeometry().equals(GRID) ) {
                     LASRequest lasRequest = makeRequest(6, "Data_extract");
                     requestQueue.add(lasRequest);
                     processQueue();
                 } else {
                     String url = makeERDDAP_url(".xhtml");
+                    url = Constants.stream + "?url=" + url;
                     Frame frame = new Frame(url);
                     frame.setWidth("100%");
                     frame.setHeight("98%");
+                    frame.addLoadHandler(new LoadHandler() {
+                        @Override
+                        public void onLoad(LoadEvent loadEvent) {
+                            layout.showValuesProgress.setDisplay(Display.NONE);
+                        }
+                    });
                     layout.showValuesWindow.add(frame);
                 }
             }
@@ -896,6 +906,7 @@ public class UI implements EntryPoint {
                     Variable v = variables.get(0);
                     layout.formatsDropDown.clear();
                     if ( v.getGeometry().equals(GRID) ) {
+                        layout.formatsButton.setText("netCDF");
                         MaterialLink netCDF = new MaterialLink();
                         netCDF.setText("netCDF");
                         layout.formatsDropDown.add(netCDF);
@@ -906,6 +917,7 @@ public class UI implements EntryPoint {
                         csv.setText("CSV");
                         layout.formatsDropDown.add(csv);
                     } else {
+                        layout.formatsButton.setText("ncCF");
                         MaterialLink netCDF = new MaterialLink();
                         netCDF.setText("ncCF");
                         layout.formatsDropDown.add(netCDF);
@@ -990,6 +1002,9 @@ public class UI implements EntryPoint {
             public void onCorrelation(Correlation event) {
                 // isOpen means this is the event that is opening the window, so set it up.
                 if ( event.isOpen() ) {
+                    // Widgets should not be acttive when first opened.
+                    layout.xVariableConstraint.setActive(false);
+                    layout.yVariableConstraint.setActive(false);
                     correlationMap.setCurrentSelection(refMap.getYlo(), refMap.getYhi(), refMap.getXlo(), refMap.getXhi());
                     correlationDateTime.setLo(dateTimeWidget.getFerretDateLo());
                     correlationDateTime.setHi(dateTimeWidget.getFerretDateHi());
@@ -1000,6 +1015,15 @@ public class UI implements EntryPoint {
                     } else {
                         correlationZaxisWidget.setDisplay(Display.NONE);
                     }
+                    layout.xSelectedVariable = variables.get(0);
+                    int index = 0;
+                    for (int i = 0; i < layout.xVariableListBox.getItemCount(); i++) {
+                        String item = layout.xVariableListBox.getItemText(i);
+                        if ( item.equals(layout.xSelectedVariable.getTitle())) {
+                            index = i;
+                        }
+                    }
+                    layout.xVariableListBox.setSelectedIndex(index);
                 } else if ( event.isSetX() ) {
                     OptionElement o = (OptionElement) event.getSource();
                     layout.xSelectedVariable = dataset.findVariableByNameAndTitle(o.getValue(), o.getText());
@@ -1034,6 +1058,8 @@ public class UI implements EntryPoint {
                         lasRequest = makeRequest(8, "prop_prop_plot");
                     } else if ( geom.equals(Constants.TRAJECTORY) ) {
                         lasRequest = makeRequest(8, "trajectory_prop_prop_plot");
+                    } else if ( geom.equals(TIMESERIES) ) {
+                        lasRequest = makeRequest(8, "time_series_prop_prop_plot");
                     } else {
                         lasRequest = makeRequest(8, "prop_prop_plot");
                     }
@@ -1496,6 +1522,7 @@ public class UI implements EntryPoint {
                 Frame frame = new Frame(myfile);
                 frame.setWidth("100%");
                 frame.setHeight("98%");
+                layout.showValuesProgress.setDisplay(Display.NONE);
                 layout.showValuesWindow.add(frame);
             } else if ( tp == 7 ) {
                 String error = results.getError();
@@ -2640,6 +2667,7 @@ public class UI implements EntryPoint {
 
                 // Use correlation window values initially set when window was opened,
                 // could be reset by user.
+
                 lasRequest.getAxesSets().get(0).setXlo(String.valueOf(correlationMap.getXlo()));
                 lasRequest.getAxesSets().get(0).setXhi(String.valueOf(correlationMap.getXhi()));
 
@@ -2658,22 +2686,22 @@ public class UI implements EntryPoint {
                 // Appply the active variable constraints
                 if ( layout.xVariableConstraint.isActive() ) {
                     if ( layout.xVariableConstraint.getLo() != null && !layout.xVariableConstraint.getLo().isEmpty() ) {
-                        DataConstraint xlo = new DataConstraint("variable", layout.xVariableConstraint.getName(), "gt", layout.xVariableConstraint.getLo());
+                        DataConstraint xlo = new DataConstraint("variable", layout.xSelectedVariable.getName(), "gt", layout.xVariableConstraint.getLo());
                         lasRequest.addDataConstraint(xlo);
                     }
                     if ( layout.xVariableConstraint.getHi() != null && !layout.xVariableConstraint.getHi().isEmpty() ) {
-                        DataConstraint xhi = new DataConstraint("variable", layout.xVariableConstraint.getName(), "lt", layout.xVariableConstraint.getHi());
+                        DataConstraint xhi = new DataConstraint("variable", layout.xSelectedVariable.getName(), "lt", layout.xVariableConstraint.getHi());
                         lasRequest.addDataConstraint(xhi);
                     }
 
                 }
                 if ( layout.yVariableConstraint.isActive() ) {
                     if ( layout.yVariableConstraint.getLo() != null && !layout.yVariableConstraint.getLo().isEmpty() ) {
-                        DataConstraint ylo = new DataConstraint("variable", layout.yVariableConstraint.getName(), "gt", layout.yVariableConstraint.getLo());
+                        DataConstraint ylo = new DataConstraint("variable", layout.ySelectedVariable.getName(), "gt", layout.yVariableConstraint.getLo());
                         lasRequest.addDataConstraint(ylo);
                     }
                     if ( layout.yVariableConstraint.getHi() != null && !layout.yVariableConstraint.getHi().isEmpty() ) {
-                        DataConstraint yhi = new DataConstraint("variable", layout.yVariableConstraint.getName(), "lt", layout.yVariableConstraint.getHi());
+                        DataConstraint yhi = new DataConstraint("variable", layout.ySelectedVariable.getName(), "lt", layout.yVariableConstraint.getHi());
                         lasRequest.addDataConstraint(yhi);
                     }
                 }

@@ -211,11 +211,13 @@ class ProductController {
         if ( pulse.getFerretScript() ) {
             def kill = 'kill -9 ' + pulse.getPid()
             def k = kill.execute()
-            if ( k ) {
-                cancelFile.delete();
-            }
+            cancelFile.delete();
         }
         render "Product request canceled"
+    }
+    def stream() {
+        def url = params.url;
+        lasProxy.executeGetMethodAndStreamResult(url, response);
     }
     def make() {
 

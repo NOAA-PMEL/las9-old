@@ -13,6 +13,9 @@ import java.util.List;
 import javax.net.ssl.SSLException;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -42,6 +45,7 @@ import org.slf4j.LoggerFactory;
 public class LASProxy {
 	public int streamBufferSize = 8196;
 	private static Logger log = LoggerFactory.getLogger(LASProxy.class.getName());
+	Gson gson = new Gson();
 	public void executeERDDAPMethodAndSaveResult(String url, File outfile, HttpServletResponse response) throws IOException, HttpException {
 		int timeout = 600;
 		RequestConfig config = RequestConfig.custom()
@@ -54,30 +58,62 @@ public class LASProxy {
 
 		HttpGet method = new HttpGet(url);
 		method.setConfig(config);
+		String message = "An error occurred downloading the data file from ERDDAP.";
 		try {
 
 			HttpResponse httpResponse = client.execute(method);
 			int rc = httpResponse.getStatusLine().getStatusCode();
 
 			if (rc != HttpStatus.SC_OK) {
-				String message = EntityUtils.toString(httpResponse.getEntity());
-				log.error(message);
-				if (response == null) {
+				message = EntityUtils.toString(httpResponse.getEntity());
+				if ( message.startsWith("<!doc")) {
+					int start = message.indexOf("Message")+11;
+					message = message.substring(start);
+					int end = message.indexOf("</p>");
+					message = message.substring(0, end);
 					throw new IOException(message);
 				} else {
-					response.sendError(rc);
+					ErddapError err = gson.fromJson(message, ErddapError.class);
+					log.error(err.getMessage());
+					throw new IOException(err.getMessage());
 				}
 			}
 			InputStream input = httpResponse.getEntity().getContent();
 			OutputStream output = new FileOutputStream(outfile);
 			stream(input, output);
+			method.releaseConnection();
 		} catch (Exception e) {
 			log.error("Trouble downloading ERDDAP data set." + e.getMessage());
-		} finally {
 			method.releaseConnection();
+			throw new IOException(message);
 		}
-		
+		method.releaseConnection();
+	}
+	public class ErddapError {
+		/*
+		Error {
+           code=404;
+           message="Not Found: Your query produced no matching results. (time>=2019-03-27T00:00:00Z is outside of the variable's actual_range: 1970-02-26T20:00:00Z to 2019-03-26T15:00:00Z)";
+        }
+		*/
+		int code;
+		String message;
 
+		public int getCode() {
+			return code;
+		}
+
+		public void setCode(int code) {
+			this.code = code;
+		}
+
+		public String getMessage() {
+			return message;
+		}
+
+		public void setMessage(String message) {
+			this.message = message;
+		}
 	}
 	public void executeGetMethodAndSaveResult(String url, File outfile, HttpServletResponse response) throws IOException, HttpException {
 		int timeout = 120;

@@ -17,6 +17,7 @@ import gwt.material.design.client.ui.html.Div;
 import pmel.sdig.las.client.main.ClientFactory;
 import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.Vector;
 
 /**
  * Created by rhs on 9/15/15.
@@ -66,6 +67,12 @@ public class Breadcrumb extends MaterialPanel {
             type = BreadcrumbType.DATASET;
         } else if ( selected instanceof Variable ) {
             Variable variable = (Variable) selected;
+//            chip.setText(" > " + variable.getTitle());
+            chip.setText(variable.getTitle());
+            chip.setTitle(variable.getTitle());
+            type = BreadcrumbType.VARIABLE;
+        } else if ( selected instanceof Vector) {
+            Vector variable = (Vector) selected;
 //            chip.setText(" > " + variable.getTitle());
             chip.setText(variable.getTitle());
             chip.setTitle(variable.getTitle());

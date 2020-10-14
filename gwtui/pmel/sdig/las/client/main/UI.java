@@ -134,6 +134,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -529,6 +530,7 @@ public class UI implements EntryPoint {
                         if ( newVector.getW() != null ) {
                             variables.add(newVector.getW());
                         }
+                        // TODO breadcrumb?
                     }
                 }
 
@@ -720,6 +722,12 @@ public class UI implements EntryPoint {
 
                         newVariable = null;
                         newVector = (Vector) selected;
+                        long uid = newVector.getU().getId();
+                        long vid = newVector.getV().getId();
+                        Variable uvar = dataset.findVariableById(uid);
+                        Variable vvar = dataset.findVariableById(vid);
+                        newVector.setU(uvar);
+                        newVector.setV(vvar);
                         if ( variables.size() > 0 ) {
                             saveAxes();
                         }
@@ -856,7 +864,12 @@ public class UI implements EntryPoint {
                     processQueue();
                 } else {
                     String url = makeERDDAP_url(".xhtml");
-                    url = Constants.stream + "?url=" + url;
+                    url = url.replaceAll("&","_amp_");
+                    try {
+                        url = Constants.stream + "?datalink=" + url;
+                    } catch (Exception e) {
+                        // Try without encodeing.
+                    }
                     Frame frame = new Frame(url);
                     frame.setWidth("100%");
                     frame.setHeight("98%");
@@ -1106,6 +1119,7 @@ public class UI implements EntryPoint {
 
     }
     private void setTopLevel(Product p) {
+        layout.topMenuEnabled(true);
         if ( p.isClientPlot() ) {
             layout.printButton.setEnabled(false);
             layout.animate.setEnabled(false);
@@ -1113,7 +1127,6 @@ public class UI implements EntryPoint {
             layout.setPanels(1);
             eventBus.fireEventFromSource(new PanelCount(1), layout.plotsDropdown);
         } else {
-            layout.topMenuEnabled(true);
             if (p.getView().equals("xy")) {
                 layout.animate.setEnabled(true);
             } else {
@@ -2339,6 +2352,7 @@ public class UI implements EntryPoint {
         state.getPanelState(1).setLasRequest(timeseriesReqeust);
         pushHistory();
 
+        setTopLevel(p);
 
         layout.panel1.clearAnnotations();
         layout.panel1.addAnnotation(new MaterialLabel("Dataset: " +dataset.getTitle()));
@@ -2360,13 +2374,17 @@ public class UI implements EntryPoint {
         String url = v.getUrl();
         url = url.substring(0, url.indexOf("#"));
         url = url + suffix;
-        String vars = v.getName();
+        String vars = dataset.getIdVariable().getName();
+        vars = vars + ","+v.getName();
         if ( !v.getName().equals("time") && !v.getName().equals("latitude") && !v.getName().equals("longitude") && !v.isDsgId() ) {
             constraints = constraints + v.getName() + "!=NaN";
         }
         for (int i = 1; i < variables.size(); i++) {
             Variable vvv = variables.get(i);
-            vars = vars + "," + vvv.getName();
+            if ( !vvv.isDsgId() ) {
+                vars = vars + "," + vvv.getName();
+            }
+
             if ( !vvv.getName().equals("time") && !vvv.getName().equals("latitude") && !vvv.getName().equals("longitude") && !vvv.isDsgId() ) {
                 if ( !constraints.endsWith("&") ) constraints = constraints + "&";
                 constraints = constraints + vvv.getName() + "!=NaN";
@@ -2467,6 +2485,8 @@ public class UI implements EntryPoint {
                 rhs = rhs.replaceAll("\\)", "");
                 String[] parts = rhs.split("_ns_");
                 rhs = "\"(" + String.join("|", parts) + ")\"";
+            } else {
+                rhs = "\"" + rhs + "\"";
             }
             constraints = constraints + "&" + dc.getLhs() + dc.getOpAsSymbol() + rhs;
         }

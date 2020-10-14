@@ -170,6 +170,15 @@ public class Dataset implements Comparable {
         }
         return null;
     }
+    public Variable findVariableById(long id) {
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i);
+            if ( v.getId() == id ) {
+                return v;
+            }
+        }
+        return null;
+    }
     public int findVariableIndexByHash(String hash) {
         for (int i = 0; i < variables.size(); i++) {
             Variable v = variables.get(i);

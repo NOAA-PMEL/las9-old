@@ -164,6 +164,7 @@ export class DatasetPickerComponent implements OnInit {
       }
     );
   }
+
   moveDataset(from_dataset: Dataset) {
     const dataset = this.applicationStateService.getSecondary();
     const parent = this.applicationStateService.getParent()

@@ -29,4 +29,13 @@ export class AdminService {
   deleteDataset(id: number): Observable<any> {
     return this.httpClient.delete<any>('/las/admin/deleteDataset/' + id);
   }
+  deleteVariable(id: number): Observable<any> {
+    return this.httpClient.delete<any>('/las/admin/deleteVariable/' + id);
+  }
+  deleteVector(id: number): Observable<any> {
+    return this.httpClient.delete<any>('/las/admin/deleteVector/' + id);
+  }
+  addVectors(id: number): Observable<any> {
+    return this.httpClient.get('/las/admin/addVectors/' + id);
+  }
 }

@@ -1,7 +1,6 @@
 package pmel.sdig.las
 
 import com.google.gson.*
-import grails.converters.JSON
 import grails.gorm.transactions.Transactional
 import grails.web.context.ServletContextHolder
 import opendap.dap.AttributeTable
@@ -13,9 +12,9 @@ import org.joda.time.chrono.GregorianChronology
 import org.joda.time.format.*
 import pmel.sdig.las.tabledap.JsonMetadata
 import pmel.sdig.las.type.GeometryType
+
 import thredds.client.catalog.Access
 import thredds.client.catalog.Catalog
-import thredds.client.catalog.Service
 import thredds.client.catalog.ServiceType
 import thredds.client.catalog.builder.CatalogBuilder
 import ucar.nc2.Attribute
@@ -678,6 +677,7 @@ class IngestService {
         } else {
             // Is it a THREDDS catalog?
         }
+        addVectors(dataset)
         dataset
         // Is it an ESGF catalog or data set?
     }
@@ -705,6 +705,7 @@ class IngestService {
                         }
                         dataset.setStatus(Dataset.INGEST_FINISHED)
                         if (dataset.validate()) {
+                            addVectors(dataset)
                             dataset.save(flush: true)
                         }
                     } else {
@@ -3282,6 +3283,143 @@ class IngestService {
 
         log.debug("FINISHED adding variables to " + limit + " of " + needIngest.size() + " OPeNDAP endpoints from THREDDS catalogs.")
 
+    }
+    def addVectors(Dataset dataset) {
+
+        if ( !dataset.getVariableChildren() ) {
+            return;
+        }
+
+        List<List<Variable>> vectors = new ArrayList<List<String>>();
+
+        def variables = dataset.getVariables();
+
+        Map<String, Variable> x_names = new HashMap<>()
+        Map<String, Variable> y_names = new HashMap<>()
+//        Map<String, Variable> z_names = new HashMap<>()
+
+        Map<String, Variable> X_names = new HashMap<>()
+        Map<String, Variable> Y_names = new HashMap<>()
+//        Map<String, Variable> Z_names = new HashMap<>()
+
+        Map<String, Variable> u_names = new HashMap<>()
+        Map<String, Variable> v_names = new HashMap<>()
+//        Map<String, Variable> w_names = new HashMap<>()
+
+        Map<String, Variable> U_names = new HashMap<>()
+        Map<String, Variable> V_names = new HashMap<>()
+//        Map<String, Variable> W_names = new HashMap<>()
+
+        for (int i = 0; i < variables.size(); i++) {
+            Variable v = variables.get(i)
+            if ( v.getName().contains("x") ) {
+                String xname = v.getName();
+                xname = xname.replace("x","");
+                x_names.put(xname, v)
+            } else if ( v.getName().contains("y") ) {
+                String yname = v.getName();
+                yname = yname.replace("y", "");
+                y_names.put(yname, v)
+            } else if ( v.getName().contains("X") ) {
+                String xname = v.getName();
+                xname = xname.replace("X", "");
+                X_names.put(xname, v)
+            } else if ( v.getName().contains("Y") ) {
+                String yname = v.getName()
+                yname = yname.replace("Y", "")
+                Y_names.put(yname, v)
+            } else if ( v.getName().contains("u") ) {
+                String uname = v.getName()
+                uname = uname.replace("u", "")
+                u_names.put(uname, v)
+            } else if ( v.getName().contains("v") ) {
+                String vname = v.getName()
+                vname = vname.replace("v", "")
+                v_names.put(vname, v)
+            } else if ( v.getName().contains("U") ) {
+                String uname = v.getName()
+                uname = uname.replace("U", "")
+                U_names.put(uname, v)
+            } else if ( v.getName().contains("V") ) {
+                String vname = v.getName()
+                vname = vname.replace("V", "")
+                V_names.put(vname, v)
+            }
+        }
+
+        List<Vector> vees_x = vectorPairs(x_names, y_names)
+        if ( vees_x.size() > 0 ) {
+            for (int i = 0; i < vees_x.size(); i++) {
+                Vector vector = vees_x.get(i)
+                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
+                if ( !found ) {
+                    dataset.addToVectors(vector)
+                }
+            }
+        }
+        List<Vector> vees_X = vectorPairs(X_names, Y_names)
+        if ( vees_X.size() > 0 ) {
+            for (int i = 0; i < vees_X.size(); i++) {
+                Vector vector = vees_X.get(i)
+                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
+                if ( !found ) {
+                    dataset.addToVectors(vector)
+                }
+            }
+        }
+        List<Vector> vees_u = vectorPairs(u_names, v_names)
+        if ( vees_u.size() > 0 ) {
+            for (int i = 0; i < vees_u.size(); i++) {
+                Vector vector = vees_u.get(i)
+                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
+                if ( !found ) {
+                    dataset.addToVectors(vector)
+                }
+            }
+        }
+        List<Vector> vees_U = vectorPairs(U_names, V_names)
+        if ( vees_U.size() > 0 ) {
+            for (int i = 0; i < vees_U.size(); i++) {
+                Vector vector = vees_U.get(i)
+                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
+                if ( !found ) {
+                    dataset.addToVectors(vector)
+                }
+            }
+        }
+
+        if ( dataset.getVectors() && dataset.getVectors().size() > 0 )
+            dataset.save(flush: true)
+
+    }
+    def List<Vector> vectorPairs(Map<String, Variable> u, Map<String, Variable> v) {
+        List<Vector> vectors = new ArrayList<>()
+        if ( u.size() > 0 ) {
+            Iterator<String> keys = u.keySet().iterator()
+            while( keys.hasNext() ) {
+                String key = keys.next()
+                Variable u_var = u.get(key)
+                Variable v_var = v.get(key)
+                if ( u_var && v_var ) {
+                    Vector vector = new Vector()
+                    vector.setHash(u_var.getHash() + "_" + v_var.getHash() )
+                    vector.setName(u_var.getName() + "_" + v_var.getName() + " vector")
+                    vector.setTitle("Vector of " + u_var.getTitle() + " and " + v_var.getTitle())
+                    vector.setGeometry(GeometryType.VECTOR)
+                    vector.setU(u_var)
+                    vector.setV(v_var)
+                    vectors.add(vector)
+                }
+            }
+        }
+        vectors
+    }
+    def makeVectors() {
+        def datasets = Dataset.findAllByGeometry(GeometryType.GRID);
+        for (int i = 0; i < datasets.size(); i++) {
+            Dataset dataset = datasets.get(i)
+            addVectors(dataset)
+        }
     }
     private static Period getPeriod(CalendarDateUnit cdu, double t0, double t1) {
         CalendarDate cdt0 = cdu.makeCalendarDate(t0)

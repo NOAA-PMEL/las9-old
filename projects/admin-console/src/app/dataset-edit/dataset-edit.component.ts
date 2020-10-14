@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {Subscription} from "rxjs";
 import {ApplicationStateService} from "../application-state.service";
-import {Dataset, Variable} from "../json/Dataset";
+import {Dataset, Variable, Vector} from "../json/Dataset";
 import {StringProperty} from "../forms/string-property";
 import {JsonFormService} from "../../json-form.service";
 import {FormGroup} from "@angular/forms";
@@ -20,6 +20,7 @@ export class DatasetEditComponent implements OnInit {
   jsonForm: FormGroup;
   title;
   variables: Variable[];
+  vectors: Vector[];
   edit_variable;
   editing_variable;
   variables_title;
@@ -86,6 +87,8 @@ export class DatasetEditComponent implements OnInit {
                 } else if (Util.isArray(this.edit_dataset[prop])) {
                   if (prop === "variables") {
                     this.variables = this.edit_dataset[prop];
+                  } else if ( prop === "vectors" ) {
+                    this.vectors = this.edit_dataset[prop];
                   }
                 } else {
                   // Other types of things to show in form
@@ -98,12 +101,29 @@ export class DatasetEditComponent implements OnInit {
             }
             this.jsonForm = this.formService.makeFormGroup(this.properties);
             this.title = "Editing " + this.edit_dataset.title;
-            this.variables_title = "Variables for " + this.edit_dataset.title;
+            this.variables_title = "Variables for " + this.edit_dataset.title + "   (Deleting a variable takes place immediately! Edits are local until you push save.)";
             this.editing_dataset = true;
           }
         }
       }
     });
+  }
+  addVectors() {
+    let id = this.edit_dataset.id;
+    this.applicationStateService.setForRequest();
+    this.adminService.addVectors(id).subscribe(data => {
+      this.applicationStateService.setProgress(false);
+      this.applicationStateService.setDatasetToEdit(data);
+      // In this case wait for the return to happen before closing
+      this.applicationStateService.reinit();
+    },error => {
+        if ( error.message.includes("auth/login") ) {
+          this.applicationStateService.setError("Failed to add vectors. Are you logged in as admin. Reload the page to login.");
+        } else {
+          this.applicationStateService.setError("Failed to add vectors. Is the server running.")
+        }
+      }
+    );
   }
   save() {
 
@@ -140,6 +160,38 @@ export class DatasetEditComponent implements OnInit {
       this.applicationStateService.reinit();
       this.editing_dataset = false;
     }
+  }
+  deleteVariable(invariable: Variable) {
+    this.applicationStateService.setForRequest();
+    this.adminService.deleteVariable(invariable.id).subscribe(indataset => {
+        this.applicationStateService.setProgress(false);
+        this.applicationStateService.setDatasetToEdit(indataset);
+      },
+      error => {
+        this.applicationStateService.setProgress(false);
+        if (error.message.includes("auth/login")) {
+          this.applicationStateService.setError("Unable to access the admin server. Are you logged in as admin? Reload this page to login.");
+        } else {
+          this.applicationStateService.setError("Unexpected error deleting variable. " + error.message);
+        }
+      }
+    );
+  }
+  deleteVector(invector: Vector) {
+    this.applicationStateService.setForRequest();
+    this.adminService.deleteVector(invector.id).subscribe(indataset => {
+        this.applicationStateService.setProgress(false);
+        this.applicationStateService.setDatasetToEdit(indataset);
+      },
+      error => {
+        this.applicationStateService.setProgress(false);
+        if (error.message.includes("auth/login")) {
+          this.applicationStateService.setError("Unable to access the admin server. Are you logged in as admin? Reload this page to login.");
+        } else {
+          this.applicationStateService.setError("Unexpected error deleting variable. " + error.message);
+        }
+      }
+    );
   }
   editVariable(variable: Variable) {
     this.editing_dataset = false;

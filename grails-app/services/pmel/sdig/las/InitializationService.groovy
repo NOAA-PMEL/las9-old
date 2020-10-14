@@ -1408,20 +1408,20 @@ class InitializationService {
                         if (coadsDS) {
                             coadsDS.setTitle("COADS")
                             coadsDS.setStatus(Dataset.INGEST_FINISHED)
-                            Variable v = coadsDS.getVariables().get(0);
-                            v.addToVariableProperties(new VariableProperty([type: "ferret", name: "time_step", value: "3"]))
-                            coadsDS.addToDatasetProperties(new DatasetProperty([type: "ferret", name: "time_step", value: "4"]))
-                            Vector vector = new Vector();
-                            vector.setGeometry(GeometryType.VECTOR)
-                            vector.setTitle("Ocean Currents")
-                            Variable ucomp = coadsDS.getVariables().find { it.name == "UWND" };
-                            Variable vcomp = coadsDS.getVariables().find { it.name == "VWND" }
-                            vector.setHash(ucomp.getHash() + "_" + vcomp.getHash())
-                            vector.setName(ucomp.getName() + " and " + vcomp.getName())
-                            vector.setU(ucomp)
-                            vector.setV(vcomp)
-                            coadsDS.addToVectors(vector)
-                            coadsDS.save(flush: true)
+//                            Variable v = coadsDS.getVariables().get(0);
+//                            v.addToVariableProperties(new VariableProperty([type: "ferret", name: "time_step", value: "3"]))
+//                            coadsDS.addToDatasetProperties(new DatasetProperty([type: "ferret", name: "time_step", value: "4"]))
+//                            Vector vector = new Vector();
+//                            vector.setGeometry(GeometryType.VECTOR)
+//                            vector.setTitle("Ocean Currents")
+//                            Variable ucomp = coadsDS.getVariables().find { it.name == "UWND" };
+//                            Variable vcomp = coadsDS.getVariables().find { it.name == "VWND" }
+//                            vector.setHash(ucomp.getHash() + "_" + vcomp.getHash())
+//                            vector.setName(ucomp.getName() + " and " + vcomp.getName())
+//                            vector.setU(ucomp)
+//                            vector.setV(vcomp)
+//                            coadsDS.addToVectors(vector)
+//                            coadsDS.save(flush: true)
                             site.addToDatasets(coadsDS)
                         }
                     }
@@ -1454,7 +1454,6 @@ class InitializationService {
                         }
                     }
                 }
-
 
 //                log.debug("Ingesting carbon tracker THREDDS catalog.")
 //                def carbonThredds = "http://ferret.pmel.noaa.gov/pmel/thredds/carbontracker.xml"
@@ -1552,6 +1551,8 @@ class InitializationService {
 //                }
 
                 site.save(failOnError: true)
+
+                ingestService.makeVectors()
 
             }
         }

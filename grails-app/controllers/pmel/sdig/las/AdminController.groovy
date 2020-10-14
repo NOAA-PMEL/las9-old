@@ -257,6 +257,14 @@ class AdminController {
         }
         //TODO render error
     }
+    def addVectors() {
+        def did = params.id
+        Dataset dataset = Dataset.get(did)
+        ingestService.addVectors(dataset)
+        JSON.use('deep') {
+            render dataset as JSON
+        }
+    }
     def addDataset() {
 
         def requestJSON = request.JSON
@@ -323,6 +331,46 @@ class AdminController {
             }
         }
 
+    }
+    def deleteVariable() {
+        def vid = params.id
+        def parent;
+        Variable v = Variable.get(vid)
+        Dataset d = v.getDataset()
+        List<Vector> vectors = d.getVectors();
+        if ( vectors ) {
+            for (int i = 0; i < vectors.size(); i++) {
+                Vector vc = vectors.get(i)
+                Variable u = vc.getU()
+                Variable vv = vc.getV()
+                Variable w = vc.getW()
+                if ( (u && u.id == v.id) || ( vv && vv.id == v.id ) || w && w.id == v.id ) {
+                    def message = 'The variable ' + v.getTitle() + ' is part of the vector ' + vc.getTitle() + '. Delete the vector first.'
+                    response.sendError(500, message)
+                }
+            }
+        }
+        d.removeFromVariables(v)
+        v.delete(flush: true)
+        d.save(flush: true)
+        JSON.use("deep") {
+            render d as JSON
+        }
+    }
+    def deleteVector() {
+        def vid = params.id
+        def parent;
+        Vector v = Vector.get(vid)
+        v.setU(null)
+        v.setV(null)
+        v.setW(null)
+        Dataset d = v.getDataset()
+        d.removeFromVectors(v)
+        v.delete(flush: true)
+        d.save(flush: true)
+        JSON.use("deep") {
+            render d as JSON
+        }
     }
     def deleteDataset() {
         def did = params.id

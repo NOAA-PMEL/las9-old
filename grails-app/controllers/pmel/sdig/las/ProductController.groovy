@@ -216,7 +216,10 @@ class ProductController {
         render "Product request canceled"
     }
     def stream() {
-        def url = params.url;
+        def url = params.datalink;
+        url = url.replaceAll("_amp_", "&")
+        def parts = url.split("\\?")
+        url = parts[0] + "?" + URLEncoder.encode(parts[1], "UTF-8")
         lasProxy.executeGetMethodAndStreamResult(url, response);
     }
     def make() {

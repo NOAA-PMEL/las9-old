@@ -40,6 +40,14 @@ class ErddapService {
 
     def makeNetcdfFile(LASRequest lasRequest, String hash, String outputPath, String productName, Operation operation, Dataset dataset) {
 
+        boolean hasLon360 = false;
+        List<Variable> lookFor360 = dataset.getVariables()
+        for (int i = 0; i < lookFor360.size(); i++) {
+            Variable lonV = lookFor360.get(i)
+            if ( lonV.getName().equals("lon360") ) {
+                hasLon360 = true;
+            }
+        }
 
         productService.writePulse(hash, outputPath, "Preparing for netCDF file download from ERDDAP.", null, null, null, PulseType.STARTED)
 
@@ -486,47 +494,17 @@ class ErddapService {
                         causeOfError = "Cannot handle two modulo variables in the same request (longitude and " + modulo_required.get(0) + ")";
                     }
 
-                    // Going west to east does not cross dateline, normal constraint
-                    if ( xloDbl < xhiDbl ) {
-                        // Going west to east does not cross dateline, normal constraint
-                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
-                            query.append("&" + lonname + ">=" + xloDbl);
-                            query.append("&" + lonname + "<=" + xhiDbl);
-                        // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
-                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
-                            query.append("&lon360>=" + xloDbl);
-                            query.append("&lon360<=" + xhiDbl);
-                        }
-                    } else if ( xloDbl > xhiDbl ) {
-                        // Going west to east
-                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
-                            // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
-                            if ( xloDbl > 0 && xhiDbl < 0 ) {
-                                xhiDbl = xhiDbl + 360;
-                                query.append("&lon360>=" + xloDbl);
-                                query.append("&lon360<=" + xhiDbl);
-                            }
-                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
-                            // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
-                            // switch an convert.
-                            if ( xloDbl > 180 && xhiDbl < 180 ) {
-                                double t = xloDbl;
-                                xloDbl = xhiDbl;
-                                xhiDbl = t;
-                                xloDbl = LatLonUtil.anglePM180(xloDbl);
-                                xhiDbl = LatLonUtil.anglePM180(xhiDbl);
-                                query.append("&" + lonname + ">=" + xloDbl);
-                                query.append("&" + lonname + "<=" + xhiDbl);
-                            }
-                        }
-                    }
+                    String lonConstraint = getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, lonname)
+
+                    query.append(lonConstraint)
                 } // Span the whole globe so leave off the lon query all together.
-                // Any other circumstance, don't bother to constrain lon and deal with the extra on the client (or not).
+            // Any other circumstance, don't bother to constrain lon and deal with the extra on the client (or not).
             } else {
                 //  If they are not both defined, add the one that is...  There will be no difficulties with dateline crossings...
                 if (xlo.length() > 0) query.append("&" + lonname + ">=" + xlo);
                 if (xhi.length() > 0) query.append("&" + lonname + "<=" + xhi);
             }
+
             // This changes the data set to the decimated data set if it exists.
             // We have decided to try all ribbon plots with the decimated data set...
             // so we will remove the !hasConstraints
@@ -591,6 +569,81 @@ class ErddapService {
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    def String getLonConstraint(double xloDbl, double xhiDbl, boolean hasLon360, String lon_domain, String lonname) {
+        StringBuilder query = new StringBuilder();
+        if (lon_domain.contains("180")) {
+            if ( xloDbl < xhiDbl ) {
+                // Going west to east does not cross dateline, normal constraint
+                if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d ) {
+                    query.append("&" + lonname + ">=" + xloDbl);
+                    query.append("&" + lonname + "<=" + xhiDbl);
+                    // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
+                    // lon360 boolean indicates data set has has such a variable. If not, don't constrain on lon where lon360 is needed
+                } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d && hasLon360) {
+                    query.append("&lon360>=" + xloDbl);
+                    query.append("&lon360<=" + xhiDbl);
+                }
+            } else if ( xloDbl > xhiDbl ) {
+                // Going west to east
+                // lon360 boolean varifies data has has such a varaible. If not, don't constrain on lon where lon360 is needed
+                if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d && hasLon360 ) {
+                    // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+                    if ( xloDbl > 0 && xhiDbl < 0 ) {
+                        xhiDbl = xhiDbl + 360;
+                        query.append("&lon360>=" + xloDbl);
+                        query.append("&lon360<=" + xhiDbl);
+                    }
+                } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d) {
+                    // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+                    // switch an convert.
+                    if ( xloDbl > 180 && xhiDbl < 180 ) {
+                        double t = xloDbl;
+                        xloDbl = xhiDbl;
+                        xhiDbl = t;
+                        xloDbl = LatLonUtil.anglePM180(xloDbl);
+                        xhiDbl = LatLonUtil.anglePM180(xhiDbl);
+                        query.append("&" + lonname + ">=" + xloDbl);
+                        query.append("&" + lonname + "<=" + xhiDbl);
+                    }
+                }
+            }
+        } else {
+            if ( xloDbl < xhiDbl ) {
+                // Going west to east does not cross 180, normal constraint
+                // Going east to west does not cross Greenwich, normal lon360
+                // with values normalized to 0 360 since that's what the data are
+                if ( (xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d) ||
+                        (xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d) ) {
+                    query.append("&" + lonname + ">=" + LatLonUtil.angle0360(xloDbl));
+                    query.append("&" + lonname + "<=" + LatLonUtil.angle0360(xhiDbl));
+                }
+            } else if ( xloDbl > xhiDbl ) {
+                // Going west to east
+                // lon360 boolean data has has such a varaible. If not, don't constrain on lon where lon360 is needed
+                if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d && hasLon360 ) {
+                    // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+                    if ( xloDbl > 0 && xhiDbl < 0 ) {
+                        query.append("&" + lonname + ">=" + LatLonUtil.angle0360(xloDbl))
+                        query.append("&" + lonname + "<=" + LatLonUtil.angle0360(xhiDbl))
+                    }
+                } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d) {
+                    // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+                    // switch an convert.
+                    if ( xloDbl > 180 && xhiDbl < 180 ) {
+                        double t = xloDbl;
+                        xloDbl = xhiDbl;
+                        xhiDbl = t;
+                        xloDbl = LatLonUtil.angle0360(xloDbl);
+                        xhiDbl = LatLonUtil.angle0360(xhiDbl);
+                        query.append("&" + lonname + ">=" + xloDbl);
+                        query.append("&" + lonname + "<=" + xhiDbl);
+                    }
+                }
+            }
+        }
+        query.toString();
     }
 
 // Helper methods for dealing with netCDF files when doing a query that crosses the dateline.

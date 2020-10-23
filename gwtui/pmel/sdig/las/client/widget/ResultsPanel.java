@@ -26,6 +26,7 @@ import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.shared.autobean.Annotation;
 import pmel.sdig.las.shared.autobean.AnnotationGroup;
 import pmel.sdig.las.shared.autobean.Variable;
+import pmel.sdig.las.shared.autobean.Vector;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -132,7 +133,7 @@ public class ResultsPanel extends Composite {
         if ( index > 0 ) {
             Breadcrumb tail = (Breadcrumb) getBreadcrumbs().get(index - 1);
             Object tailObject = tail.getSelected();
-            if ( tailObject instanceof Variable) {
+            if ( tailObject instanceof Variable || tailObject instanceof Vector ) {
                 removeBreadcrumb(tail);
                 breadcrumbs.add(b);
             } else {

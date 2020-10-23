@@ -309,8 +309,8 @@ public class Layout extends Composite {
     int advancedSearchCount = Constants.PAGE;
     int advancedSearchOffset = 0;
 
-//    @UiField
-//    MaterialIcon back;
+    @UiField
+    MaterialIcon back;
 
     @UiField
     MaterialPanel products;
@@ -369,6 +369,7 @@ public class Layout extends Composite {
 
     @UiField
     MaterialButton prev10;
+
 
     Widget root;
 
@@ -775,7 +776,7 @@ public class Layout extends Composite {
         DataItem s = (DataItem) datasets.getWidget(index);
         s.setRadioSelected();
     }
-    public void setSelectedVariable(int i) {
+    public void setSelectedItem(int i) {
         DataItem di = (DataItem) datasets.getWidget(i);
         di.setSelected();
     }
@@ -822,7 +823,6 @@ public class Layout extends Composite {
                 index = i;
             }
         }
-        //TODO The end value is too big. What should it be?
         removeBreadcrumbs(crumbs, index, targetPanel);
 
     }
@@ -1429,11 +1429,11 @@ public class Layout extends Composite {
         animate.setEnabled(false);
         event.stopPropagation();
     }
-    //    @UiHandler("back")
-//    public void onBack(ClickEvent event) {
-//        goBack();
-//        event.stopPropagation();
-//    }
+    @UiHandler("back")
+    public void onBack(ClickEvent event) {
+        goBack();
+        event.stopPropagation();
+    }
     public void goBack(){
         if ( getBreadcrumbCount(1) > 0 ) {
             panel1.getBreadcrumbContainer().remove(panel1.getBreadcrumbContainer().getWidgetCount()-1);
@@ -1442,9 +1442,10 @@ public class Layout extends Composite {
             Breadcrumb bc = (Breadcrumb) panel1.getBreadcrumbContainer().getWidget(panel1.getBreadcrumbContainer().getWidgetCount()-1);
             eventBus.fireEventFromSource(new BreadcrumbSelect(bc.getSelected(), 1), bc);
         } else {
-            eventBus.fireEventFromSource(new BreadcrumbSelect(), home);
+            eventBus.fireEventFromSource(new BreadcrumbSelect(null, 1), home);
         }
     }
+
     @UiHandler("next")
     public void onNext(ClickEvent event) {
         eventBus.fireEventFromSource(new MoveAnimation(1), next);
@@ -1612,6 +1613,12 @@ public class Layout extends Composite {
         sr.setCount(advancedSearchCount);
         sr.setOffset(offset);
         startSearch( sr );
+    }
+    public void clearConstraints() {
+        activeConstraints.clear();
+        byVariable.clear();
+        subsetColumn.clear();
+        possibleValues.clear();
     }
     @UiHandler("advancedSearchLaunch")
     void onAdvancedSearch(ClickEvent event) {

@@ -3,34 +3,36 @@
     <p-card [header]="header" [subheader]="subHeader">
       <p-breadcrumb [model]="breadcrumbs"></p-breadcrumb>
       <p-scrollPanel [style]="{width: '100%', height: '200px'}">
-        <div *ngFor="let dataset of datasets">
-          <div class="ui-g" style="padding: 0px">
-            <div class="ui-g-10" style="padding: 0px">
-              <button pButton class="wide-button ui-button-secondary" label="{{dataset.title}}" (click)="getDataset(dataset)"></button>
-            </div>
-            <div *ngIf="edit">
-              <div class="ui-g-1" style="padding: 0px">
-                <button label="Edit" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="editDataset(dataset)"></button>
+        <div style="padding-bottom: 25px;">
+          <div *ngFor="let dataset of datasets">
+            <div class="ui-g" style="padding: 0px;">
+              <div class="ui-g-10" style="padding: 0px">
+                <button pButton class="wide-button ui-button-secondary" label="{{dataset.title}}" (click)="getDataset(dataset)"></button>
               </div>
-            </div>
-            <div *ngIf="move">
-              <div class="ui-g-1" style="padding: 0px">
-                <button label="Move" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="moveDataset(dataset)"></button>
+              <div *ngIf="edit">
+                <div class="ui-g-1" style="padding: 0px">
+                  <button label="Edit" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="editDataset(dataset)"></button>
+                </div>
               </div>
-            </div>
-            <div *ngIf="hide">
-              <div class="ui-g-1" style="padding: 0px">
-                <button label="Hide" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="moveDataset(dataset)"></button>
+              <div *ngIf="move">
+                <div class="ui-g-1" style="padding: 0px">
+                  <button label="Move" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="moveDataset(dataset)"></button>
+                </div>
               </div>
-            </div>
-            <div *ngIf="delete">
-              <div class="ui-g-1" style="padding: 0px">
-                <button label="Delete" pButton class="ui-button-warning" type="button" icon="pi pi-trash" iconPos="left" (click)="deleteDataset(dataset)"></button>
+              <div *ngIf="hide">
+                <div class="ui-g-1" style="padding: 0px">
+                  <button label="Hide" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="moveDataset(dataset)"></button>
+                </div>
               </div>
-            </div>
-            <div *ngIf="update">
-              <div class="ui-g-1" style="padding: 0px">
-                <button label="Edit" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="editUpdate(dataset)"></button>
+              <div *ngIf="delete">
+                <div class="ui-g-1" style="padding: 0px">
+                  <button label="Delete" pButton class="ui-button-warning" type="button" icon="pi pi-trash" iconPos="left" (click)="deleteDataset(dataset)"></button>
+                </div>
+              </div>
+              <div *ngIf="update">
+                <div class="ui-g-1" style="padding: 0px">
+                  <button label="Edit" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="editUpdate(dataset)"></button>
+                </div>
               </div>
             </div>
           </div>

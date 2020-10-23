@@ -188,6 +188,22 @@ public class Dataset implements Comparable {
         }
         return -1;
     }
+    public int findVectorIndexByHash(List<String> hashes) {
+        Variable u_u = findVariableByHash(hashes.get(0));
+        Variable v_v = findVariableByHash(hashes.get(1));
+        if ( vectors != null ) {
+            for (int i = 0; i < vectors.size(); i++) {
+                Variable u = vectors.get(i).getU();
+                Variable v = vectors.get(i).getV();
+                if (u.getId() == u_u.getId() && v.getId() == v_v.getId() ) {
+                    vectors.get(i).setU(u_u);
+                    vectors.get(i).setV(v_v);
+                    return variables.size() + i;
+                }
+            }
+        }
+        return -1;
+    }
     public boolean hasVariableChildren() {
         return variableChildren;
     }

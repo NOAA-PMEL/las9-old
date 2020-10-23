@@ -47,6 +47,7 @@ export class DatasetEditComponent implements OnInit {
   hasT;
   time_axis_properties
   timeForm;
+  hasV;
 
   header = "Navigate to the data set you want to edit.";
   sub_header = "Click the edit icon next to the data set name."
@@ -75,7 +76,9 @@ export class DatasetEditComponent implements OnInit {
           console.log("State change with what should be the data set page open.")
           this.edit_dataset = state.edit_dataset;
           if (this.edit_dataset) {
+            this.hasV = this.edit_dataset.variableChildren;
             this.variables = [];
+            this.vectors = [];
             this.properties = [];
             let has_url = false;
             for (let prop in this.edit_dataset) {
@@ -107,6 +110,9 @@ export class DatasetEditComponent implements OnInit {
         }
       }
     });
+  }
+  close() {
+    this.applicationStateService.reinit();
   }
   addVectors() {
     let id = this.edit_dataset.id;

@@ -14,6 +14,31 @@ public class Util {
 	}
 	/**
 	 * Stolen from Bob S.
+	 * This converts an angle (in degrees) into the range &gt;=0 to
+	 *   &lt;360.
+	 * <UL>
+	 * <LI> If isMV(angle), it returns 0.
+	 * </UL>
+	 */
+	public static final double angle0360(double degrees) {
+		if (!Double.isFinite(degrees))
+			return 0;
+
+		while (degrees < 0)
+			degrees += 360;
+		while (degrees >= 360)
+			degrees -= 360;
+
+		//causes slight bruising
+		//degrees = frac(degrees / 360) * 360;
+		//now it is -360..360
+		//if (degrees < 0)
+		//    degrees += 360;
+
+		return degrees;
+	}
+	/**
+	 * Stolen from Bob S.
 	 *
 	 * This converts an angle (in degrees) into the range &gt;=-180 to &lt;180
 	 * (180 becomes -180).
@@ -88,5 +113,79 @@ public class Util {
 			return (String) param.get(0);
 		}
 		return null;
+	}
+	public static String getLonConstraint(double xloDbl, double xhiDbl, boolean hasLon360, String lon_domain, String lonname) {
+		StringBuilder query = new StringBuilder();
+		if (lon_domain.contains("180")) {
+			if ( xloDbl < xhiDbl ) {
+				// Going west to east does not cross dateline, normal constraint
+				if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d ) {
+					query.append("&" + lonname + ">=" + xloDbl);
+					query.append("&" + lonname + "<=" + xhiDbl);
+					// Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
+					// lon360 boolean indicates data set has has such a variable. If not, don't constrain on lon where lon360 is needed
+				} else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d && hasLon360) {
+					query.append("&lon360>=" + xloDbl);
+					query.append("&lon360<=" + xhiDbl);
+				}
+			} else if ( xloDbl > xhiDbl ) {
+				// Going west to east
+				// lon360 boolean varifies data has has such a varaible. If not, don't constrain on lon where lon360 is needed
+				if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d && hasLon360 ) {
+					// Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+					if ( xloDbl > 0 && xhiDbl < 0 ) {
+						xhiDbl = xhiDbl + 360;
+						query.append("&lon360>=" + xloDbl);
+						query.append("&lon360<=" + xhiDbl);
+					}
+				} else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d) {
+					// Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+					// switch an convert.
+					if ( xloDbl > 180 && xhiDbl < 180 ) {
+						double t = xloDbl;
+						xloDbl = xhiDbl;
+						xhiDbl = t;
+						xloDbl = Util.anglePM180(xloDbl);
+						xhiDbl = Util.anglePM180(xhiDbl);
+						query.append("&" + lonname + ">=" + xloDbl);
+						query.append("&" + lonname + "<=" + xhiDbl);
+					}
+				}
+			}
+		} else {
+			if ( xloDbl < xhiDbl ) {
+				// Going west to east does not cross 180, normal constraint
+				// Going east to west does not cross Greenwich, normal lon360
+				// with values normalized to 0 360 since that's what the data are
+				if ( (xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d) ||
+						(xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d) ) {
+					query.append("&" + lonname + ">=" + Util.angle0360(xloDbl));
+					query.append("&" + lonname + "<=" + Util.angle0360(xhiDbl));
+				}
+			} else if ( xloDbl > xhiDbl ) {
+				// Going west to east
+				// lon360 boolean data has has such a varaible. If not, don't constrain on lon where lon360 is needed
+				if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >= -180.0d && hasLon360 ) {
+					// Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
+					if ( xloDbl > 0 && xhiDbl < 0 ) {
+						query.append("&" + lonname + ">=" + Util.angle0360(xloDbl));
+						query.append("&" + lonname + "<=" + Util.angle0360(xhiDbl));
+					}
+				} else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >= 0.0d) {
+					// Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
+					// switch an convert.
+					if ( xloDbl > 180 && xhiDbl < 180 ) {
+						double t = xloDbl;
+						xloDbl = xhiDbl;
+						xhiDbl = t;
+						xloDbl = Util.angle0360(xloDbl);
+						xhiDbl = Util.angle0360(xhiDbl);
+						query.append("&" + lonname + ">=" + xloDbl);
+						query.append("&" + lonname + "<=" + xhiDbl);
+					}
+				}
+			}
+		}
+		return query.toString();
 	}
 }

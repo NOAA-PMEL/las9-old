@@ -39,6 +39,7 @@
                         <m:MaterialCollapsibleHeader debugId="panelHeaderData">
                             <m:MaterialPanel addStyleNames="valign-wrapper">
                                 <m:MaterialIcon marginLeft="4" ui:field="panelHome" iconType="HOME"></m:MaterialIcon>
+                                <m:MaterialIcon ui:field="back" iconType="ARROW_BACK" iconPosition="RIGHT"/>
                                 <m:MaterialLink addStyleNames="panelHeader" width="319px" fontSize="1.4em" fontWeight="BOLDER" text="Data" display="FLEX"></m:MaterialLink>
                             </m:MaterialPanel>
                         </m:MaterialCollapsibleHeader>

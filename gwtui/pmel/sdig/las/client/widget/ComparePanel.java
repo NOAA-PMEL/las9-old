@@ -49,6 +49,7 @@ import gwt.material.design.client.ui.html.Div;
 import org.fusesource.restygwt.client.Method;
 import org.fusesource.restygwt.client.MethodCallback;
 import pmel.sdig.las.client.event.AutoColors;
+import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.event.NavSelect;
 import pmel.sdig.las.client.event.PanelControlOpen;
 import pmel.sdig.las.client.event.PlotOptionChange;
@@ -151,6 +152,8 @@ public class ComparePanel extends Composite {
     MaterialPanel dateTimePanel;
     @UiField
     MaterialPanel zaxisPanel;
+    @UiField
+    MaterialIcon back;
 
     MaterialIcon gear = new MaterialIcon(IconType.SETTINGS);
     List<Breadcrumb> holdBreadcrumbs = new ArrayList<>();
@@ -226,12 +229,11 @@ public class ComparePanel extends Composite {
                 for (int i = 0; i < holdBreadcrumbs.size(); i++) {
                     removeBreadcrumb(holdBreadcrumbs.get(i));
                 }
-                // This event loads the site (beginning of the heirarchy.  Only fire if datasets is empty.
-                if ( getDataItems().size() <= 0 ) {
-                    navcollapsible.setActive(1, true);
-                    dataItem.showProgress(ProgressType.INDETERMINATE);
-                    eventBus.fireEventFromSource(new PanelControlOpen(index), ComparePanel.this);
-                }
+                back.setVisible(false);
+                // Always start at the top when the window opens
+                navcollapsible.setActive(1, true);
+                navcollapsible.setActive(1, true);
+                eventBus.fireEventFromSource(new PanelControlOpen(index), ComparePanel.this);
                 event.stopPropagation();
             }
         });
@@ -433,12 +435,13 @@ public class ComparePanel extends Composite {
 
     public void addBreadcrumb(Breadcrumb b) {
 
-        int index = getBreadcrumbs().size();
+        back.setVisible(true);
+        int bindex = getBreadcrumbs().size();
         if ( b.getSelected() instanceof Dataset ) {
             dataset = (Dataset) b.getSelected();
         }
-        if ( index > 0 ) {
-            Breadcrumb tail = (Breadcrumb) getBreadcrumbs().get(index - 1);
+        if ( bindex > 0 ) {
+            Breadcrumb tail = (Breadcrumb) getBreadcrumbs().get(bindex - 1);
             Object tailObject = tail.getSelected();
             if ( tailObject instanceof Variable) {
                 removeBreadcrumb(tail);
@@ -487,9 +490,6 @@ public class ComparePanel extends Composite {
     }
     public void scale(int navWidth) {
         outputPanel.scale(navWidth);
-    }
-    public void open(int left, int top) {
-
     }
 
     public void initializeAxes(String view, String mapView, Variable variable) {
@@ -694,6 +694,19 @@ public class ComparePanel extends Composite {
             startSearch(search);
         }
     };
+    @UiHandler("back")
+    void onBack(ClickEvent click) {
+        if ( getBreadcrumbs().size() > 0 ) {
+            getBreadcrumbContainer().remove(getBreadcrumbContainer().getWidgetCount()-1);
+        }
+        if (getBreadcrumbs().size() > 0 ) {
+            Breadcrumb bc = (Breadcrumb) getBreadcrumbContainer().getWidget(getBreadcrumbContainer().getWidgetCount()-1);
+            eventBus.fireEventFromSource(new BreadcrumbSelect(bc.getSelected(), 2), bc);
+        } else {
+            eventBus.fireEventFromSource(new PanelControlOpen(index), ComparePanel.this);
+        }
+        click.stopPropagation();
+    }
     private void startSearch(String search) {
         SearchRequest sr = new SearchRequest();
         sr.setOffset(0);

@@ -512,7 +512,13 @@ class ProductController {
                 }
             }
 
+            boolean hasLon360 = false;
             Dataset dataset = Dataset.findByHash(lasRequest.getDatasetHashes().get(0))
+            List<Variable> lookForLon = dataset.getVariables();
+            for (int i = 0; i < lookForLon.size(); i++) {
+                Variable lonV = lookForLon.get(i)
+                if ( lonV.getName().equals("lon360")) hasLon360 = true;
+            }
             def idVar = null
             dataset.getVariables().each{Variable variable ->
                 if ( variable.isDsgId() ) {
@@ -551,7 +557,7 @@ class ProductController {
 
             String xlo = lasRequest.getAxesSets().get(0).getXlo()
             String xhi = lasRequest.getAxesSets().get(0).getXhi()
-
+            String lon_domain = dataset.getDatasetPropertyValue("tabledap_access", "lon_domain")
             if (xlo.length() > 0 && xhi.length() > 0) {
 
                 double xhiDbl = Double.valueOf(xhi).doubleValue();
@@ -559,44 +565,12 @@ class ProductController {
 
                 // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
                 if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
-                    // Going west to east does not cross dateline, normal constraint
-                    if ( xloDbl < xhiDbl ) {
-                        // Going west to east does not cross dateline, normal constraint
-                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
-                            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                            constraint = constraint + lonname + ">=" + xloDbl
-                            constraint = constraint + "&" +lonname + "<=" + xhiDbl
-                            // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
-                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
-                            if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                            constraint = constraint + "lon360>=" + xloDbl;
-                            constraint = constraint + "&lon360<=" + xhiDbl;
-                        }
-                    } else if ( xloDbl > xhiDbl ) {
-                        // Going west to east
-                        if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
-                            // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
-                            if ( xloDbl > 0 && xhiDbl < 0 ) {
-                                xhiDbl = xhiDbl + 360;
-                                if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                                constraint = constraint + "lon360>=" + xloDbl;
-                                constraint = constraint + "&lon360<=" + xhiDbl;
-                            }
-                        } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
-                            // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
-                            // switch an convert.
-                            if ( xloDbl > 180 && xhiDbl < 180 ) {
-                                double t = xloDbl;
-                                xloDbl = xhiDbl;
-                                xhiDbl = t;
-                                xloDbl = LatLonUtil.anglePM180(xloDbl);
-                                xhiDbl = LatLonUtil.anglePM180(xhiDbl);
-                                if ( !constraint.isEmpty() ) constraint = constraint + "&"
-                                constraint = constraint + lonname + ">=" + xloDbl;
-                                constraint = constraint + "&" + lonname + "<=" + xhiDbl;
-                            }
-                        }
-                    }
+
+                    String lon_constraint = erddapService.getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, lonname)
+                    if ( !constraint.endsWith("&") ) constraint = constraint + "&"
+                    constraint = constraint + lon_constraint
+
+
                 } // Span the whole globe so leave off the lon query all together.
                 // Any other circumstance, don't bother to constrain lon and deal with the extra on the client (or not).
             } else {

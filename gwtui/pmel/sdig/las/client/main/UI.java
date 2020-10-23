@@ -18,10 +18,6 @@ import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
-import com.google.gwt.event.shared.EventHandler;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.json.client.JSONArray;
@@ -54,8 +50,6 @@ import org.fusesource.restygwt.client.Resource;
 import org.fusesource.restygwt.client.RestService;
 import org.fusesource.restygwt.client.RestServiceProxy;
 import org.fusesource.restygwt.client.TextCallback;
-import org.gwttime.time.DateTime;
-import org.gwttime.time.DateTimeZone;
 import org.gwttime.time.format.DateTimeFormatter;
 import org.gwttime.time.format.ISODateTimeFormat;
 import pmel.sdig.las.client.event.AddVariable;
@@ -134,11 +128,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +137,6 @@ import java.util.Queue;
 
 import static pmel.sdig.las.client.util.Constants.GRID;
 import static pmel.sdig.las.client.util.Constants.TIMESERIES;
-import static pmel.sdig.las.client.util.Constants.TRAJECTORY;
 import static pmel.sdig.las.client.util.Constants.navWidth;
 
 /**
@@ -619,6 +609,11 @@ public class UI implements EntryPoint {
                                 datasetService.getDataset(p2ds.getId() + ".json", layout.panel2.datasetCallback);
                             }
                         }
+                    } else {
+                        if ( panel == 1 ) {
+                            layout.panel2.openDatasets();
+                            siteService.getSite("1.json", layout.panel2.siteCallback);
+                        }
                     }
                 }
             }
@@ -672,7 +667,7 @@ public class UI implements EntryPoint {
                     int selectedIndex = dataset.findVariableIndexByHash(infoVariable.getHash());
 
                     if (selectedIndex >= 0) {
-                        layout.setSelectedVariable(selectedIndex);
+                        layout.setSelectedItem(selectedIndex);
                     }
 
                     configService.getConfig(dataset.getId(), configCallback);
@@ -734,7 +729,6 @@ public class UI implements EntryPoint {
                         applyConfig();
                     }
                     layout.addBreadcrumb(bc, 1);
-
                 } else if ( index == 2 ) {
                     layout.panel2.addBreadcrumb(bc);
                     if (selected instanceof Dataset) {
@@ -1840,6 +1834,9 @@ public class UI implements EntryPoint {
         @Override
         public void onSuccess(Method method, Dataset returnedDataset) {
 
+            if (dataset != null && !returnedDataset.getHash().equals(dataset.getHash()) ) {
+                layout.clearConstraints();
+            }
             layout.clearDatasets();
             if (returnedDataset.getDatasets() != null) {
                 dataset = returnedDataset;
@@ -1858,8 +1855,6 @@ public class UI implements EntryPoint {
                 if (dataset.hasVariableChildren() && dataset.getStatus() != null && dataset.getStatus().equals(Dataset.INGEST_FINISHED)) {
                     // Changed data sets, don't retain previous variables or state associated with them.
                     variables.clear();
-                    // Clear active constraints too.
-                    layout.activeConstraints.clear();
                     if (layout.loadDialog.isOpen())
                         layout.loadDialog.close();
                     configService.getConfig(dataset.getId(), configCallback);
@@ -1999,16 +1994,34 @@ public class UI implements EntryPoint {
 
 
 
+                // TODO, fix this so it works with vector requests as well.
+                // Maybe have to use the product to know it's a fector.
                 String hash = historyRequest.getVariableHashes().get(0);
                 if (hash != null && !hash.isEmpty()) {
                     historyVariable = hash;
                 }
 
-                int selectedIndex = dataset.findVariableIndexByHash(historyVariable);
+                String product = historyRequest.getOperation();
+                int selectedIndex = 0;
+                if ( !product.toLowerCase().contains("vector") ) {
+                    selectedIndex = dataset.findVariableIndexByHash(historyVariable);
+                } else {
+                    if ( historyRequest.getVariableHashes().size() > 1 ) {
+                        selectedIndex = dataset.findVectorIndexByHash(historyRequest.getVariableHashes());
+                    }
+                }
+
+
 
                 if (selectedIndex >= 0) {
-                    layout.setSelectedVariable(selectedIndex);
-                    newVariable = layout.getSelectedVariable();
+                    layout.setSelectedItem(selectedIndex);
+                    if ( !product.toLowerCase().contains("vector") ) {
+                        newVariable = layout.getSelectedVariable();
+                        newVector = null;
+                    } else {
+                        newVector = layout.getSelectedVector();
+                        newVariable = null;
+                    }
                     final Breadcrumb dbc = new Breadcrumb(dataset, false);
                     dbc.addClickHandler(new ClickHandler() {
                         @Override
@@ -2020,7 +2033,12 @@ public class UI implements EntryPoint {
                     });
                     layout.removeBreadcrumbs(1);
                     layout.addBreadcrumb(dbc, 1);
-                    final Breadcrumb vbc = new Breadcrumb(newVariable, true);
+                    final Breadcrumb vbc;
+                    if ( newVariable != null ) {
+                        vbc = new Breadcrumb(newVariable, true);
+                    } else {
+                        vbc = new Breadcrumb(newVector, true);
+                    }
                     vbc.addClickHandler(new ClickHandler() {
                         @Override
                         public void onClick(ClickEvent event) {
@@ -2243,15 +2261,18 @@ public class UI implements EntryPoint {
             }
 
             if ( historyRequest.getVariableHashes().size() > 1 ) {
-                if ( p.getMaxArgs() > 1 ) layout.toDatasetChecks();
-                variables.clear();
-                for (int i = 1; i < historyRequest.getVariableHashes().size(); i++) {
-                    String vhash = historyRequest.getVariableHashes().get(i);
-                    int selectedIndex = dataset.findVariableIndexByHash(vhash);
-                    if ( selectedIndex >= 0 ) {
-                        Variable v = dataset.getVariables().get(selectedIndex);
-                        variables.add(v);
-                        layout.setSelectedVariable(selectedIndex);
+                if ( p.getMaxArgs() > 1 ) {
+                    // Everything is already set unless it's product with many args that might have more than one checked.
+                    layout.toDatasetChecks();
+                    variables.clear();
+                    for (int i = 0; i < historyRequest.getVariableHashes().size(); i++) {
+                        String vhash = historyRequest.getVariableHashes().get(i);
+                        int selectedIndex = dataset.findVariableIndexByHash(vhash);
+                        if (selectedIndex >= 0) {
+                            Variable v = dataset.getVariables().get(selectedIndex);
+                            variables.add(v);
+                            layout.setSelectedItem(selectedIndex);
+                        }
                     }
                 }
             }
@@ -2369,6 +2390,13 @@ public class UI implements EntryPoint {
 
     }
     private String makeERDDAP_url(String suffix) {
+        boolean hasLon360 = false;
+        List<Variable> lookFor = dataset.getVariables();
+        String lon_domain = dataset.getProperty("tabledap_access", "lon_domain");
+        for (int i = 0; i < lookFor.size(); i++) {
+            Variable lonV = lookFor.get(i);
+            if ( lonV.getName().equals("lon360")) hasLon360 = true;
+        }
         String constraints = "&";
         Variable v = variables.get(0);
         String url = v.getUrl();
@@ -2395,7 +2423,11 @@ public class UI implements EntryPoint {
             if ( !vars.contains("latitude") ) vars = "latitude," + vars;
             double[] exts = refMap.getDataExtent();
             if (!constraints.endsWith("&")) constraints = constraints + "&";
-            constraints = constraints + "longitude>=" + Util.anglePM180(exts[2]) + "&longitude<=" + Util.anglePM180(exts[3]);
+            if ( lon_domain.contains("180") ) {
+                constraints = constraints + "longitude>=" + Util.anglePM180(exts[2]) + "&longitude<=" + Util.anglePM180(exts[3]);
+            } else {
+                constraints = constraints + "longitude>=" + Util.angle0360(exts[2]) + "&longitude<=" + Util.angle0360(exts[3]);
+            }
             constraints = constraints + "&latitude>=" + exts[0] + "&latitude<=" + exts[1];
         } else {
             if ( !vars.contains("longitude")) vars = "longitude," + vars;
@@ -2405,44 +2437,10 @@ public class UI implements EntryPoint {
 
             // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
             if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
+                String lon_constraint = Util.getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, "longitude");
                 // Going west to east does not cross dateline, normal constraint
-                if ( xloDbl < xhiDbl ) {
-                    // Going west to east does not cross dateline, normal constraint
-                    if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
-                        if ( !constraints.isEmpty() ) constraints = constraints + "&";
-                        constraints = constraints + "longitude>=" + xloDbl;
-                        constraints = constraints + "&longitude<=" + xhiDbl;
-                        // Going east to west does not cross Greenwich, normal lon360 constraint from lon360 input
-                    } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
-                        if ( !constraints.isEmpty() ) constraints = constraints + "&";
-                        constraints = constraints + "lon360>=" + xloDbl;
-                        constraints = constraints + "&lon360<=" + xhiDbl;
-                    }
-                } else if ( xloDbl > xhiDbl ) {
-                    // Going west to east
-                    if ( xloDbl <= 180.0d && xloDbl >= -180.0d && xhiDbl <= 180.0d && xhiDbl >=-180.0d ) {
-                        // Going west to east over dateline, but not greenwich, convert to lon360 from -180 to 180 input
-                        if ( xloDbl > 0 && xhiDbl < 0 ) {
-                            xhiDbl = xhiDbl + 360;
-                            if ( !constraints.isEmpty() ) constraints = constraints + "&";
-                            constraints = constraints + "lon360>=" + xloDbl;
-                            constraints = constraints + "&lon360<=" + xhiDbl;
-                        }
-                    } else if ( xloDbl <= 360.0d && xloDbl >= 0.0d && xhiDbl <= 360.0d && xhiDbl >=0.0d) {
-                        // Going west to east does not cross dateline, from 360 input, just normal -180 to 180 so
-                        // switch an convert.
-                        if ( xloDbl > 180 && xhiDbl < 180 ) {
-                            double t = xloDbl;
-                            xloDbl = xhiDbl;
-                            xhiDbl = t;
-                            xloDbl = Util.anglePM180(xloDbl);
-                            xhiDbl = Util.anglePM180(xhiDbl);
-                            if ( !constraints.isEmpty() ) constraints = constraints + "&";
-                            constraints = constraints + "longitude>=" + xloDbl;
-                            constraints = constraints + "&longitude<=" + xhiDbl;
-                        }
-                    }
-                }
+                if (!constraints.endsWith("&")) constraints = constraints + "&";
+                constraints = constraints + lon_constraint;
             }
 
 
@@ -3084,27 +3082,30 @@ public class UI implements EntryPoint {
             downloadMap.setTool("xy");
             correlationMap.setTool("xy");
             layout.constraints.setDisplay(Display.BLOCK);
-            layout.subsetColumn.clear();
-            layout.byVariable.clear();
             for (int i = 0; i < dataset.getVariables().size(); i++) {
                 Variable v = dataset.getVariables().get(i);
 
                 if ( v.isSubset() || v.isDsgId() ) {
-                    if ( clearConstraints) layout.activeConstraints.clear();
-                    MaterialRow r = new MaterialRow();
-                    r.addStyleName("radioHeight");
-                    MaterialRadioButton rb = new MaterialRadioButton();
-                    rb.addClickHandler(new ClickHandler() {
-                        @Override
-                        public void onClick(ClickEvent clickEvent) {
-                            eventBus.fireEventFromSource(new SubsetValues(v), rb);
+                    if ( clearConstraints) {
+                        layout.clearConstraints();
+                    } else {
+                        if ( layout.subsetColumn.getWidgetCount() == 0 ) {
+                            MaterialRow r = new MaterialRow();
+                            r.addStyleName("radioHeight");
+                            MaterialRadioButton rb = new MaterialRadioButton();
+                            rb.addClickHandler(new ClickHandler() {
+                                @Override
+                                public void onClick(ClickEvent clickEvent) {
+                                    eventBus.fireEventFromSource(new SubsetValues(v), rb);
+                                }
+                            });
+                            rb.setName("byIdConstraint");
+                            rb.setText(v.getTitle());
+                            rb.setFormValue(v.getName());
+                            r.add(rb);
+                            layout.subsetColumn.add(r);
                         }
-                    });
-                    rb.setName("byIdConstraint");
-                    rb.setText(v.getTitle());
-                    rb.setFormValue(v.getName());
-                    r.add(rb);
-                    layout.subsetColumn.add(r);
+                    }
                 } else {
                     layout.byVariable.addItem(v.getName(), v.getTitle());
                 }

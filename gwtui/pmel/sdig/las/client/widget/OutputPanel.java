@@ -4,6 +4,7 @@ import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.ImageData;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.ImageElement;
 import com.google.gwt.event.dom.client.*;
 import com.google.gwt.event.shared.EventBus;
@@ -80,6 +81,7 @@ public class OutputPanel extends AbsolutePanel {
 
     // Take into account if the window is scrolled
     int yscroll;
+    int xscroll;
 
     boolean outx = false;
     boolean outy = false;
@@ -201,9 +203,10 @@ public class OutputPanel extends AbsolutePanel {
             startx = event.getX();
             starty = event.getY();
 
-            yscroll = Window.getScrollTop();
-
+            yscroll = Document.get().getScrollTop();
+            xscroll = Document.get().getScrollLeft();
             starty = starty - yscroll;
+            startx = startx - xscroll;
 
             // TODO DEBUG promise to only click in the image
             draw = true;
@@ -277,9 +280,10 @@ public class OutputPanel extends AbsolutePanel {
 
             int currentx = event.getX();
             int currenty = event.getY();
-            yscroll = Window.getScrollTop();
-
+            yscroll = Document.get().getScrollTop();
+            xscroll = Document.get().getScrollLeft();
             currenty = currenty - yscroll;
+            currentx = currentx - xscroll;
             // If you drag it out, we'll stop drawing.
 
             if (currentx < x_offset_from_left* imageScaleRatio || currenty < y_offset_from_top * imageScaleRatio ||

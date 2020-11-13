@@ -120,6 +120,8 @@ public class Layout extends Composite {
     @UiField
     MaterialCollapsibleItem constraints;
     @UiField
+    MaterialCollapsibleItem analysisPanel;
+    @UiField
     MaterialColumn subsetColumn;
     @UiField
     MaterialPanel possibleValues;
@@ -225,6 +227,8 @@ public class Layout extends Composite {
     MaterialButton downloadButton;
     @UiField
     MaterialLink downloadLink;
+    @UiField
+    MaterialLink downloadLink2;
     @UiField
     MaterialPreLoader downloadLoader;
     @UiField
@@ -556,6 +560,18 @@ public class Layout extends Composite {
     }
     public void setAnalysisActive(boolean value) {
         analysisSwitch.setValue(value);
+    }
+    public void disableOver(String over) {
+        for (int i = 0; i < overListBox.getItemCount(); i++) {
+            OptionElement oe = overListBox.getOptionElement(i);
+            if ( over != null ) {
+                if ( oe.getValue().equalsIgnoreCase(over) ) {
+                    oe.setDisabled(true);
+                }
+            } else {
+                oe.setDisabled(false);
+            }
+        }
     }
     public void setAnalysisOver(String over) {
         int index = -1;
@@ -1264,6 +1280,7 @@ public class Layout extends Composite {
     @UiHandler("formatsDropDown")
     void onFormatChange(SelectionEvent<Widget> event) {
         downloadLink.setDisplay(Display.NONE);
+        downloadLink.setDisplay(Display.NONE);
         downloadError.setDisplay(Display.NONE);
         String title = ((MaterialLink) event.getSelectedItem()).getText();
         formatsButton.setText(title);
@@ -1413,6 +1430,7 @@ public class Layout extends Composite {
 
     @UiHandler("showValuesButton")
     public void onShowValues(ClickEvent event) {
+        showValuesWindow.clear();
         showValuesWindow.setLayoutPosition(Style.Position.ABSOLUTE);
         showValuesWindow.setLeft(0);
         showValuesWindow.setTop(0);

@@ -145,7 +145,7 @@ class InitializationService {
 
         if ( !ferret.validate() ) {
             ferret.errors.each {
-                log.debug(it)
+                log.debug(it.toString())
             }
         }
 

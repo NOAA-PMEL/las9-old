@@ -716,6 +716,12 @@ class ProductService {
 
                     // TODO GRID vs regular
 
+                    Set<VariableProperty> variableProperties = variable.getVariableProperties()
+                    Iterator<VariableProperty> vpIt = variableProperties.iterator()
+                    while( vpIt.hasNext() ) {
+                        VariableProperty vp = vpIt.next()
+                        jnl.append("DEFINE SYMBOL ${vp.getType()}_${vp.getName()} = ${vp.getValue()}\n")
+                    }
                     jnl.append("DEFINE SYMBOL data_${h}_dataset_name = ${dataset.title}\n")
                     jnl.append("DEFINE SYMBOL data_${h}_dataset_url = ${variable_url}\n")
                     jnl.append("DEFINE SYMBOL data_${h}_grid_type = regular\n")
@@ -731,22 +737,18 @@ class ProductService {
                     // Is there an axesset?
                     if ( lasRequest.getAxesSets().size() > h ) {
                         // Does it have non-null values?
-                        if (!analysis_axes.contains("t") && lasRequest.getAxesSets().get(h).getThi() && lasRequest.getAxesSets().get(h).getTlo()) {
+                        if ( lasRequest.getAxesSets().get(h).getThi() && lasRequest.getAxesSets().get(h).getTlo()) {
                             jnl.append("DEFINE SYMBOL region_${h}_t_hi = ${lasRequest.getAxesSets().get(h).getThi()}\n")
                             jnl.append("DEFINE SYMBOL region_${h}_t_lo = ${lasRequest.getAxesSets().get(h).getTlo()}\n")
                         }
-                        if (!analysis_axes.contains("x")) {
-                            jnl.append("DEFINE SYMBOL region_${h}_x_hi = ${lasRequest.getAxesSets().get(h).getXhi()}\n")
-                            jnl.append("DEFINE SYMBOL region_${h}_x_lo = ${lasRequest.getAxesSets().get(h).getXlo()}\n")
-                        }
-                        if (!analysis_axes.contains("y")) {
-                            jnl.append("DEFINE SYMBOL region_${h}_y_hi = ${lasRequest.getAxesSets().get(h).getYhi()}\n")
-                            jnl.append("DEFINE SYMBOL region_${h}_y_lo = ${lasRequest.getAxesSets().get(h).getYlo()}\n")
-                        }
-                        if (!analysis_axes.contains("z")) {
-                            if (lasRequest.getAxesSets().get(h).getZlo()) jnl.append("DEFINE SYMBOL region_${h}_z_lo = ${lasRequest.getAxesSets().get(h).getZlo()}\n")
-                            if (lasRequest.getAxesSets().get(h).getZhi()) jnl.append("DEFINE SYMBOL region_${h}_z_hi = ${lasRequest.getAxesSets().get(h).getZhi()}\n")
-                        }
+                        jnl.append("DEFINE SYMBOL region_${h}_x_hi = ${lasRequest.getAxesSets().get(h).getXhi()}\n")
+                        jnl.append("DEFINE SYMBOL region_${h}_x_lo = ${lasRequest.getAxesSets().get(h).getXlo()}\n")
+
+                        jnl.append("DEFINE SYMBOL region_${h}_y_hi = ${lasRequest.getAxesSets().get(h).getYhi()}\n")
+                        jnl.append("DEFINE SYMBOL region_${h}_y_lo = ${lasRequest.getAxesSets().get(h).getYlo()}\n")
+
+                        if (lasRequest.getAxesSets().get(h).getZlo()) jnl.append("DEFINE SYMBOL region_${h}_z_lo = ${lasRequest.getAxesSets().get(h).getZlo()}\n")
+                        if (lasRequest.getAxesSets().get(h).getZhi()) jnl.append("DEFINE SYMBOL region_${h}_z_hi = ${lasRequest.getAxesSets().get(h).getZhi()}\n")
                     }
 
 //                        if (lasRequest.getAxesSets().get(1) != null) {

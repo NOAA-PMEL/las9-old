@@ -33,7 +33,6 @@ class ProductController {
     JsonParser jsonParser = new JsonParser()
     ResultsService resultsService
     DateTimeService dateTimeService
-    ErddapService erddapService
 
     def summary () {
         def webAppDirectory = request.getSession().getServletContext().getRealPath("")
@@ -216,10 +215,10 @@ class ProductController {
         render "Product request canceled"
     }
     def stream() {
-        def url = params.datalink;
-        url = url.replaceAll("_amp_", "&")
-        def parts = url.split("\\?")
-        url = parts[0] + "?" + URLEncoder.encode(parts[1], "UTF-8")
+        def urls = params.datalink;
+        urls = urls.replaceAll("_amp_", "&")
+        def parts = urls.split("\\?")
+        def url = parts[0] + "?" + URLEncoder.encode(parts[1], "UTF-8")
         lasProxy.executeGetMethodAndStreamResult(url, response);
     }
     def make() {
@@ -563,15 +562,16 @@ class ProductController {
                 double xhiDbl = Double.valueOf(xhi).doubleValue();
                 double xloDbl = Double.valueOf(xlo).doubleValue();
 
-                // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
-                if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
-
-                    String lon_constraint = erddapService.getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, lonname)
-                    if ( !constraint.endsWith("&") ) constraint = constraint + "&"
-                    constraint = constraint + lon_constraint
 
 
-                } // Span the whole globe so leave off the lon query all together.
+                List<String> lon_constraint = LatLonUtil.getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, lonname)
+                if ( lon_constraint.size() == 1 ) {
+                    String lon_con = lon_constraint.get(0)
+                    constraint = constraint + lon_con
+                } // Else 0 or 2 can't constraint send extra data
+
+
+
                 // Any other circumstance, don't bother to constrain lon and deal with the extra on the client (or not).
             } else {
                 //  If they are not both defined, add the one that is...  There will be no difficulties with dateline crossings...

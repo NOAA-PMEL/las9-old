@@ -4,6 +4,7 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.OptionElement;
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
@@ -520,7 +521,6 @@ public class UI implements EntryPoint {
                         if ( newVector.getW() != null ) {
                             variables.add(newVector.getW());
                         }
-                        // TODO breadcrumb?
                     }
                 }
 
@@ -605,13 +605,13 @@ public class UI implements EntryPoint {
                             Dataset p2ds = (Dataset) selected;
                             layout.removeBreadcrumbs(selected, panel);
                             if ( panel == 2 ) {
-                                layout.panel2.openDatasets();
+                                layout.panel2.openSettings();
                                 datasetService.getDataset(p2ds.getId() + ".json", layout.panel2.datasetCallback);
                             }
                         }
                     } else {
                         if ( panel == 1 ) {
-                            layout.panel2.openDatasets();
+                            layout.panel2.openSettings();
                             siteService.getSite("1.json", layout.panel2.siteCallback);
                         }
                     }
@@ -853,27 +853,27 @@ public class UI implements EntryPoint {
                 Variable v = variables.get(0);
                 layout.showValuesProgress.setDisplay(Display.BLOCK);
                 if ( v.getGeometry().equals(GRID) ) {
-                    LASRequest lasRequest = makeRequest(6, "Data_extract");
+                    LASRequest lasRequest = makeRequest(6, "Data_Extract");
                     requestQueue.add(lasRequest);
                     processQueue();
                 } else {
-                    String url = makeERDDAP_url(".xhtml");
-                    url = url.replaceAll("&","_amp_");
-                    try {
-                        url = Constants.stream + "?datalink=" + url;
-                    } catch (Exception e) {
-                        // Try without encodeing.
+                    List<String> urls = makeERDDAP_urls(".xhtml");
+                    String url = Constants.stream + "?";
+                    for (int i = 0; i < urls.size(); i++) {
+                        String q = urls.get(i);
+                        q = q.replaceAll("&","_amp_");
+                        String url_query = url + "datalink=" + q;
+                        Frame frame = new Frame(url_query);
+                        frame.setWidth("100%");
+                        frame.setHeight("98%");
+                        frame.addLoadHandler(new LoadHandler() {
+                            @Override
+                            public void onLoad(LoadEvent loadEvent) {
+                                layout.showValuesProgress.setDisplay(Display.NONE);
+                            }
+                        });
+                        layout.showValuesWindow.add(frame);
                     }
-                    Frame frame = new Frame(url);
-                    frame.setWidth("100%");
-                    frame.setHeight("98%");
-                    frame.addLoadHandler(new LoadHandler() {
-                        @Override
-                        public void onLoad(LoadEvent loadEvent) {
-                            layout.showValuesProgress.setDisplay(Display.NONE);
-                        }
-                    });
-                    layout.showValuesWindow.add(frame);
                 }
             }
         });
@@ -901,12 +901,21 @@ public class UI implements EntryPoint {
                         processQueue();
                     } else {
                         String suffix = "." + layout.formatsButton.getText();
-                        String url = makeERDDAP_url(suffix);
+                        List<String> urlList = makeERDDAP_urls(suffix);
+                        String url = urlList.get(0);
                         layout.downloadLink.setText("Request sucessful. Click to download...");
                         layout.downloadLoader.setDisplay(Display.NONE);
                         layout.downloadLink.setDisplay(Display.BLOCK);
                         layout.downloadLink.setTarget("_blank");
                         layout.downloadLink.setHref(url);
+                        if ( urlList.size() > 1 ) {
+                            String url2 = urlList.get(1);
+                            layout.downloadLink2.setText("Request requires second longitude constraint. Click to download...");
+                            layout.downloadLoader.setDisplay(Display.NONE);
+                            layout.downloadLink2.setDisplay(Display.BLOCK);
+                            layout.downloadLink2.setTarget("_blank");
+                            layout.downloadLink2.setHref(url2);
+                        }
                     }
                 } else {
 
@@ -1517,20 +1526,28 @@ public class UI implements EntryPoint {
             } else if ( tp == 6 ) {
                 String error = results.getError();
                 if ( error != null && !error.isEmpty() ) {
+                    String[] eparts = error.split("\n");
+                    for (int i = 0; i < eparts.length; i++) {
+                        if ( !eparts[i].toLowerCase().contains("note")) {
+                            MaterialLabel error_label = new MaterialLabel(eparts[i]);
+                            if ( eparts[i].toLowerCase().contains("erro") ) error_label.setFontWeight(Style.FontWeight.BOLDER);
+                            layout.showValuesWindow.add(error_label);
+                        }
+                    }
+                } else {
+                    layout.showValuesWindow.clear();
+                    String myfile = "";
+                    Result outfile = results.getResultByTypeAndFile_type("ferret_listing", "text");
+                    if (outfile != null) {
+                        myfile = outfile.getUrl();
+                    }
 
+                    Frame frame = new Frame(myfile);
+                    frame.setWidth("100%");
+                    frame.setHeight("98%");
+                    layout.showValuesWindow.add(frame);
                 }
-                layout.showValuesWindow.clear();
-                String myfile  = "";
-                Result outfile = results.getResultByTypeAndFile_type("ferret_listing", "text");
-                if ( outfile != null ) {
-                    myfile = outfile.getUrl();
-                }
-
-                Frame frame = new Frame(myfile);
-                frame.setWidth("100%");
-                frame.setHeight("98%");
                 layout.showValuesProgress.setDisplay(Display.NONE);
-                layout.showValuesWindow.add(frame);
             } else if ( tp == 7 ) {
                 String error = results.getError();
                 if ( error != null && !error.isEmpty() ) {
@@ -2185,6 +2202,12 @@ public class UI implements EntryPoint {
         if (newVariable != null) {
             variables.add(newVariable);
             isVector = false;
+            String vp = newVariable.getProperty("ferret", "curvi_coord_lon");
+            if ( vp != null ) {
+                layout.disableOver("Area");
+            } else {
+                layout.disableOver(null);
+            }
         }
         if ( newVector != null ) {
             isVector = true;
@@ -2342,6 +2365,7 @@ public class UI implements EntryPoint {
     }
     private void update(Product p) {
         layout.showProgress();
+        layout.panel2.closeSettings();
         if (p.isClientPlot()) {
             layout.advancedSearch.setDisplay(Display.NONE);
             layout.panel1.getOutputPanel().setVisible(false);
@@ -2389,7 +2413,7 @@ public class UI implements EntryPoint {
         datatableService.datatable(timeseriesReqeust, makeGoogleChartFromDataTable);
 
     }
-    private String makeERDDAP_url(String suffix) {
+    private List<String> makeERDDAP_urls(String suffix) {
         boolean hasLon360 = false;
         List<Variable> lookFor = dataset.getVariables();
         String lon_domain = dataset.getProperty("tabledap_access", "lon_domain");
@@ -2418,6 +2442,9 @@ public class UI implements EntryPoint {
                 constraints = constraints + vvv.getName() + "!=NaN";
             }
         }
+
+        List<String> lon_constraint = new ArrayList<>();
+
         if ( v.getGeometry().equals(TIMESERIES)) {
             if ( !vars.contains("longitude")) vars = "longitude," + vars;
             if ( !vars.contains("latitude") ) vars = "latitude," + vars;
@@ -2435,14 +2462,8 @@ public class UI implements EntryPoint {
             double xloDbl = refMap.getXlo();
             double xhiDbl = refMap.getXhi();
 
-            // Check the span before normalizing and if it's big, just forget about the lon constraint all together.
-            if (Math.abs(xhiDbl - xloDbl) < 355.0d) {
-                String lon_constraint = Util.getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, "longitude");
-                // Going west to east does not cross dateline, normal constraint
-                if (!constraints.endsWith("&")) constraints = constraints + "&";
-                constraints = constraints + lon_constraint;
-            }
 
+            lon_constraint = Util.getLonConstraint(xloDbl, xhiDbl, hasLon360, lon_domain, "longitude");
 
 
             if (!constraints.endsWith("&")) constraints = constraints + "&";
@@ -2488,7 +2509,39 @@ public class UI implements EntryPoint {
             }
             constraints = constraints + "&" + dc.getLhs() + dc.getOpAsSymbol() + rhs;
         }
-        return url + "?" + vars + URL.encode(constraints);
+
+        List<String> queries = new ArrayList<>();
+
+        // Size will be 0, 1 or 2
+        if ( lon_constraint.size() == 0 ) {
+
+            String q1 = url + "?" + vars + URL.encode(constraints);
+            queries.add(q1);
+
+        } else if ( lon_constraint.size() == 1 ) {
+
+            constraints = constraints + lon_constraint.get(0);
+            String q1 = url + "?" + vars + URL.encode(constraints);
+
+            queries.add(q1);
+
+        } else if ( lon_constraint.size() == 2 ) {
+
+            String other_constraints = constraints;
+
+            constraints = other_constraints + lon_constraint.get(0);
+            String q1 = url + "?" + vars + URL.encode(constraints);
+
+            queries.add(q1);
+
+            constraints = other_constraints + lon_constraint.get(1);
+            String q2 = url + "?" + vars + URL.encode(constraints);
+
+            queries.add(q2);
+
+        }
+
+        return queries;
     }
     private LASRequest makeRequest(int panel, String productName) {
         LASRequest lasRequest = new LASRequest();
@@ -2538,15 +2591,15 @@ public class UI implements EntryPoint {
             lasRequest.getAxesSets().get(0).setYlo(String.valueOf(exts[0]));
             lasRequest.getAxesSets().get(0).setYhi(String.valueOf(exts[1]));
         } else {
-            if (analysis == null || (analysis != null && !analysis.getAxes().contains("x"))) {
+//            if (analysis == null || (analysis != null && !analysis.getAxes().contains("x"))) {
                 lasRequest.getAxesSets().get(0).setXlo(String.valueOf(refMap.getXlo()));
                 lasRequest.getAxesSets().get(0).setXhi(String.valueOf(refMap.getXhi()));
-            }
+//            }
 
-            if (analysis == null || (analysis != null && !analysis.getAxes().contains("y"))) {
+//            if (analysis == null || (analysis != null && !analysis.getAxes().contains("y"))) {
                 lasRequest.getAxesSets().get(0).setYlo(String.valueOf(refMap.getYlo()));
                 lasRequest.getAxesSets().get(0).setYhi(String.valueOf(refMap.getYhi()));
-            }
+//            }
         }
 
         if ( ! variables.get(0).getGeometry().equals(GRID) ) {
@@ -2576,7 +2629,7 @@ public class UI implements EntryPoint {
                 }
             }
         } else {
-            if (analysis == null || (analysis != null && !analysis.getAxes().contains("t"))) {
+//            if (analysis == null || (analysis != null && !analysis.getAxes().contains("t"))) {
                 if (variables.get(0).getTimeAxis() != null) {
                     lasRequest.getAxesSets().get(0).setTlo(dateTimeWidget.getFerretDateLo());
                     if (dateTimeWidget.isRange()) {
@@ -2584,20 +2637,20 @@ public class UI implements EntryPoint {
                     } else {
                         lasRequest.getAxesSets().get(0).setThi(dateTimeWidget.getFerretDateLo());
                     }
-                }
+//                }
             }
         }
 
         if (variables.get(0).getVerticalAxis() != null) {
 
-            if (analysis == null || (analysis != null && !analysis.getAxes().contains("z"))) {
+//            if (analysis == null || (analysis != null && !analysis.getAxes().contains("z"))) {
                 lasRequest.getAxesSets().get(0).setZlo(zAxisWidget.getLo());
                 if (zAxisWidget.isRange()) {
                     lasRequest.getAxesSets().get(0).setZhi(zAxisWidget.getHi());
                 } else {
                     lasRequest.getAxesSets().get(0).setZhi(zAxisWidget.getLo());
                 }
-            }
+//            }
 
         }
 
@@ -3077,11 +3130,13 @@ public class UI implements EntryPoint {
             downloadMap.setTool(view);
             correlationMap.setTool(view);
             layout.constraints.setDisplay(Display.NONE);
+            layout.analysisPanel.setDisplay(Display.BLOCK);
         } else {
             refMap.setTool("xy");
             downloadMap.setTool("xy");
             correlationMap.setTool("xy");
             layout.constraints.setDisplay(Display.BLOCK);
+            layout.analysisPanel.setDisplay(Display.NONE);
             for (int i = 0; i < dataset.getVariables().size(); i++) {
                 Variable v = dataset.getVariables().get(i);
 
@@ -3089,22 +3144,22 @@ public class UI implements EntryPoint {
                     if ( clearConstraints) {
                         layout.clearConstraints();
                     } else {
-                        if ( layout.subsetColumn.getWidgetCount() == 0 ) {
-                            MaterialRow r = new MaterialRow();
-                            r.addStyleName("radioHeight");
-                            MaterialRadioButton rb = new MaterialRadioButton();
-                            rb.addClickHandler(new ClickHandler() {
-                                @Override
-                                public void onClick(ClickEvent clickEvent) {
-                                    eventBus.fireEventFromSource(new SubsetValues(v), rb);
-                                }
-                            });
-                            rb.setName("byIdConstraint");
-                            rb.setText(v.getTitle());
-                            rb.setFormValue(v.getName());
-                            r.add(rb);
-                            layout.subsetColumn.add(r);
-                        }
+
+                        MaterialRow r = new MaterialRow();
+                        r.addStyleName("radioHeight");
+                        MaterialRadioButton rb = new MaterialRadioButton();
+                        rb.addClickHandler(new ClickHandler() {
+                            @Override
+                            public void onClick(ClickEvent clickEvent) {
+                                eventBus.fireEventFromSource(new SubsetValues(v), rb);
+                            }
+                        });
+                        rb.setName("byIdConstraint");
+                        rb.setText(v.getTitle());
+                        rb.setFormValue(v.getName());
+                        r.add(rb);
+                        layout.subsetColumn.add(r);
+
                     }
                 } else {
                     layout.byVariable.addItem(v.getName(), v.getTitle());

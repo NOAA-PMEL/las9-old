@@ -255,6 +255,7 @@ class IngestService {
                 // Axes are next...
                 long tIndex = -1
                 long zIndex = -1
+                Variable variable = new Variable()
                 TimeAxis tAxis = null
                 if (gcs.hasTimeAxis()) {
 
@@ -390,7 +391,7 @@ class IngestService {
 
 
                     } else {
-                        // TODO 2D Time Axis
+
                     }
                 }
 
@@ -436,6 +437,35 @@ class IngestService {
                     xAxis.setMin(x.getMinValue())
                     xAxis.setMax(x.getMaxValue())
                     xAxis.setSize(x.getSize())
+                    VariableProperty vp1 = new VariableProperty()
+                    vp1.setType("ferret")
+                    vp1.setName("curvi_coord_lon")
+                    vp1.setValue(x.getShortName())
+                    variable.addToVariableProperties(vp1)
+                    VariableProperty vp2 = new VariableProperty()
+                    vp2.setType("ferret")
+                    vp2.setName("curv_lon_min")
+                    vp2.setValue(String.valueOf(x.getMinValue()))
+                    variable.addToVariableProperties(vp2)
+                    VariableProperty vp3 = new VariableProperty()
+                    vp3.setType("ferret")
+                    vp3.setName("curv_lon_max")
+                    vp3.setValue(String.valueOf(x.getMaxValue()))
+                    variable.addToVariableProperties(vp3)
+                    double xmax = x.getMaxValue()
+                    double xmin = x.getMinValue()
+                    double range = xmax - xmin
+                    double delta = range/Double.valueOf(x.getSize()+1).doubleValue()
+                    double max_span = 360.0d - delta
+                    VariableProperty vp4 = new VariableProperty()
+                    vp4.setType("ferret")
+                    vp4.setName("lon_modulo")
+                    if ( Math.abs(range) >= max_span ) {
+                        vp4.setValue("1")
+                    } else {
+                        vp4.setValue("0")
+                    }
+                    variable.addToVariableProperties(vp4)
                 }
                 GeoAxisY yAxis = null
                 CoordinateAxis yca = gcs.getYHorizAxis()
@@ -454,7 +484,6 @@ class IngestService {
                     yAxis.setMax(y.getMaxValue())
                     yAxis.setSize(y.getSize())
                     yAxis.setDimensions(1)
-
                 } else {
                     CoordinateAxis2D y = (CoordinateAxis2D) yca
                     yAxis = new GeoAxisY()
@@ -467,6 +496,11 @@ class IngestService {
                     yAxis.setMax(y.getMaxValue())
                     yAxis.setSize(y.getSize())
                     yAxis.setDimensions(2)
+                    VariableProperty vp1 = new VariableProperty()
+                    vp1.setType("ferret")
+                    vp1.setName("curvi_coord_lat")
+                    vp1.setValue(y.getShortName())
+                    variable.addToVariableProperties(vp1)
                 }
                 CoordinateAxis1D z = gcs.getVerticalAxis()
                 VerticalAxis zAxis = null
@@ -624,7 +658,7 @@ class IngestService {
                     intervals = intervals + "t"
                 }
 
-                Variable variable = new Variable()
+
                 variable.setUrl(url)
                 variable.setName(vname)
                 variable.setHash(vhash)

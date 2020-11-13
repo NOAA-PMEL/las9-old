@@ -152,7 +152,7 @@
                             </m:MaterialPanel>
                         </m:MaterialCollapsibleBody>
                     </m:MaterialCollapsibleItem>
-                    <m:MaterialCollapsibleItem marginTop="8" shadow="1">
+                    <m:MaterialCollapsibleItem marginTop="8" shadow="1" ui:field="analysisPanel">
                         <m:MaterialCollapsibleHeader addStyleNames="LAS-accordian">
                             <m:MaterialLink fontWeight="BOLDER" fontSize="1.4em" text="Analysis Transformations"></m:MaterialLink>
                         </m:MaterialCollapsibleHeader>
@@ -449,7 +449,7 @@
                 </m:MaterialColumn>
             </m:MaterialRow>
         </m:MaterialContainer>
-        <ma:window.MaterialWindow ui:field="animateWindow" title="Animate" height="100%" width="100%" maximize="false">
+        <ma:window.MaterialWindow ui:field="animateWindow" title="Animate" height="97%" width="97%" maximize="false">
             <m:MaterialRow>
                 <m:MaterialProgress ui:field="animateProgress" type="INDETERMINATE" display="NONE" color="PINK_DARKEN_4"></m:MaterialProgress>
             </m:MaterialRow>
@@ -486,10 +486,10 @@
                 </m:MaterialColumn>
             </m:MaterialRow>
         </ma:window.MaterialWindow>
-        <ma:window.MaterialWindow ui:field="showValuesWindow" title="Values" maximize="false" height="100%" width="100%">
+        <ma:window.MaterialWindow ui:field="showValuesWindow" title="Values" maximize="false" height="97%" width="97%" overflow="VISIBLE">
             <m:MaterialProgress ui:field="showValuesProgress" type="INDETERMINATE" color="PINK_DARKEN_4" display="NONE"></m:MaterialProgress>
         </ma:window.MaterialWindow>
-        <ma:window.MaterialWindow ui:field="downloadWindow" title="Data Download" maximize="false" height="100%" width="100%">
+        <ma:window.MaterialWindow ui:field="downloadWindow" title="Data Download" maximize="false" height="97%" width="97%">
             <m:MaterialPanel paddingTop="16">
                 <m:MaterialRow>
                     <m:MaterialColumn grid="s4">
@@ -523,14 +523,19 @@
                             <m:MaterialPreLoader ui:field="downloadLoader" display="NONE" size="SMALL">
                                 <m:MaterialSpinner></m:MaterialSpinner>
                             </m:MaterialPreLoader>
-                            <m:MaterialLink ui:field="downloadLink" text="" display="NONE"></m:MaterialLink>
+                            <m:MaterialRow>
+                              <m:MaterialLink ui:field="downloadLink" text="" display="NONE"></m:MaterialLink>
+                            </m:MaterialRow>
+                            <m:MaterialRow>
+                              <m:MaterialLink ui:field="downloadLink2" text="" display="NONE"></m:MaterialLink>
+                            </m:MaterialRow>
                         </m:MaterialRow>
                         <m:MaterialLabel ui:field="downloadError" textColor="RED" text=""></m:MaterialLabel>
                     </m:MaterialColumn>
                 </m:MaterialRow>
             </m:MaterialPanel>
         </ma:window.MaterialWindow>
-        <ma:window.MaterialWindow ui:field="correlationWindow" title="Property-Property Plots" maximize="false" height="100%" width="100%">
+        <ma:window.MaterialWindow ui:field="correlationWindow" title="Property-Property Plots" maximize="false" height="97%" width="97%">
             <m:MaterialRow>
                 <m:MaterialProgress ui:field="correlationProgress" type="INDETERMINATE" color="PINK_DARKEN_4" display="NONE"></m:MaterialProgress>
             </m:MaterialRow>

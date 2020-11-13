@@ -32,7 +32,12 @@ IF ($have_las_plotvar"0") THEN
    LET the_plot_var = las_plotvar  ! from LAS_auto_levels
 ELSE
    IF ($native_curvilinear_xy"0|0|*>1") THEN 
-      LET the_plot_var = plot_var
+      ! view does not contain "xy"
+      IF  `STRINDEX("($ferret_view)", "xy") EQ 0` THEN
+         LET the_plot_var = ($ferret_plot_var)
+      ELSE
+         LET the_plot_var = plot_var
+      ENDIF
    ELIF ($do_hybrid_z"0|0|*>1") THEN
       LET the_plot_var = ($ferret_plot_base_var_noregion)
    ELIF ($native_Z_plot"0|0|*>1") THEN

@@ -96,9 +96,17 @@ public class ResultsPanel extends Composite {
         String error = state.getPanelState(this.getTitle()).getResultSet().getError();
         annotationPanel.clear();
         if ( error != null && !error.equals("") ) {
-            MaterialLabel l = new MaterialLabel();
-            l.setText(error);
-            annotationPanel.add(l);
+            String[] parts = error.split("\n");
+            for (int i = 0; i < parts.length; i++) {
+                MaterialLabel l = new MaterialLabel();
+                if ( !parts[i].toLowerCase().contains("note") ) {
+                    l.setText(parts[i]);
+                    if (parts[i].toLowerCase().contains("err")) {
+                        l.setFontWeight(Style.FontWeight.BOLDER);
+                    }
+                    annotationPanel.add(l);
+                }
+            }
             outputPanel.clearPlot();
         } else {
             outputPanel.setState(state);

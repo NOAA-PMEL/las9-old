@@ -8,8 +8,6 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.logical.shared.CloseEvent;
 import com.google.gwt.event.logical.shared.CloseHandler;
-import com.google.gwt.event.logical.shared.OpenEvent;
-import com.google.gwt.event.logical.shared.OpenHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
@@ -28,29 +26,22 @@ import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.CollapseEvent;
 import gwt.material.design.client.events.ExpandEvent;
-import gwt.material.design.client.events.SearchFinishEvent;
 import gwt.material.design.client.ui.MaterialCheckBox;
 import gwt.material.design.client.ui.MaterialCollapsible;
 import gwt.material.design.client.ui.MaterialCollapsibleBody;
-import gwt.material.design.client.ui.MaterialCollapsibleHeader;
 import gwt.material.design.client.ui.MaterialCollapsibleItem;
 import gwt.material.design.client.ui.MaterialCollection;
 import gwt.material.design.client.ui.MaterialColumn;
 import gwt.material.design.client.ui.MaterialIcon;
 import gwt.material.design.client.ui.MaterialLabel;
-import gwt.material.design.client.ui.MaterialLink;
-import gwt.material.design.client.ui.MaterialNavBar;
 import gwt.material.design.client.ui.MaterialPanel;
-import gwt.material.design.client.ui.MaterialSearch;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
-import gwt.material.design.client.ui.MaterialToast;
 import gwt.material.design.client.ui.html.Div;
 import org.fusesource.restygwt.client.Method;
 import org.fusesource.restygwt.client.MethodCallback;
 import pmel.sdig.las.client.event.AutoColors;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
-import pmel.sdig.las.client.event.NavSelect;
 import pmel.sdig.las.client.event.PanelControlOpen;
 import pmel.sdig.las.client.event.PlotOptionChange;
 import pmel.sdig.las.client.event.Search;
@@ -139,7 +130,7 @@ public class ComparePanel extends Composite {
     int index;
 
     @UiField
-    MaterialWindow window;
+    MaterialWindow settingsWindow;
     @UiField
     MaterialCollection panelDatasets;
     @UiField
@@ -224,7 +215,7 @@ public class ComparePanel extends Composite {
         gear.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                openDatasets();
+                openSettings();
                 holdBreadcrumbs = getBreadcrumbs();
                 for (int i = 0; i < holdBreadcrumbs.size(); i++) {
                     removeBreadcrumb(holdBreadcrumbs.get(i));
@@ -238,7 +229,7 @@ public class ComparePanel extends Composite {
             }
         });
 
-        window.addCloseHandler(new CloseHandler() {
+        settingsWindow.addCloseHandler(new CloseHandler() {
             @Override
             public void onClose(CloseEvent event) {
                 Object currentEnd = null;
@@ -302,13 +293,18 @@ public class ComparePanel extends Composite {
             dataItem.hideProgress();
         }
     };
-    public void openDatasets() {
+    public void openSettings() {
         navcollapsible.setActive(1, true);
-        window.setLayoutPosition(Style.Position.ABSOLUTE);
-        window.setLeft(gear.getAbsoluteLeft());
-        window.setTop(gear.getAbsoluteTop());
-        window.setWidth(Constants.navWidth+"px");
-        window.open();
+        settingsWindow.setLayoutPosition(Style.Position.ABSOLUTE);
+        settingsWindow.setLeft(gear.getAbsoluteLeft());
+        settingsWindow.setTop(gear.getAbsoluteTop());
+        settingsWindow.setWidth(Constants.navWidth+"px");
+        settingsWindow.open();
+    }
+    public void closeSettings() {
+        if ( settingsWindow.isOpen() ) {
+            settingsWindow.close();
+        }
     }
     private List<DataItem> getDataItems() {
         List<DataItem> dataItems = new ArrayList<>();

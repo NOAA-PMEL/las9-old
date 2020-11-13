@@ -27,7 +27,7 @@
         <m:html.Div visible="false" ui:field="chart"/>
 
 
-        <ma:window.MaterialWindow ui:field="window" title="Panel Controls" toolbarColor="BLUE_LIGHTEN_2">
+        <ma:window.MaterialWindow ui:field="settingsWindow" title="Panel Controls" toolbarColor="BLUE_LIGHTEN_2">
             <m:MaterialColumn grid="s12">
                 <m:MaterialRow marginBottom="2">
                     <m:MaterialPanel addStyleNames="valign-wrapper">

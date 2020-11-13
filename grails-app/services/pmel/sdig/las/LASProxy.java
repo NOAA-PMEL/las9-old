@@ -236,7 +236,7 @@ public class LASProxy {
 		return executeGetMethodAndReturnStream(request, response, -1);
 	   
 	}
-	
+
 	/**
 	 * Makes HTTP GET request and writes result to response output stream.
 	 * @param request fully qualified request URL.

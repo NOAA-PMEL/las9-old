@@ -48,11 +48,18 @@ export class DatasetUpdateComponent implements OnInit {
     });
 
   }
+  close() {
+    this.applicationStateService.reinit();
+    this.edit_dataset_update = false;
+    this.cron_spec = null;
+    this.update_dataset = null;
+  }
   save() {
     let update: UpdateSpec = new class implements UpdateSpec {
       cron_spec: string;
       datset: any;
     };
+    this.applicationStateService.setForRequest();
     update["cron_spec"] = this.cron_spec;
     update["dataset"] = this.update_dataset.id;
     const parent_type = this.applicationStateService.getParentType('parent_type');

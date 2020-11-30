@@ -1,5 +1,6 @@
 package pmel.sdig.las
 
+import grails.core.GrailsApplication
 import grails.gorm.transactions.Transactional
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -10,6 +11,7 @@ import pmel.sdig.las.type.GeometryType
 @Transactional(readOnly = true)
 class ProductService {
 
+    GrailsApplication grailsApplication
     FerretService ferretService
     ErddapService erddapService
     JsonSlurper jsonSlurper = new JsonSlurper();
@@ -613,7 +615,7 @@ class ProductService {
 
                 Dataset dataset = null
                 Variable variable = null
-
+                def lasVersion = grailsApplication.getMetadata().getApplicationVersion()
                 // There is one data set has entry and one variable hash entry for each variable in the request
                 // even if the variables are from the same data set.
                 for (int h = 0; h < datasetHashes.size(); h++) {
@@ -728,7 +730,7 @@ class ProductService {
                     jnl.append("DEFINE SYMBOL data_${h}_name = ${variable_name}\n")
                     jnl.append("DEFINE SYMBOL data_${h}_ID = ${variable_name}\n")
                     jnl.append("DEFINE SYMBOL data_${h}_region = region_0\n")
-                    jnl.append("DEFINE SYMBOL data_${h}_title = ${variable_title}\n")
+                    jnl.append("DEFINE SYMBOL data_${h}_title = ${variable_title.replaceAll("'","")}\n")
                     if (variable.units) jnl.append("DEFINE SYMBOL data_${h}_units = ${variable.units}\n")
                     jnl.append("DEFINE SYMBOL data_${h}_url = ${variable_url}\n")
                     jnl.append("DEFINE SYMBOL data_${h}_var = ${variable_name}\n")
@@ -782,6 +784,7 @@ class ProductService {
                 if ( product.name == "Trajectory_timeseries_plot" || product.name == "Timeseries_station_plot") {
                     view = product.getData_view()
                 }
+                jnl.append("DEFINE SYMBOL ferret_las_version = ${lasVersion}\n")
                 jnl.append("DEFINE SYMBOL ferret_view = " + view + "\n")
                 jnl.append("DEFINE SYMBOL las_debug = false\n")
                 jnl.append("DEFINE SYMBOL las_output_type = xml\n")

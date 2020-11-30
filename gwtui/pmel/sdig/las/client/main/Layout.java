@@ -1307,6 +1307,9 @@ public class Layout extends Composite {
 
     @UiHandler("correlationLink")
     public void onCorrelation(ClickEvent event) {
+        openCorrelation();
+    }
+    public void openCorrelation() {
         correlationWindow.setLeft(0);
         correlationWindow.setTop(0);
         xVariableListBox.clear();
@@ -1417,8 +1420,9 @@ public class Layout extends Composite {
     }
     @UiHandler("animate")
     public void onAnimate(ClickEvent event) {
-
-//        animateWindow.setLayoutPosition(Style.Position.ABSOLUTE);
+        startAnimation();
+    }
+    public void startAnimation() {
         animateWindow.setLeft(0);
         animateWindow.setTop(0);
         animationControls.setDisplay(Display.NONE);

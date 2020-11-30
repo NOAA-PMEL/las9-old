@@ -24,8 +24,11 @@ class UpdateDatasetJobService implements StatefulSchwartzJob {
 	void execute(JobExecutionContext context) throws JobExecutionException {
 		JobDataMap jobDataMap = context.mergedJobDataMap
 		def id = jobDataMap.getLong('id')
-		ingestService.updateTime(id)
-//		ingestService.cleanup()
+		try {
+			ingestService.updateTime(id)
+		} catch (Exception e) {
+			log.error("Exception during update of data set ${id} with message ${e.getMessage()}" )
+		}
 	}
 
 	void addDatasetUpdate(long id, String cron_spec) {
@@ -40,7 +43,7 @@ class UpdateDatasetJobService implements StatefulSchwartzJob {
 					.cronSchedule(cron_spec)
 					.build()
 			schedule(trigger)
-			log.info("Started updates for data set id=" + id + " for cron spec "+ cron_spec)
+			log.info("Setting up cron-based updates for data set id=" + id + " for cron spec "+ cron_spec)
 		} catch (Exception e ) {
 			log.error("Update job setup failed. " + e.getMessage())
 		}

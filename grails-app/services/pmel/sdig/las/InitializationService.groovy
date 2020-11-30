@@ -28,7 +28,12 @@ class InitializationService {
     @Transactional
     def initEnvironment() {
 
+        def v = grailsApplication.getMetadata().getApplicationVersion()
+        def n = grailsApplication.getMetadata().getApplicationName()
+
+        log.info("This is ${n} verison ${v}")
         log.debug("Setting up Ferret environment from the runtime environment.")
+
         // We are remaking this every time we start up...
         def old_ferret = Ferret.first()
         if ( old_ferret ) {
@@ -45,6 +50,7 @@ class InitializationService {
         def cleanenv = [:]
 
         // grails and gorm HATE upper case variables names. I don't know why.
+
         env.each() { key, value ->
             if ( !key.startsWith("_") ) {
                 cleanenv.putAt(key.toLowerCase(), value)
@@ -79,6 +85,7 @@ class InitializationService {
         def fer_descr = grailsApplication.config.getProperty('ferret.FER_DESCR')
         fer_dir = grailsApplication.config.getProperty('ferret.FER_DIR')
         def pyfer_external_functions = grailsApplication.config.getProperty('ferret.PYFER_EXTERNAL_FUNCTIONS')
+        def pythonpath = grailsApplication.config.getProperty('ferret.PYTHONPATH')
         def tmp = grailsApplication.config.getProperty('ferret.TMP')
         def python = grailsApplication.config.getProperty('ferret.PYTHON')
         def ld_library_path = grailsApplication.config.getProperty('ferret.LD_LIBRARY_PATH')
@@ -108,6 +115,8 @@ class InitializationService {
             cleanenv['tmp'] = tmp
         if ( ld_library_path )
             cleanenv['ld_library_path'] = ld_library_path
+        if ( pythonpath )
+            cleanenv['pythonpath'] = pythonpath
 
 
         def ferretEnvironment = FerretEnvironment.first()

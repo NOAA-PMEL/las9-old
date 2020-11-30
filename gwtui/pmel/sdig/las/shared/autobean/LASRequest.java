@@ -75,6 +75,18 @@ public class LASRequest {
         return requestProperties;
     }
 
+    public String getRequestPropertyValue(String type, String name) {
+        if ( requestProperties != null ) {
+            for (int i = 0; i < requestProperties.size(); i++) {
+                RequestProperty rp = requestProperties.get(i);
+                if ( rp.getType().equals(type) && rp.getName().equals(name) ) {
+                    return rp.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
     public void addRequestProperty(RequestProperty requestProperty) {
         if ( this.requestProperties == null ) {
             this.requestProperties = new ArrayList<>();

@@ -8,6 +8,7 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Widget;
+import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.IconType;
 import gwt.material.design.client.events.CollapseEvent;
 import gwt.material.design.client.events.ExpandEvent;
@@ -107,7 +108,7 @@ public class ResultsPanel extends Composite {
                     annotationPanel.add(l);
                 }
             }
-            outputPanel.clearPlot();
+            clearPlot();
         } else {
             outputPanel.setState(state);
             List<AnnotationGroup> groups = state.getPanelState(this.getTitle()).getResultSet().getAnnotationGroups();
@@ -205,6 +206,8 @@ public class ResultsPanel extends Composite {
     }
     public void clearPlot() {
         outputPanel.clearPlot();
+        chart.clear();
+        chart.setVisible(false);
     }
     public int countAnnotations() {
         int count = 0;

@@ -396,4 +396,14 @@ class AdminController {
     def start() {
         ingestService.addVariablesToAll()
     }
+    def ferret() {
+        Ferret ferret = Ferret.first()
+        if ( ferret ) {
+            JSON.use("deep") {
+                render ferret as JSON
+            }
+        } else {
+            log.error("No site found for this installation.")
+        }
+    }
 }

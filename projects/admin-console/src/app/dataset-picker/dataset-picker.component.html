@@ -30,8 +30,10 @@
                 </div>
               </div>
               <div *ngIf="update">
+                <div *ngIf="dataset.variableChildren">
                 <div class="ui-g-1" style="padding: 0px">
                   <button label="Edit" pButton class="ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="editUpdate(dataset)"></button>
+                </div>
                 </div>
               </div>
             </div>

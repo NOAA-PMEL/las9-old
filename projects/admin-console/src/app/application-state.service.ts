@@ -135,7 +135,7 @@ export class ApplicationStateService extends ObservableStore<ApplicationStateSto
 
   reinit() {
     this.error = false;
-    this.setState({showProgress: false, errorDialogMessage: "", edit_dataset: null, dataset_dirty: null, variables_dirty: null, geox_dirty: null, geoy_dirty: null, z_dirty: null, time_dirty: null}, "REINIT_STATE")
+    this.setState({dataset_to_edit_updates: null, showProgress: false, errorDialogMessage: "", edit_dataset: null, dataset_dirty: null, variables_dirty: null, geox_dirty: null, geoy_dirty: null, z_dirty: null, time_dirty: null}, "REINIT_STATE")
   }
   getEditDataset(): Dataset {
     let state = this.getState();

@@ -117,32 +117,39 @@ class IngestService {
     }
     void updateTime(long id) {
         Dataset dataset = Dataset.get(id)
-        log.info("Updating time axis information for " + dataset.getTitle())
-        Dataset nd = null;
-        if ( dataset.geometry == GeometryType.GRID ) {
-            nd = ingest(null, dataset.getUrl())
-        } else {
-            nd = ingestFromErddap_using_json(dataset.getUrl(), new ArrayList<AddProperty>())
-        }
-        if ( nd ) {
-            List<Variable> nvariables = nd.getVariables();
-            List<Variable> ovariables = dataset.getVariables();
-            for (int i = 0; i < nvariables.size(); i++) {
-                Variable nv = nvariables.get(i)
-                for (int j = 0; j < ovariables.size(); j++) {
-                    Variable ov = ovariables.get(j)
-                    if ( nv.name == ov.name ) {
-                        TimeAxis ot = ov.getTimeAxis();
-                        TimeAxis nt = nv.getTimeAxis();
-                        ot.setEnd(nt.getEnd())
-                        ot.save(flush: true)
+        if ( dataset.variableChildren ) {
+            log.info("Updating time axis information for " + dataset.getTitle())
+            Dataset nd = null;
+            if (dataset.geometry == GeometryType.GRID) {
+                nd = ingest(null, dataset.getUrl())
+            } else {
+                nd = ingestFromErddap_using_json(dataset.getUrl(), new ArrayList<AddProperty>())
+            }
+            if (nd && nd.getVariables()) {
+                List<Variable> nvariables = nd.getVariables();
+                List<Variable> ovariables = dataset.getVariables();
+                for (int i = 0; i < nvariables.size(); i++) {
+                    Variable nv = nvariables.get(i)
+                    for (int j = 0; j < ovariables.size(); j++) {
+                        Variable ov = ovariables.get(j)
+                        // Not every variable has a time axis!
+                        if (nv.name == ov.name && ov.getTimeAxis() && nv.getTimeAxis()) {
+                            TimeAxis ot = ov.getTimeAxis();
+                            TimeAxis nt = nv.getTimeAxis();
+                            ot.setStart(nt.getStart())
+                            ot.setEnd(nt.getEnd())
+                            ot.setSize(nt.getSize())
+                            ot.setPeriod(nt.getPeriod())
+                            // In the IOOS models, the units change to the first date of the period.
+                            ot.setUnits(nt.getUnits())
+                            ot.save(flush: true)
+                        }
                     }
                 }
+                dataset.save(flush: true)
             }
-            dataset.save(flush: true)
             log.info("Finished updating time information axis for " + dataset.getTitle())
         }
-
     }
     Dataset ingest(String parentHash, String url) {
 
@@ -1225,7 +1232,7 @@ class IngestService {
 
         List<thredds.client.catalog.Dataset> children = catalog.getDatasetsLogical();
 
-                                                                     // TODO getFullName ???
+        // TODO getFullName ???
         if ( children.size() == 2 && !children.get(0).hasAccess() && children.get(1).getName().toLowerCase().contains("rubric") ) {
             thredds.client.catalog.Dataset onlyChild = children.get(0);
             String name = onlyChild.getName();
@@ -1412,7 +1419,7 @@ class IngestService {
                                 profile.addToDatasets(tabledapItem)
                             }
                         }
-                    // If not, just use the DSG type
+                        // If not, just use the DSG type
                     } else {
                         if (tabledapItem.getGeometry() == GeometryType.TIMESERIES) {
                             timeseries.addToDatasets(tabledapItem)

@@ -133,5 +133,11 @@ class DatasetController {
         }
         render results as JSON;
     }
+// For debugging the update service method
+//    def update() {
+//        def id = params.id
+//        long did = Long.valueOf(id).longValue()
+//        ingestService.updateTime(did)
+//    }
 
 }

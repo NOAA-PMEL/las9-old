@@ -249,6 +249,8 @@ public class UI implements EntryPoint {
 
     LASRequest historyRequest = null;
     LASRequest historyRequestPanel2 = null;
+    LASRequest historyRequestPanel5 = null;    // Animation
+    LASRequest historyRequestPanel8 = null;    // Correlation
 
     // Used for both history and for loading a variable from the description page.
     String historyVariable = null;
@@ -447,6 +449,7 @@ public class UI implements EntryPoint {
                 if ( event.isCancel() ) {
                     animateCancel = true;
                     state.setAnimating(false);
+                    historyRequestPanel5 = null;
                 } else if (event.isSubmit() ) {
                     LASRequest lasRequest;
                     if ( isVector ) {
@@ -491,6 +494,23 @@ public class UI implements EntryPoint {
                     layout.panel5.setImage("images/animation_arrow.png");
                     String l = "Animating " + dataset.getTitle() + " " + variables.get(0).getTitle();
                     layout.panel5.setLabel(l);
+                    if ( historyRequestPanel5 != null ) {
+                        // set the menus and submit
+                        AxesSet s = historyRequestPanel5.getAxesSets().get(0);
+                        String tlo = s.getTlo();
+                        String thi = s.getThi();
+                        animateDateTimeWidget.setRange(true);
+                        animateDateTimeWidget.setHi(thi);
+                        animateDateTimeWidget.setLo(tlo);
+                        String step = historyRequestPanel5.getRequestPropertyValue("ferret", "time_step");
+                        if (step != null) {
+                            layout.time_step.setText(step);
+                        }
+                        historyRequestPanel5 = null;
+                        // Start animating
+                        layout.animateProgress.setDisplay(Display.BLOCK);
+                        eventBus.fireEvent(new AnimateAction(false, false, true));
+                    }
                 }
             }
         });
@@ -589,7 +609,7 @@ public class UI implements EntryPoint {
 
                         info = false;
                         siteService.getSite("1.json", siteCallback);
-                        layout.panel1.getOutputPanel().clear();
+                        layout.panel1.clearPlot();
                         layout.panel1.clearAnnotations();
                         layout.removeBreadcrumbs(1);
                         layout.advancedSearch.setDisplay(Display.BLOCK);
@@ -1069,17 +1089,21 @@ public class UI implements EntryPoint {
                         Variable v = variables.get(0);
                         geom = v.getGeometry();
                     }
-                    LASRequest lasRequest;
-                    if ( geom.equals(Constants.GRID) ) {
-                        lasRequest = makeRequest(8, "prop_prop_plot");
-                    } else if ( geom.equals(Constants.TRAJECTORY) ) {
-                        lasRequest = makeRequest(8, "trajectory_prop_prop_plot");
-                    } else if ( geom.equals(TIMESERIES) ) {
-                        lasRequest = makeRequest(8, "time_series_prop_prop_plot");
+                    if ( historyRequestPanel8 != null ) {
+                        requestQueue.add(historyRequestPanel8);
                     } else {
-                        lasRequest = makeRequest(8, "prop_prop_plot");
+                        LASRequest lasRequest;
+                        if (geom.equals(Constants.GRID)) {
+                            lasRequest = makeRequest(8, "prop_prop_plot");
+                        } else if (geom.equals(Constants.TRAJECTORY)) {
+                            lasRequest = makeRequest(8, "trajectory_prop_prop_plot");
+                        } else if (geom.equals(TIMESERIES)) {
+                            lasRequest = makeRequest(8, "time_series_prop_prop_plot");
+                        } else {
+                            lasRequest = makeRequest(8, "prop_prop_plot");
+                        }
+                        requestQueue.add(lasRequest);
                     }
-                    requestQueue.add(lasRequest);
                     processQueue();
                 }
 
@@ -1421,6 +1445,7 @@ public class UI implements EntryPoint {
                     layout.hideProgress();
                 }
             } else {
+                layout.progress.close();
                 layout.hideProgress();
             }
             if ( tp < 5 ) {
@@ -1439,9 +1464,14 @@ public class UI implements EntryPoint {
                         layout.setPlotCount(2);
                     }
                     // TODO other panels
-//                    } else if ( currentTokens.size() == 4 ) {
-//                        eventBus.fireEvent(new PanelCount(4));
-//                    }
+                    if ( historyRequestPanel8 != null ) {
+                        layout.openCorrelation();
+                    }
+
+                    if ( historyRequestPanel5 != null ) {
+                        layout.startAnimation();
+
+                    }
 
                     historyRequest = null;
                     historyVariable = null;
@@ -1573,6 +1603,32 @@ public class UI implements EntryPoint {
                     layout.downloadLink.setHref(myfile);
                 }
             } else if ( tp == 8 ) {
+                // Should be done now.
+                if ( historyRequestPanel8 != null) {
+
+                    // In addition to the constraints below, the variables need to be set.
+                    List<String> vhashes = historyRequestPanel8.getVariableHashes();
+
+                    String x = vhashes.get(0);
+                    Variable xv = dataset.findVariableByHash(x);
+                    int xi = layout.xVariableListBox.getIndex(xv.getName());
+                    layout.xVariableListBox.setSelectedIndex(xi);
+
+                    String y = vhashes.get(1);
+                    Variable yv = dataset.findVariableByHash(y);
+                    int yi = layout.yVariableListBox.getIndex(yv.getName());
+                    layout.yVariableListBox.setSelectedIndex(yi);
+
+                    if ( vhashes.size() == 3 ) {
+                        String c = vhashes.get(2);
+                        Variable cv = dataset.findVariableByHash(c);
+                        int ci = layout.cVariableListBox.getIndex(cv.getName());
+                        layout.colorByOn.setValue(true);
+                        layout.cVariableListBox.setSelectedIndex(ci);
+                    }
+
+                    historyRequestPanel8 = null;
+                }
                 layout.correlationProgress.setDisplay(Display.NONE);
                 // Show plot an annotations in panel 8
                 state.getPanelState(tp).setResultSet(results);
@@ -2369,7 +2425,7 @@ public class UI implements EntryPoint {
         if (p.isClientPlot()) {
             layout.advancedSearch.setDisplay(Display.NONE);
             layout.panel1.getOutputPanel().setVisible(false);
-            layout.panel1.getOutputPanel().clearPlot();
+            layout.panel1.clearPlot();
             makeDataRequest(variables, p);
         } else {
             for (int i = 1; i <= state.getPanelCount(); i++) {
@@ -2974,6 +3030,33 @@ public class UI implements EntryPoint {
             fullHistoryToken = fullHistoryToken + "_tok_" + jsonHistoryToken.toString();
         }
 
+        // 5 Animation window
+        // 6 Show values window
+        // 7  Save as... opens a tab with result url
+        // 8 The correlation viewer
+        LASRequest r5 = state.getPanelState(5).getLasRequest();
+        if ( r5 != null && r5.getOperation().toLowerCase().contains("animation") ) {
+            // Save the original animation request
+            JSONValue jsonHistoryToken = requestCodec.encode(r5);
+            fullHistoryToken = fullHistoryToken + "_tok_" + jsonHistoryToken.toString();
+            historyRequestPanel5 = r5;
+        } else {
+            if ( historyRequestPanel5 != null ) {
+                // Keep putting it back until the animation window closes.
+                JSONValue jsonHistoryToken = requestCodec.encode(historyRequestPanel5);
+                fullHistoryToken = fullHistoryToken + "_tok_" + jsonHistoryToken.toString();
+            }
+        }
+
+
+        LASRequest r8 = state.getPanelState(8).getLasRequest();
+
+        if ( r8 != null ) {
+            JSONValue jsonHistoryToken = requestCodec.encode(r8);
+            fullHistoryToken = fullHistoryToken + "_tok_" + jsonHistoryToken.toString();
+        }
+
+
         // TODO history for panel 3 and 4
 
         History.newItem(fullHistoryToken, false);
@@ -2994,9 +3077,15 @@ public class UI implements EntryPoint {
             }
         }
         if ( currentTokens != null && currentTokens.size() > 1 ) {
-            String panelTwoRequest = currentTokens.get(1);
-            historyRequestPanel2 = requestCodec.decode(panelTwoRequest);
-
+            String secondRequest = currentTokens.get(1);
+            LASRequest second = requestCodec.decode(secondRequest);
+            if ( second.getTargetPanel() == 2 ) {
+                historyRequestPanel2 = second;
+            } else if ( second.getTargetPanel() == 5 ) {
+                historyRequestPanel5 = second;
+            } else if ( second.getTargetPanel() == 8 ) {
+                historyRequestPanel8 = second;
+            }
         }
         initialHistory = null;
         // TODO Get Ferret properties
@@ -3143,7 +3232,7 @@ public class UI implements EntryPoint {
                 if ( v.isSubset() || v.isDsgId() ) {
                     if ( clearConstraints) {
                         layout.clearConstraints();
-                    } else {
+                    } else if ( layout.subsetColumn.getWidgetCount() == 0 ) {
 
                         MaterialRow r = new MaterialRow();
                         r.addStyleName("radioHeight");

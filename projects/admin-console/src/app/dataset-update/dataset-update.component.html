@@ -1,5 +1,5 @@
 <app-dataset-picker [header]="header" [subHeader]="subHeader" [update]="true"></app-dataset-picker>
-<p-dialog [style]="{width: '80%'}" [(visible)]="edit_dataset_update" header="{{dataset_title}}">
+<p-dialog [style]="{width: '80%'}" [(visible)]="edit_dataset_update" header="{{dataset_title}}" (onHide)="close()">
   <h3>Update Specification</h3>
   <div class="p-field">
     <input placeholder="cron format" id="update" aria-describedby="update-help" class="p-inputtext-lg" [(ngModel)]="cron_spec" pInputText />

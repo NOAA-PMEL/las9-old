@@ -15,7 +15,7 @@ class BootStrap {
 
     def init = { servletContext ->
         def v = Holders.grailsApplication.metadata['app.version']
-        log.info("This is LAS v" + v);
+
         log.debug("Starting the init bootstrap closure...")
 
         // Always init the environment so it can be changed

@@ -31,12 +31,14 @@ set data 1
 IF ($have_las_plotvar"0") THEN 
    LET the_plot_var = las_plotvar  ! from LAS_auto_levels
 ELSE
-   IF ($native_curvilinear_xy"0|0|*>1") THEN 
-      ! view does not contain "xy"
-      IF  `STRINDEX("($ferret_view)", "xy") EQ 0` THEN
-         LET the_plot_var = ($ferret_plot_var)
+   IF ($native_curvilinear_xy"0|0|*>1") THEN
+      ! When checking for no data, stat only works to find good data in the XY plane
+      ! Don't do the check for other views
+      ! RHS - 2021-02-03
+      IF ($ferret_view"0|xy>1|*>0") THEN
+        LET the_plot_var = plot_var
       ELSE
-         LET the_plot_var = plot_var
+        DEFINE SYMBOL no_novalid_lab = 1
       ENDIF
    ELIF ($do_hybrid_z"0|0|*>1") THEN
       LET the_plot_var = ($ferret_plot_base_var_noregion)
@@ -56,13 +58,14 @@ ENDIF
 
 ! Annotate if the selection resulted in no data  ngood_data is defined for insitu datasets
 
+
 IF `($ngood_data"-1|*>1") NE -1` THEN
-   IF `($ngood_data) EQ 0` THEN annotate/norm/x=0.02/y=0.92/halign=-1/siz=0.1 "No Valid Data in the selection"
+   IF `($ngood_data) EQ 0` THEN annotate/norm/x=0.52/y=0.92/halign=0/siz=0.14 "No Valid Data in the selection"
 ELSE
    IF `($ferret_annotations"0|*>1") AND ($plotvar_is_basemap"0|*>1") EQ 0 AND ($no_novalid_lab"0|*>1") NE 1` THEN
       stat the_plot_var
       IF `($stat_ngood"0|0|*>1") EQ 0` THEN \
-       annotate/norm/x=0.02/y=0.92/halign=-1/siz=0.1 "No Valid Data in the selection"
+       annotate/norm/x=0.52/y=0.92/halign=0/siz=0.14 "No Valid Data in the selection"
   ENDIF
 ENDIF
 
@@ -115,9 +118,9 @@ IF ($is_animation_frame"0|0|*>1") THEN EXIT/SCRIPT
 
 ! If an insitu waterfall plot made a "blankvar" plot underlying the color plot,
 ! re-draw that to use in making the reference map. It has the correct time/space
-! size and units.
+! size and units, so draw this plot to set pplus symbols.
 
-IF ($insitu_blankvar"0|*>1) THEN SHADE/PAL=white/NOLAB/NOKEY/LEV=(0,1,1) ($insitu_blankvar)
+IF ($insitu_blankvar"0|*>1) THEN SHADE($insitu_blankvar_qual) ($insitu_blankvar)
 
 !Do not write out the url and variable name output. This info is not saved
 !when map_scale.xml is generated anyway. (See ferret ticket 1933)
@@ -434,6 +437,7 @@ IF ($ferret_annotations%0|*>1%) THEN GO LAS_annotations_xml
 ! Result "colorbar" is the legend of the plot_image...only for Google Earth
 IF ($result_colorbar_filename%0|*>1%) THEN GO colorbar
 
+
 ! Result ref_map is a ref map. Save to result_ref_map_filename
 
 IF  ($ferret_use_ref_map%0|false>0|*>1%) THEN 
@@ -451,5 +455,7 @@ IF ($fland_area"0|*>1") THEN
    SAY _________________Map plot:    $fland_area    ($fland_area)
    SAY _________________Map plot:    topo file      ($topo_url)
 ENDIF
+
+
 ! End of file ------------LAS_results.jnl--------------------------
 

@@ -6,10 +6,9 @@
 ! Create a new title that includes subsampling info
 
 ! Restart setting plot qualifiers for correlation plot. 
-
-! 3/14/2018  Initial changes to take advantage of PyFerret symbols to replace
-!            use of slow outlined polygons.  Currently only draws triangles,
-!            need to implelement a list of symbol names replacing /sym=triufill
+!
+! 4/2019 redo for DSG datasets.  The feature-mask if any is already
+!        applied to the dataset.
 
 DEFINE SYMBOL qualifiers = /NOLAB
 
@@ -20,206 +19,92 @@ IF `($data_1_var"0|*>1") EQ 0` THEN
   EXIT/PROGRAM
 ENDIF
 
-LET n_in_mask = constraints_mask[i=@ngd]
+
+let nmasked_var = XSEQUENCE(constraints_mask)
+LET n_in_mask = nmasked_var[i=@ngd]
+
 IF `n_in_mask eq 0` THEN 
   DEFINE SYMBOL put_label = 1 
   EXIT/SCRIPT
 ENDIF
 
-DEFINE SYMBOL feature_max = `($rowvar),RETURN=size`
 
-! The mask is 1 for start of features 
+LET idvar = constraints_mask* ($feature_variable)
 
-LET feature_id = _M[GE=featurevar]
-LET feature_len =($rowvar)
-
-IF ($subset_mask"0|*>1") THEN
-   LET feature_id = ESEQUENCE(subset_mask) * _M[GE=featurevar]
-   LET feature_len = ESEQUENCE(subset_mask) * ($rowvar)
-ENDIF
-
-LET idvar = EXPND_BY_LEN(feature_id, ($rowvar), ($rowvar)[m=@sum])
-
-
-
-! Masking for constraints may mean not all are shown. Recompute cruises_shown.
-
-LET idvar_masked = idvar * var_mask
-LET count_nf = 0
-LET count_orig = 0
-
-IF `($feature_max) LE ($feature_max_labels)` THEN
-   REPEAT/RANGE=1:`($rowvar),RETURN=msize`/NAME=ic (\
-    DEFINE SYMBOL ic = `ic` ;\
-    DEFINE SYMBOL nf = `idvar_masked[I=@LOC:($ic)]` ;\
-    DEFINE SYMBOL cruise_is = ($nf"0|bad>0|*>($ic)") ;\
-    LET count_nf = `count_nf +  ($nf"0|bad>0|*>1")` ;\
-    IF `($cruise_is) GT 0` THEN LET count_orig = `count_orig + ($rowvar)[m=($cruise_is)]`;\ 
-   )
-ELSE
-   LET count_nf = `($rowvar),RETURN=msize`
-   LET count_orig = idvar_masked[i=@ngd]
-ENDIF
-
-DEFINE SYMBOL cruises_shown = `count_nf`
-DEFINE SYMBOL prof_traj_shown = `count_nf`
-
-LET decimate_size = count_orig
-
-! Now we have the full size of desired cruise selection. Do the decimation if any on 
-! the full set so as to keep placeholders for all the cruises (decimating cruises , 
-! that are all-blank, lose the start and end of cruises)
-
-LET feature_id = _M[GE=featurevar]
-LET feature_len =($rowvar)
-
-! This section setting up obs_mask, for non-lon-lat plots, which do not use decimation.
-LET all_feature_id = _M[GE=featurevar]
-LET all_idvar = EXPND_BY_LEN(all_feature_id, ($rowvar), ($rowvar)[m=@sum])
-
-LET tmask = IF all_idvar[i=@ddb] EQ 1 THEN 1 ELSE 0
-LET obs_mask1 = tmask[gx=($ferret_plot_var_0)@ASN]
-LET obs_mask2 = IF i[gx=($ferret_plot_var_0)] EQ 1 THEN 1 ELSE 0
-LET obs_mask = IF (obs_mask1+obs_mask2) EQ 1 THEN 1
-
-
-LET pvar = constraints_mask* ($ferret_plot_var_0)
-IF ($pvar_reset"0|*>1") THEN LET pvar = constraints_mask* ($pvar_reset)
-LET qvar = constraints_mask* ($ferret_plot_var_1)
-LET dvar =  idvar
-
-LET pvar = constraints_mask* (xvar)
-LET qvar = constraints_mask* (yvar)
-
-LET data_1_var_c =  EXPNDI_BY_Z(pvar, obs_mask, `nfeatures`, `longest`)
-LET data_var_c =  EXPNDI_BY_Z(qvar, obs_mask, `nfeatures`, `longest`)
-
-! Decimation for longitude/latitude plots
-! Dont decimate for prop-prop plots when we have a subset mask!
-
-LET num_decimate = 1000
-!LET num_decimate = 10000
-IF `($numobs) LT num_decimate` THEN LET num_decimate = -1  ! separate cruises but dont decimate
-
-
-IF `($ferret_plot_var_0"0|longitude>1|*>0") AND ($ferret_plot_var_1"0|latitude>1|*>0") AND\
-  (($numobs) GE num_decimate) AND (($subset_mask"0|*>1) EQ 0)` THEN
-
-! Decimation always?
-! IF `(($numobs) GE num_decimate)` THEN
-
-   DEFINE SYMBOL is_decimate = 1
-
-   LET pxvar = constraints_mask* ($ferret_plot_var_0)
-   IF ($pvar_reset"0|*>1") THEN LET pxvar = constraints_mask*  ($pvar_reset) ! see LAS_xytvar_setup
-   LET qyvar = constraints_mask* ($ferret_plot_var_1)
-   
-   LET var_data = idvar
-   
-   DEFINE SYMBOL data_x_var = if idvar then pxvar
-   DEFINE SYMBOL data_y_var =  if idvar then qyvar
-   
-   DEFINE SYMBOL data_x_var = pxvar
-   DEFINE SYMBOL data_y_var = qyvar
-   DEFINE SYMBOL data_var = idvar
-   
-   ! Arguments are 
-   !  min # points for doing decimation 
-   !  lon/lat tolerance for piecewise decimation
-   !  var tolerance (var at lon/lat)
-   
-   LET tol1 = `MAX(($region_x_range)/($ppl$xpixel), ($region_y_range)/($ppl$ypixel))`
-   LET tol1 = `MIN(($region_x_range)/($ppl$xpixel), ($region_y_range)/($ppl$ypixel))`
-   LET tol1 = MAX(`tol1`,0.001)
-   let tol2 = 0.01
-   list tol1, tol2
-
-   DEFINE SYMBOL decimate_fraction = 0.1
-   GO setup_dsg_variables `num_decimate` `tol1` `tol2` 0.1
-
-   LET pvar = ($data_x_var)
-   LET qvar = ($data_y_var)
-   LET dvar = ($data_var)
-
-! data_var is the feature index at each obs index i, with a gap between features.
-! Find where the features start now that they are sampled. (Need to remove the gaps
-! between features that the script introduces...)
-
-   LET index_sampled = if ($data_var) then ($data_var) else ($data_var)[i=@shf:-1]
-   LET new_feature = index_sampled[i=@ddb]
-   LET decimated_mask1 = IF new_feature NE 0 THEN 1 ELSE 0
-   LET decimated_mask2 = IF I[gx=($data_var)] EQ 1 THEN 1 ELSE 0
-   LET ndmask = `pvar,return=isize`
-   LET decimated_mask  = IF (decimated_mask1[i=1:`ndmask`] + decimated_mask2[i=1:`ndmask`]) EQ 1 THEN 1
-   
-   ! This value of longest is now wrong, but it's too big so should be harmless.
-   
-
-   LET data_1_var_c =  EXPNDI_BY_Z(pvar, decimated_mask, `nfeatures`, `longest`)
-   LET data_var_c =  EXPNDI_BY_Z(qvar, decimated_mask, `nfeatures`, `longest`)
-   LET data_var_d =  EXPNDI_BY_Z(dvar, decimated_mask, `nfeatures`, `longest`)
-
-   LET dmask =  subset_mask * data_var_d
-   DEFINE SYMBOL have_dmask = 1
-
-   DEFINE SYMBOL ngood_data = `pvar[i=@ngd]`
-
-ENDIF  ! Decimation for longitude/latitude plots
-
-! Set up to plot the data and the linear fit
-LET pmask =  subset_mask * data_1_var_c
-LET qmask =  subset_mask * data_var_c
-
-LET p = XSEQUENCE( subset_mask * data_1_var_c)
-LET q = XSEQUENCE( subset_mask * data_var_c)
+LET p = constraints_mask* (xvar)
+LET q = constraints_mask* (yvar)
 
 ! Set up to make polygon plot. If there are not too many features
 ! color the data according to feature.
 
-DEFINE SYMBOL qualifiers = ($qualifiers)/OVER/NOAXES/NOKEY/NOLAB/
+DEFINE SYMBOL qualifiers = ($qualifiers)/NOAXES/NOKEY/NOLAB/OVER
 
-IF `($feature_max) LE ($feature_max_labels)` THEN
+
+! /VS/RIBBON/OVER/PALETTE=ten_by_levels/THICK/SYM=19/NOLAB
+
+IF `($features_shown) LE ($feature_max_labels)` THEN
    DEFINE SYMBOL ferret_poly_palette = ten_by_levels
    DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_poly_palette)
 
 ! If undefined, set polygon scale according to number of points
-   IF ($ferret_poly_scale"1|*>0") THEN 
+   IF `($ferret_poly_scale"1|*>0") AND ($py_syms"0")` THEN 
       GO LAS_set_poly_scale
       DEFINE SYMBOL ferret_poly_scale 0.5*($ferret_poly_scale)
    ENDIF
-
-! *** draw outlines only when running Ferret.  Too slow in PyFerret.
-   IF `($ferret_poly_scale) GE 0.4` THEN
-      IF ($program_name"0|Ferret>1|*>0") THEN \
-       DEFINE SYMBOL qualifiers = ($qualifiers)/LINE/THICK=1
-    ENDIF
+   
+   DEFINE SYMBOL qualifiers = ($qualifiers)/LINE/THICK=1
 
 ELSE
    DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=black
    DEFINE SYMBOL poly_scale = 0.4
-   DEFINE SYMBOL plot_using_sym = 1
+   DEFINE SYMBOL plot_using_sym = 1 
 ENDIF
 
-! *** draw outlines only when running Ferret.  Too slow in PyFerret.
-IF ($program_name"0|Ferret>1|*>0") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/LINE
+DEFINE SYMBOL poly_command POLY/FILL($qualifiers)
 
-DEFINE SYMBOL poly_command POLY($qualifiers)
 DEFINE SYMBOL line_color = blue
 
-DEFINE SYMBOL pysym_command = PLOT/VS/OVER/NOLAB/NOKEY/ribbon/highlight/PALETTE=($ferret_poly_palette)/siz=0.15
+DEFINE SYMBOL pysym_command = PLOT/VS/NOLAB/NOKEY/ribbon/highlight/PALETTE=($ferret_poly_palette)/siz=0.15/OVER
+DEFINE SYMBOL fersym_command = PLOT/VS/NOLAB/NOKEY/ribbon/miss=blank/PALETTE=($ferret_poly_palette)/siz=0.15/THICK/OVER
 
-IF `( ($feature_max) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
+! Start the plot. Draw an underlay of dashed-line plot for time series and map trajctory plots
 
-   LET p = XSEQUENCE( subset_mask * data_1_var_c)  ! for regression line
-   LET q = XSEQUENCE( subset_mask * data_var_c)
+
+IF `itsa_tim_prop` THEN
+   LET tmin = p[L=@min]
+   LET tmax = p[L=@max]
+   LET t1 = `tmin[e=@min]`
+   LET t2 = `tmax[e=@max]`
+ENDIF
+
+IF `( ($features_shown) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
+
+   set data/fmask=subset_mask 1
+   PPL COLOR,6,90,90,90  !gray
+
+   IF `itsa_tim_prop EQ 0 AND itsa_map_plot EQ 0` THEN \
+      PLOT/VS/SYM=dot($hlim)($vlim)/RIBBON/NOKEY/NOLAB/PALETTE=white {0,1}, {0,1}, {0,1}  ! underlay to draw the axes... (Need /hlim, /vlim for expanded axes?)
+
+   IF `itsa_tim_prop AND ($connect_dots"0|0|1|*>1")` THEN \
+     PLOT/t=`t1`:`t2`/NOLAB/DASH=(0.1,0.04,0.1,0.04)/color=6 q
+
+   IF `itsa_map_plot AND ($connect_dots"0|0|1|*>1")` THEN \
+     PLOT/OVER/NOLAB/VS/RIBBON/DASH=(0.1,0.04,0.1,0.04)/pal=gray p,q, 0*q
+
+   PPL COLOR,6,100,0,100  !restore default line-6 color
+
+   CANCEL SYMBOL connect_dots
+
+   IF ($ax_label_x"0|*>1") THEN annotate/norm/halign=0/xp=0.5/yp=-0.06/siz=0.12 "($ax_label_x)"
+   IF ($ax_label_y"0|*>1") THEN annotate/norm/halign=0/angle=90/xp=-0.06/yp=0.5/siz=0.12 "($ax_label_y)"
 
    ! Use different color for each feature 1-10, 11-21, ...
    ! Use different symbols for each set of 10
 
    LET ncolors = 10
    LET nshapes = 20
-   LET polygon_set = `INT(0.5+($feature_max)/nshapes)`
-   IF `polygon_set*nshapes LT ($feature_max)`  THEN LET polygon_set = `polygon_set+1`
+   LET polygon_set = `INT(0.5+($features_shown)/nshapes)`
+   IF `polygon_set*nshapes LT ($features_shown)`  THEN LET polygon_set = `polygon_set+1`
 
 ! See polyshape script for the list of available pre-defined shapes.
 
@@ -228,53 +113,59 @@ IF `( ($feature_max) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
 
    GO LAS_pp_set_feature_shapes
 
-   LET cmax = `MIN(($feature_max),ncolors)`
+   LET cmax = `MIN(nfeatures,ncolors)`
    LET c1 = 1
-   DEFINE SYMBOL poly_command ($poly_command)/LEVELS=(`c1`,`cmax+1`,1)
-   DEFINE SYMBOL pysym_command ($pysym_command)/LEVELS=(`c1`,`cmax+1`,1)
+!   DEFINE SYMBOL poly_command ($poly_command)/LEVELS=(`c1`,`cmax+1`,1)
+!   DEFINE SYMBOL fersym_command ($fersym_command)/LEVELS=(`c1`,`cmax+1`,1)
+!   DEFINE SYMBOL pysym_command ($pysym_command)/LEVELS=(`c1`,`cmax+1`,1)
 
    LET ishape = 1
    LET icolor = 1
 
-   LET colr_index = MOD(i[i=1:`nfeatures`],`ncolors`)
-   LET allcolors = IF colr_index EQ 0 THEN `ncolors` ELSE colr_index 
-   IF `($have_dmask"0|*>1") EQ 0` THEN LET dmask = subset_mask * allcolors + 0*qmask
-
-   LET transpmask = TRANSPOSE_XZ(pmask)
-   LET transqmask = TRANSPOSE_XZ(qmask)
-   LET transdmask = TRANSPOSE_XZ(dmask)
+   LET cvar = MOD(_m[ge=($rowvar)],`ncolors`)  ! cycle through avail colors
 
    LET c1 = 1
-   LET cn = `ncolors`
+   LET cn = MIN(ncolors, nfeatures)
+
+! PyFerret will use the fancy PLOT symbols. 
+! Note need to protect the colors from one set of 10 to the next
+
+   LET idvar = EXPND_BY_LEN (_m[ge=($feature_variable)], ($rowvar), ($numobs))
+   LET ids_on_obs = RESHAPE (idvar, ($xvar))
+      
+   LET xplt_var = XSEQUENCE(($xvar))
+   LET yplt_var = XSEQUENCE(($yvar))
+   LET zplt_var = XSEQUENCE(ids_on_obs)
+
+
+!  LET xplt_var = ($xvar)
+!  LET yplt_var = ($yvar)
+!  LET zplt_var = ($zvar)
+
+   DEFINE SYMBOL plot_arg = xplt_var, yplt_var, zplt_var
+
+   LET ishape = 1
+   LET icolor = 1
+
+   LET cvar = MOD(_m[ge=($rowvar)],`ncolors`)  ! cycle through avail colors
+
+   LET c1 = 1
+   LET cn = MIN(ncolors, nfeatures)
+
+   CANCEL data/fmask 1
+   LET mmask = _M[ge=rowsize] 
 
    REPEAT/RANGE=1:`nfeatures`:`ncolors`/NAME=ic (\
     DEFINE SYMBOL ishape = `ishape`;\
-    LET zx = transpmask[k=`c1`:`cn`];\
-    LET zy = transqmask[k=`c1`:`cn`];\
-    LET zd = transdmask[k=`c1`:`cn`];\
-    DEFINE AXIS/X=1:`(cn-c1+1)*longest`:1 long_x;\
-    LET lxx = x[gx=long_x];\
-    LET xpolydat = RESHAPE(zx,lxx);\
-    LET ypolydat = RESHAPE(zy,lxx);\
-    LET colorplus = 0;\
-    IF ($is_decimate"0|*>1") THEN LET colorplus = (ishape-1)*ncolors;\
-    LET dpolydat = RESHAPE(zd-`colorplus`, lxx);\
-    LET all_mask = IF xpolydat+ypolydat+dpolydat THEN 1;\
-    LET all_x = COMPRESSI(all_mask*xpolydat);\   
-    LET all_y = COMPRESSI(all_mask*ypolydat);\
-    LET all_d = COMPRESSI(all_mask*dpolydat);\
-    LET ndo_it = `all_x[i=@ngd]`;\
-    LET do_it = `ndo_it GT 0`;\
-    LET/units=($lon_units"dum") plot_x = all_x[i=1:`ndo_it`];\   
-    LET plot_y = all_y[i=1:`ndo_it`];\
-    LET plot_d = all_d[i=1:`ndo_it`];\
+    CANCEL data/fmask 1;\
+    LET ishape_mask = if mmask ge c1 and mmask le cn then 1;\
+    LET mask_for_shape = subset_mask* mmask* ishape_mask;\
+    SET DATA/fmask=mask_for_shape 1;\
      ;\
-     IF `do_it AND ($connect_dots"0|0|1|*>1")` THEN \
-     PLOT/NOAX/VS/OVER/LINE=6/DASH=(0.1,0.04,0.1,0.04)/NOLAB xpolydat, ypolydat ;\
+     DEFINE SYMBOL color_command = GO polymark ($poly_command)/LEVELS=(`c1`,`cn+1`,1) ($plot_arg), ($shape($ishape)), ($poly_scale) ;\
+     IF ($py_syms"0") THEN DEFINE SYMBOL color_command = ($pysym_command)/sym=($pyshape($ishape))/E=`c1`:`cn`/LEVELS=(`c1`,`cn+1`,1) ($plot_arg);\
      ;\
-     DEFINE SYMBOL color_command = GO polymark ($poly_command) plot_x, plot_y, plot_d, ($shape($ishape)), ($poly_scale) ;\
-     IF ($py_syms"0") THEN DEFINE SYMBOL color_command = ($pysym_command)/sym=($pyshape($ishape)) plot_x, plot_y, plot_d;\
-    IF `do_it` THEN ($color_command); \
+     ($color_command); \
      ;\
      LET c1 = `c1 + ncolors`;\
      LET cn = `cn + ncolors`;\
@@ -283,16 +174,15 @@ IF `( ($feature_max) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` THEN
      PPL shaset protect;\
      )
 
-! Note need to protect the colors from one set of 10 to the next
-  
+    CANCEL DATA/FMASK 1
+    SET DATA/FMASK = subset_mask 1
+
 ELSE ! all features, do as a PLOT not a POLY command, much faster
 
    PLOT/VS/NOLAB/over/sym=19/siz=.12 p,q
    DEFINE SYMBOL ngood_data = `p[i=@ngd]`
 ENDIF
 
-
-   
 ! If location(s) of a crossover has been sent, mark them.
 ! This might be one point, or two, comma-separated.
 

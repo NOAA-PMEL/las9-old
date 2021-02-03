@@ -1,0 +1,82 @@
+! LAS_setup_watermark.jnl
+! Add the settings for a watermark image to the 
+! qualifiers in symbol set_window_quals
+! 
+! If they asked for a watermark, place it on the page. This uses "plot inches"
+! expressed as fractions of 1000 measured from the upper-left corner.  
+! Make a plot to load pplus symbols
+
+! Ferret properties for the dataset, variable or the entire LAS:
+! * The image name
+! * The (approx) image size, in pixels.  Assumes 100 if not given.
+!    The linux command "identify" returns the image info including size in pixels:
+!    identify -ping imagefile.png
+!
+! * A scale factor to use, default 1
+!
+! * The opacity to use in percent, default 50
+!
+! * Where to place the watermark within the image. These are defined here:
+!    ulc, urc, llc, lrc  upper left corner, upper right corner, lower left...
+!    uli, uli, lli, lri  upper left within the image, ...
+!    More, such as centered along the bottom ?
+!
+! <ferret>
+!   <wmark_image>/home/users/ansley/socat_cat.png</wmark_image>
+!   <wmark_size>200</wmark_size>
+!   <wmark_scale>0.5</wmark_scale>
+!   <wmark_opacity>50</wmark_opacity>
+!   <wmark_loc>lli</wmark_loc>
+! </ferret>
+! 
+
+IF `($ferret_wmark_image"0|*>1") EQ 0` THEN EXIT/SCRIPT
+
+LET wmsize = ($ferret_wmark_size"100|*") 	! image size
+LET wmscale = ($ferret_wmark_scale"1|*") 	! scale factor to use
+LET wmopac =  ($ferret_wmark_opacity"50|*") 	! opacity to use
+
+
+! Location for the watermark within ghe plot
+
+! ulc, urc, llc, lrc  for upper left corner, upper right corner...
+! By default, or if unrecognized value, use upper left corner
+
+DEFINE SYMBOL wmark_loc = ($ferret_wmark_loc"ulc|uli|ulc|urc|llc|lrc|uli|uli|lli|lri|*>ulc|uli") 
+
+!!!! Right now the only one that works well is upper=left corner
+
+DEFINE SYMBOL wmark_loc = ulc
+
+! To account for the size of the watermark image.
+let fudge = wmscale* wmsize
+
+! Make a plot to get pplus symbols for this window
+
+shade/x=0:1/y=0:1/nolab/noax x+y
+
+show sym ppl$width, ppl$xorg, ppl$height, ppl$yorg
+DEFINE SYMBOL x_rt_margin = `($ppl$width) - ($ppl$xlen) - ($ppl$xorg)`
+DEFINE SYMBOL y_up_margin = `($ppl$height) - ($ppl$ylen) - ($ppl$yorg)`
+
+show sym ppl$width, ppl$xlen, ppl$xorg, x_rt_margin
+show sym ppl$height, ppl$ylen, ppl$yorg, y_up_margin
+
+
+! Watermark in the upper left corner
+IF ($wmark_loc"0|ulc>1|*>0") THEN 
+   LET wmxloc = 5
+   LET wmyloc = 5
+ENDIF
+
+! Watermark in the lower left corner
+IF ($wmark_loc"0|llc>1|*>0") THEN 
+   LET wmxloc = 5
+   LET wmyloc = 100* (($ppl$ylen) + ($y_up_margin)) - fudge
+ENDIF
+
+
+DEFINE SYMBOL set_window_quals = ($set_window_quals)\
+ /wmark="($ferret_wmark_image)"/wmscale=`wmscale`/wmopac=`wmopac`/wmxloc=`wmxloc`/wmyloc=`wmyloc`
+
+SET WINDOW/CLEAR

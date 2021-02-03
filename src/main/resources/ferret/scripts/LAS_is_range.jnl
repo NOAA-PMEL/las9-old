@@ -4,6 +4,7 @@
 ! Given a min and max variables defined, see if they are valid data
 ! and use them to define axis min,max, delta. If min and max are not
 ! valid then return nominal 0:100 and set an error flag.
+! 8/19 *acm* more bad-value handling
 ! 2/25/2020 ACM robust method usin Ferret/PyFerret internal method 
 !           to set range for constant-valued data
 
@@ -11,19 +12,29 @@ LET baddat = 0
 
 CANCEL SYMBOL dm_labels
 
-LET ok = IFV ($1) THEN 1 ELSE 0
+IF ($1"0|bad>1|*>0") THEN 
+   let ok = 0
+ELSE
+   LET ok = IFV (($1)) THEN 1 ELSE 0
+ENDIF 
+
 IF `ok` THEN 
    DEFINE SYMBOL ax_lo = `($1)`
 ELSE 
    DEFINE SYMBOl ax_lo = bad
 ENDIF
-LET ok = IFV ($2) THEN 1 ELSE 0
+
+IF ($2"0|bad>1|*>0") THEN 
+   let ok = 0
+ELSE
+   LET ok = IFV (($2)) THEN 1 ELSE 0
+ENDIF 
+
 IF `ok` THEN 
    DEFINE SYMBOL ax_hi = `($2)`
 ELSE 
    DEFINE SYMBOl ax_hi = bad
 ENDIF
-
 
 IF `($ax_lo"0|bad>1|*>0") OR ($ax_hi"0|bad>1|*>0")` THEN 
   LET ax_lo = 0

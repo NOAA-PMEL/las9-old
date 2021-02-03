@@ -9,6 +9,7 @@
 ! 11/2017 back off finding direction variables based on attributes for now
 ! 12/2017 changes for efficiency getting variable types
 !  1/2018 Time will only be the independent variable - no vertical time axis.
+!  8/2020 Updates for working with DSG datasets
 
 ! prop_prop_plot.jnl creates a property-property plot, using the 
 ! data variable in symbol data_0_var and the second variable from
@@ -28,8 +29,7 @@ GO LAS_initial_setup
 
 DEFINE SYMBOL its_prop_plot = 1
 DEFINE SYMBOL its_insitu = 1
-
-DEFINE SYMBOL ribbon = 1
+LET color_by_feature = 0
 
 ! For LAS v8.0 relese, dont take into account any of these Ferret properties.
 ! This is a workaround for items 3 and 4 in ticket 1388; the issues will be 
@@ -39,7 +39,10 @@ CANCEL SYMBOL ferret_fill_levels
 CANCEL SYMBOL ferret_contour_levels
 CANCEL SYMBOL ferret_palette
 
-!DEFINE SYMBOL ferret_fill_levels = v
+! pale gray line for underlay
+SET MODE linecolors:7
+PPL color, 7, 90, 90, 90  !gray
+
 
 ! Initialize data and variables
 ! Set up masks for constraints
@@ -47,10 +50,9 @@ CANCEL SYMBOL ferret_palette
 
 GO setup_prop_prop
 
-
 ! Check for data types
 ! 3/16/17 Make this more robust, if there are regions etc on the ferret_plot_var_* 
-! variables the RETURN=dtypemay fail.
+! variables the RETURN=dtype may fail.
 
 LET gettype = ($ferret_plot_var_0_small%($ferret_plot_var_0)%)
 DEFINE SYMBOL vtype = `gettype,RETURN=dtype`
@@ -66,6 +68,7 @@ IF ($error_string"0|*>1") THEN
    MESSAGE/ERROR **ERROR ($error_string)
    EXIT/PROGRAM
 ENDIF
+
 
 ! Open the window, apply size, scale options
 
@@ -86,18 +89,9 @@ IF ($ferret_use_graticules"0|0|*>1) THEN
   SET MODE GRATICULE:(DASH=(0.1,0.04,0.1,0.04),COLOR=black)
 ENDIF
 
-! This may be a polygon plot. Options for color, shape, size.
-
-DEFINE SYMBOL polycolor = ($ferret_symbol_color%black|default>black|black|red|blue|green|lightblue|purple|*>blue%)
-DEFINE SYMBOL polysize = ($ferret_symbol_size%0.6|default>*0.6|*%)
-DEFINE SYMBOL polyshape = ($ferret_symbol_shape%triangle|default>triangle|triangle|delta\
-|square|diamond|pentagon|hexagon|circle|star|plus|ex|*>triangle%)
-
-!DEFINE SYMBOL ferret_plot_title = " "
-
 ! Set the plot argument. 
 DEFINE SYMBOL plot_arg = ($xvar), ($yvar)
-
+DEFINE SYMBOL plot_arg = x_plot_var, y_plot_var
 DEFINE SYMBOL qualifiers = ($qualifiers)/NOLAB
 
 IF `($ferret_thumb"0|*>1") AND ($data_count"0") LE 2` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/COLOR=red
@@ -137,7 +131,7 @@ IF `($ferret_thumb"0|0|*>1") AND \
    DEFINE SYMBOL lonlatcolor = RED
    GO prop_prop_map_thumb
  
-! notation with number of cruises, trajectories, or profiles and obs.
+! notation with number of timeseries, trajectories, or profiles and obs.
    GO feature_labels
 
 ! Save the results
@@ -169,193 +163,163 @@ ENDIF
 ! If this is a Watch Circle plot, set that up. 
 ! This is a hack, which can be generalized with properties or attributes.
 
+LET itsa_lon_prop = 0
+LET itsa_lat_prop = 0
+LET itsa_tim_prop = 0
+LET itsa_lon_plot = 0
+LET itsa_lat_plot = 0
+LET itsa_tim_plot = 0
+LET itsa_map_plot = 0
+
+
 GO setup_watch_circle
 
-IF `its_watch_circle EQ 0` THEN GO LAS_xytvar_setup
+IF `its_watch_circle EQ 0` THEN 
+   IF ($dsgshape"0|*>1") THEN 
+      GO LAS_xytvar_setup
+   ELSE
+      GO LAS_xytvar_griddat_setup
+   ENDIF
+ENDIF
+
+IF `($ngood_data"0|*") EQ -1` THEN 
+   GO LAS_results box
+   EXIT/SCRIPT
+ENDIF
+
+DEFINE SYMBOL xvar = constraints_mask*xvar
+DEFINE SYMBOL yvar = constraints_mask*yvar
+LET x_plot_var = ($xvar)
+LET y_plot_var = ($yvar)
+IF `($data_count"0") GT 2` THEN 
+   DEFINE SYMBOL zvar = constraints_mask*zvar
+   LET z_plot_var = ($zvar)
+ENDIF
+
+
+! compute # points plotted after mask applied
+
+LET compute_good =  ($xvar)* ($yvar)
+
+
+IF `($data_count"0") GT 2` THEN 
+   DEFINE SYMBOL ztyp = `($zvar),return=dtype`
+   IF `($ztyp"0|FLOAT>1|*>0") AND ($zshape"0|POINT>0|($shape)>1|*>0")` THEN \
+      LET compute_good =  ($xvar)* ($yvar)* ($zvar)
+ENDIF
+STAT compute_good
+DEFINE SYMBOL shape = `compute_good,RETURN=shape`
+DEFINE SYMBOL ngood_data = ($stat_ngood)
+DEFINE SYMBOL nbad_data  = ($stat_nbad)
 
 IF ($put_label"0|*>1") THEN DEFINE SYMBOL all_missing = 1
+IF `($ngood_data) EQ 0` THEN DEFINE SYMBOL all_missing = 1
 
-DEFINE SYMBOL plot_arg = ($xvar), ($yvar), 0
+DEFINE SYMBOL plot_arg = ($xvar), ($yvar)
+DEFINE SYMBOL plot_arg = x_plot_var, y_plot_var
+sh sym xvar, yvar, zvar
+sh var xvar,yvar
 
-LET compute_good = ($xvar)* ($yvar)
-IF `($ngood_data"-10|*>1") LT 0` THEN DEFINE SYMBOL ngood_data = `compute_good[i=@ngd]`
-IF `($nbad_data"-10|*>1") LT 0` THEN DEFINE SYMBOL nbad_data = `compute_good[i=@nbd]`
+IF `($data_count"0") GT 2` THEN DEFINE SYMBOL plot_arg = x_plot_var, y_plot_var, z_plot_var
 
-IF ($ribbon"0") THEN DEFINE SYMBOL plot_arg = ($xvar), ($yvar)
-IF `($data_count"0") GT 2` THEN 
-   DEFINE SYMBOL plot_arg = ($xvar), ($yvar), ($zvar)
-   LET compute_good =  ($xvar)* ($yvar)* ($zvar)
-   IF `($ngood_data"-10|*>1") LT 0` THEN DEFINE SYMBOL ngood_data = `compute_good[i=@ngd]`
-   IF `($nbad_data"-10|*>1") LT 0` THEN DEFINE SYMBOL nbad_data = `compute_good[i=@nbd]`
-ENDIF
-
-IF `($all_missing"0") EQ 0` THEN
-
-! If a time axis was defined, set symbols in the original time units for the map scale file.
-!IF ($timeaxis"0|haxis>1|*>0) THEN 
-!   DEFINE SYMBOL xaxis_min = `ax_lo`
-!   DEFINE SYMBOL xaxis_max = `ax_hi`
-!ENDIF
-!IF ($timeaxis"0|vaxis>1|*>0) THEN 
-!   DEFINE SYMBOL yaxis_min = `ax_lo`
-!   DEFINE SYMBOL yaxis_max = `ax_hi`
-!ENDIF
-
-DEFINE SYMBOL qualifiers = ($qualifiers)/OVER
-IF ($ribbon"0|*>1") THEN
+IF `($all_missing"0") EQ 0` THEN !!!! or all the way to the bottom of this script
 
 ! ... let symbol size gradually increase as no. of obs gets small
-   DEFINE SYMBOL size_creep_factor `(($ngood_data)+300)/(($ngood_data)+100) - 1`  ! [0,1] range
-   LET sym_factr = 0.9 + 1.5*($size_creep_factor)
+DEFINE SYMBOL size_creep_factor `(($ngood_data)+300)/(($ngood_data)+100) - 1`  ! [0,1] range
+LET sym_factr = 0.9 + 1.5*($size_creep_factor)
 
-   DEFINE SYMBOL plot_command = PLOT/OVER/NOLAB/VS/sym=17/SIZE=`.12*sym_factr`
-   DEFINE SYMBOL underlay_command = PLOT/OVER/NOLAB/VS/sym=17/COLOR=6/SIZE=`.08*sym_factr`
+DEFINE SYMBOL plot_command = PLOT/NOLAB/VS/sym=17/SIZE=`.12*sym_factr`
+DEFINE SYMBOL underlay_command = PLOT/NOLAB/RIBBON/VS/sym=17/palette=gray_light/NOKEY/SIZE=`.08*sym_factr`
+DEFINE SYMBOL underlay_vars = x_plot_var, y_plot_var, y_plot_var
 
-! Fewer and larger symbols, use thicker line
-   IF `.12*sym_factr GT 0.3` THEN 
-      DEFINE SYMBOL qualifiers = ($qualifiers)/THICK=3
-      DEFINE SYMBOL underlay_command = PLOT/OVER/NOLAB/VS/sym=17/COLOR=6/SIZE=`.08*sym_factr`/THICK=3
-   ELIF `.12*sym_factr GT 0.16` THEN 
-      DEFINE SYMBOL qualifiers = ($qualifiers)/THICK=2
-      DEFINE SYMBOL underlay_command = PLOT/OVER/NOLAB/VS/sym=17/COLOR=6/SIZE=`.08*sym_factr`/THICK=2
-   ENDIF
-   DEFINE SYMBOL plot_end_command = PLOT/OVER
-   IF `($data_count"0") GT 2` THEN 
-      IF ($color_by_levels"0|*>1") THEN DEFINE SYMBOL ferret_fill_levels = ($color_by_levels)
-      DEFINE SYMBOL plot_command = ($plot_command)/RIBBON/LEVELS=($ferret_fill_levels"v")/pal=default/MISSING=blank
-      DEFINE SYMBOL plot_end_command = RIBBON/OVER
-   ENDIF
+! gray dashed line underlying trajectories or time series
+
+DEFINE SYMBOL under_line = /VS/LINE=6/DASH=(0.1,0.04,0.1,0.04)/NOLAB($vlim) x_plot_var, y_plot_var
+IF `itsa_map_plot` THEN 
+   DEFINE SYMBOL under_line = /pal=gray_light/DASH=(0.1,0.04,0.1,0.04)/NOLAB($vlim) x_plot_var
+   DEFINE SYMBOL underlay_command = ($underlay_command)/OVER
 ENDIF
 
-IF `($ribbon"0") EQ 0` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/LINE
+! Set up gray dash line and underly of gray symbols as simple line plots not ribbon plots
+! Make the time coordinate variable the first argument for the ribbon plot so the scaling is right.
+
+IF  `itsa_tim_prop AND ($connect_dots"0|0|1|*>1")` THEN  !! not a /VS plot.
+   DEFINE SYMBOL under_line = /COLOR=7/DASH=(0.1,0.04,0.1,0.04)/NOLAB($vlim) y_plot_var
+   DEFINE SYMBOL underlay_command = PLOT/NOLAB/sym=17/COLOR=7/NOKEY/SIZE=`.08*sym_factr`/THICK=1
+   DEFINE SYMBOL underlay_vars = y_plot_var
+   
+   DEFINE SYMBOL plot_arg = ($data_0_var), ($data_1_var), z_plot_var
+ENDIF
+
+
+! Fewer and larger symbols, use thicker line
+IF `.12*sym_factr GT 0.3` THEN 
+   DEFINE SYMBOL qualifiers = ($qualifiers)/THICK=3
+   DEFINE SYMBOL underlay_command = ($underlay_command)/THICK=3
+ELIF `.12*sym_factr GT 0.16` THEN 
+   DEFINE SYMBOL qualifiers = ($qualifiers)/THICK=2
+   DEFINE SYMBOL underlay_command = ($underlay_command)/THICK=2
+ENDIF
+DEFINE SYMBOL plot_end_command = PLOT
+IF `($data_count"0") GT 2` THEN 
+   IF ($color_by_levels"0|*>1") THEN DEFINE SYMBOL ferret_fill_levels = ($color_by_levels)
+   DEFINE SYMBOL plot_command = ($plot_command)/RIBBON/LEVELS=($ferret_fill_levels"v")
+   DEFINE SYMBOL plot_end_command = RIBBON
+ENDIF
 
 LET x_plot_var = ($xvar)
 LET y_plot_var = ($yvar)
+IF `($data_count"0") GT 2` THEN LET z_plot_var = ($zvar)
 
-IF ($color_by_feature"0|*>1") THEN 
+LET have_constr = `constraints_mask,RETURN=isready`
+IF `have_constr EQ 0` THEN LET constraints_mask = 1
+
+IF `color_by_feature` THEN 
    GO LAS_pp_colorby_feature
 
 !   put_label has been set if all data is missing or constraints return no data.
+ELIF ($ferret_thumb"0|*>1") THEN 
+   IF `itsa_tim_prop ` THEN
+      PLOT/color=red/sym=17/title=" "/set y_plot_var
+	 ppl ylab "($ferret_title_1)"
+	 go unlabel ($labnum_x)
+	 go unlabel ($labnum_e)
+	 go unlabel ($labnum_dset)
+	 go unlabel ($labnum_datitl)
+      PPL PLOT
+   ELSE
+      PLOT/VS/color=red/sym=17/title=" "/set x_plot_var, y_plot_var
+	 ppl xlab "($ferret_title_0)"
+	 ppl ylab "($ferret_title_1)"
+	 go unlabel ($labnum_x)
+	 go unlabel ($labnum_e)
+	 go unlabel ($labnum_dset)
+	 go unlabel ($labnum_datitl)
+      PPL PLOT
+   ENDIF
 ELSE
-
    IF ($color_by"0|*>1") THEN 
-
-      IF ($rowvar"0|*>1") THEN 
-
-         LET pxvar = constraints_mask* ($ferret_plot_var_0)
-         IF ($pvar_reset"0|*>1") THEN LET pxvar = constraints_mask*  ($pvar_reset) ! see LAS_xytvar_setup
-         LET qyvar = constraints_mask* ($ferret_plot_var_1)
-   
-         LET var_data = idvar
-   
-         DEFINE SYMBOL data_x_var = pxvar
-         DEFINE SYMBOL data_y_var = qyvar
-         DEFINE SYMBOL data_var = zvar
-
-         LET ranger = MINMAX(pxvar)
-
-	 DEFINE SYMBOL range2 = `ranger[i=2]`
-	 DEFINE SYMBOL range1 = `ranger[i=1]`
-	 IF `($range2"|bad>1|*>0) OR ($range1"|bad>1|*>0)` THEN 
-	    LET tol1 = 0.1
-	 ELIF `ABS(($range2"|bad>1|*")) GT 1.e20 OR ABS(($range1"|bad>1|*")) GT 1.e20` THEN
-	    LET tol1 = 0.1
-	 ELSE
-            LET tol1 = `0.1* (ranger[i=2] - ranger[i=1])`
-            IF `tol1 LT 1.e-6` THEN LET tol1 = 1.e-6
-	 ENDIF
-
-         LET ranger = MINMAX(qyvar)
-	 DEFINE SYMBOL range2 = `ranger[i=2]`
-	 DEFINE SYMBOL range1 = `ranger[i=1]`
-	 IF `($range2"|bad>1|*>0) OR ($range1"|bad>1|*>0)` THEN 
-	    LET tol1 = 0.1
-	 ELIF `ABS(($range2"|bad>1|*")) GT 1.e20 OR ABS(($range1"|bad>1|*")) GT 1.e20` THEN  
-	    LET tol1 = 0.1
-	 ELSE
-            LET tol2 = `0.1* (ranger[i=2] - ranger[i=1])`
-            IF `tol2 LT 1.e-6` THEN LET tol2 = 1.e-6
-	 ENDIF
-
-         LET ranger = MINMAX(zvar)
-	 DEFINE SYMBOL range2 = `ranger[i=2]`
-	 DEFINE SYMBOL range1 = `ranger[i=1]`
-	 IF `($range2"|bad>1|*>0) OR ($range1"|bad>1|*>0)` THEN 
-	    LET tol3 = 0.1
-	 ELIF `ABS(($range2"|bad>1|*")) GT 1.e20 OR ABS(($range1"|bad>1|*")) GT 1.e20` THEN 
-	    LET tol3 = 0.1
-	 ELSE
-            LET tol3 = `0.1* (ranger[i=2] - ranger[i=1])`
-            IF `tol3 LT 1.e-6` THEN LET tol2 = 1.e-6
-	 ENDIF
-
-! This script separates the cruises putting a gap between.
-! Call if first 2 variables are longitude and latitude. Symbol 
-! connect_dots is set if the underlay is a map or if its a time series plot.
-
-         IF ($connect_dots"0|*>1") THEN 
-	    DEFINE SYMBOL data_x_var = ($data_0_var)* constraints_mask
-	    DEFINE SYMBOL data_y_var = ($data_1_var)* constraints_mask
-            GO setup_dsg_variables 200000 tol1 tol2 tol3
-	    LET constraints_mask_var =  SEPARATE(constraints_mask, ($rowvar), 0)
-	    LET feature_size = `($rowvar),return=msize`
-	    IF `feature_size EQ 1` THEN LET constraints_mask_var = constraints_mask
-
-	    DEFINE SYMBOL xvar = ($data_x_var)* constraints_mask_var
-	    DEFINE SYMBOL yvar = ($data_y_var)* constraints_mask_var	    
-	    LET x_plot_var = ($xvar)
-	    IF ($lon_units"0|*>1") THEN LET/units=($lon_units) x_plot_var = ($xvar)
-	    LET y_plot_var = ($yvar)
-	    DEFINE SYMBOL plot_arg = x_plot_var, y_plot_var, ($data_var)* constraints_mask_var
-	 ENDIF
-
-         LET pvar = ($data_x_var)
-         LET qvar = ($data_y_var)
-         LET dvar = ($data_var)
-
-      ELSE   ! IF ($rowvar)
-         LET nout_lonlat = `zvar[i=@ngd]`  ! ??
-         DEFINE SYMBOL nout_lonlat = `nout_lonlat` 
-      ENDIF  ! IF ($rowvar)
 
 ! Get color-plot qualifiers
      DEFINE SYMBOL qualifiers = ($qualifiers)/LEVELS=($ferret_fill_levels"v")
    
-     IF ($ferret_plot_key"0|0|nokey>1|*>0") THEN 
-        DEFINE SYMBOL qualifiers = ($qualifiers)/NOKEY
-	DEFINE SYMBOL dokey = 0
-     ELSE
-        IF `STRINDEX(UPCASE("($qualifiers)"), "/KEY") EQ 0` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY
-	DEFINE SYMBOL dokey = 1
-     ENDIF
+     IF `($ngood_data"0") GT 0` THEN
+        IF ($ferret_plot_key"0|0|nokey>1|*>0") THEN 
+           DEFINE SYMBOL qualifiers = ($qualifiers)/NOKEY
+	   DEFINE SYMBOL dokey = 0
+        ELSE
+           IF `STRINDEX(UPCASE("($qualifiers)"), "/KEY") EQ 0` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY
+	   DEFINE SYMBOL dokey = 1
+        ENDIF
    
-! Dont use the palette coming in. Its for variable 0
-     DEFINE SYMBOL qualifiers = ($qualifiers)/PALETTE=($ferret_palette"default|*>*)
+        IF ($ferret_key_centerlab"0|0|*>1") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY=CONT,CENT
 
-     IF ($ferret_key_centerlab"0|0|*>1") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/KEY=CONT,CENT
+     ENDIF
 
      DEFINE SYMBOL color_by_title = `zvar,RETURN=title`
 
-   ELSE    ! IF ($color_by)
+   ELSE  
       DEFINE SYMBOL qualifiers = ($qualifiers)/palette=($polycolor)
-
-! Need to separate the different trajectories for 2-variable time series or map plots      
-      IF ($connect_dots"0|*>1") THEN 
-          DEFINE SYMBOL data_x_var = ($data_0_var)
-          DEFINE SYMBOL data_y_var = ($data_1_var)
-          DEFINE SYMBOL data_var = ($data_y_var)  !just so its defined.
-          GO setup_dsg_variables 200000 tol1 tol2 tol3
-	  LET constraints_mask_var =  SEPARATE(constraints_mask, ($rowvar), 0)
-	  LET feature_size = `($rowvar),return=msize`
-	  IF `feature_size EQ 1` THEN LET constraints_mask_var = constraints_mask
-
-          DEFINE SYMBOL xvar = ($data_x_var)* constraints_mask_var
-          DEFINE SYMBOL yvar = ($data_y_var)* constraints_mask_var
-	  LET x_plot_var = ($xvar)
-	  IF ($lon_units"0|*>1") THEN LET/units=($lon_units) x_plot_var = ($xvar)
-		  LET y_plot_var = ($yvar)
-	  DEFINE SYMBOL plot_arg = x_plot_var, y_plot_var, ($data_var)* constraints_mask_var
-      ENDIF
 
    ENDIF   ! IF ($color_by)
    
@@ -365,13 +329,26 @@ ELSE
    ENDIF
 
 ! on lat/lon plots, draw a gray line on the cruise tracks.
-   IF `($connect_dots"0|0|1|*>1")` THEN PLOT/NOAX/VS/OVER/LINE=6/DASH=(0.1,0.04,0.1,0.04)/NOLAB  x_plot_var, y_plot_var
+   IF `itsa_map_plot OR ($watch_plot"0|*>1") AND ($connect_dots"0|0|1|*>1") ` THEN PLOT/OVER($under_line) 
 
-! ?? show locations where the color-by variable is missing...
-   IF `($data_count"0") GT 2` THEN ($underlay_command) x_plot_var, y_plot_var
+   if ($watch_plot"0|*>1") THEN DEFINE SYMBOL underlay_command = ($underlay_command)/over/nolab/noaxis
+
+! on time plots, draw a gray line. This is the first plot, drawing the time axis
+   IF `itsa_tim_prop ` THEN PLOT($under_line) 
+
+! show locations where the color-by variable is missing.  This way all missing data
+! is underneath good data but PLOT/RIBBON/MISSING=gray can plot lots of missing pts over
+! valid ones from data already on the page
+
+   PPL COLOR,6,60,60,60 ! grey
+   IF `($data_count"0") GT 2 AND itsa_map_plot EQ 0 AND ($watch_plot"0|*>1") EQ 0` THEN
+      ($underlay_command)/set ($underlay_vars)
+      IF ($ax_label_x"0|*>1") THEN PPL xlab ($ax_label_x)
+      IF ($ax_label_y"0|*>1") THEN PPL ylab ($ax_label_y)
+      PPL PLOT
+   ENDIF
 
    DEFINE SYMBOL qualifiers = ($qualifiers)/OVER/SET
-   DEFINE SYMBOL poly_command POLYGON($qualifiers)
 
 ! If the color-by variable has units of "count", set up color levels and palette appropriately.
 
@@ -390,25 +367,23 @@ ELSE
 	DEFINE SYMBOL qualifiers = ($qualifiers)/levels=($ferret_fill_levels)/KEY=CENTER/palette=($ferret_palette)
    ENDIF
 
-   IF ($ribbon"0") THEN
-      ($plot_command)($qualifiers) ($plot_arg)
-      IF `($ferret_annotations%0|*>1%) AND ($dokey"0|1>1|*>1")` THEN GO key_at_top
-      ($ax_label_resize)
-      PPL ($plot_end_command)
-   ELSE
-      GO polymark ($poly_command) ($plot_arg), ($polyshape), ($polysize)
-      IF ($ferret_annotations%0|*>1%) THEN GO key_at_top
-      ($ax_label_resize)
-      PPL POLYGON/OVER
-   ENDIF
-ENDIF  ! color-by-trajectory or not...
+   IF `STRINDEX("($qualifiers)", "palette") EQ 0` THEN \
+    DEFINE SYMBOL qualifiers = ($qualifiers)/palette=($ferret_palette"default|*>*)
+
+   IF `STRINDEX("($qualifiers)", "OVER") GT 0` THEN DEFINE SYMBOL plot_end_command ($plot_end_command)/OVER
+   ($plot_command)($qualifiers) ($plot_arg)
+   IF `($ferret_annotations%0|*>1%) AND ($dokey"0|1>1|*>1")` THEN GO key_at_top
+   ($ax_label_resize)
+   PPL ($plot_end_command)
+   
+ENDIF  ! color-by-feature or not...
+
 ! This allows for auto-levels on prop-prop plots.
 IF ($color_by"0|*>1") THEN
-   LET data_range = minmax(constraints_mask*zvar)
+   LET data_range = MINMAX(constraints_mask*zvar)
    DEFINE SYMBOL data_plotted_min = `data_range[i=1],prec=7`
    DEFINE SYMBOL data_plotted_max = `data_range[i=2],prec=7`
 ENDIF
-
 
 IF `($color_by_title"0|*>1") AND ($ferret_annotations%0|*>1%) EQ 0` THEN \ 
  LABEL/NOUSER `($ppl$width)-($ppl$xorg)-0.2`, -0.7, 1, 0, 0.12 Colored by <NL>($color_by_title)
@@ -422,18 +397,28 @@ IF `($color_by_title"0|*>1") AND ($ferret_annotations%0|*>1%) EQ 0` THEN \
 
 LET p = ($xvar)  ! for regression line
 LET q = ($yvar)
-LET do_rsquare = 1
+
+IF `itsa_map_plot or itsa_tim_prop` THEN DEFINE SYMBOL do_rsquare = 0
+
+! ~ 85 points gives a confidence of 0.8
+
+IF `($do_rsquare"1|0|*>1) AND ($ngood_data"0") LT 85` THEN 
+   DEFINE SYMBOL do_rsquare = 0
+   IF ($program_name"0|PyFerret>1|*>0") THEN SET TEXT/COLOR=blue moveable
+   DEFINE SYMBOL rsqlab = Too few points to compute
+   LET wid = `LABWID("($rsqlab)", 0.1)`
+   LABEL/NOUSER -0.5,-0.42,-1, 0, 0.1, Too few points to compute
+   LABEL/NOUSER -0.5,-0.6,-1, 0, 0.1,  regression line
+ENDIF
 
 DEFINE SYMBOL  line_color = blue  ! regression line
 IF ($polycolor%0|blue>1|*>0%) THEN DEFINE SYMBOL  line_color = red
 
-GO LAS_regressx
-
-IF `(p[i=@NGD] LE 1)` THEN DEFINE SYMBOL do_rsquare = 0
-
 ! Note do_rsquare is set in LAS_xytvar_setup, where plots with time, lon, or 
 ! lat axes are set to NOT draw the regression line.
+
 IF ($do_rsquare"1|0|*>1) THEN 
+   GO LAS_regressx
 
 ! Note that qhat in the regress script is defined as
 !   LET qhat = slope*p + intercep
@@ -441,19 +426,25 @@ IF ($do_rsquare"1|0|*>1) THEN
 
    LET qhatmasked = slope*pmasked + intercep
 
-   LET pminmax = MINMAX(pmasked)
-   LOAD pminmax
-   DEFINE SYMBOL P1 = `pminmax[i=1]`
-   DEFINE SYMBOL P2 = `pminmax[i=2]`
-   LET p1 = `pminmax[i=1]`
-   LET p2 = `pminmax[i=2]`
+   DEFINE SYMBOL shape = `p,RETURN=shape`
+   LET amin = p[($shape"X")=@min]
+   LET amax = p[($shape"X")=@max]
+
+
+   DEFINE SYMBOL P1 = `amin[m=@min]`
+   DEFINE SYMBOL P2 = `amax[m=@max]`
+   LET p1 = ($p1)
+   LET p2 = ($p2)
 
    LET qminmax = MINMAX(qhatmasked)
-   LOAD qminmax
-   DEFINE SYMBOL q1 = `qminmax[i=1]`
-   DEFINE SYMBOL q2 = `qminmax[i=2]`
-   LET q1 = `qminmax[i=1]`
-   LET q2 = `qminmax[i=2]`
+
+   DEFINE SYMBOL shape = `qhatmasked,RETURN=shape`
+   LET amin = qhatmasked[($shape"X")=@min]
+   LET amax = qhatmasked[($shape"X")=@max]
+   DEFINE SYMBOL q1 = `amin[m=@min]`
+   DEFINE SYMBOL q2 = `amax[m=@max]`
+   LET q1 = ($q1)
+   LET q2 = ($q2)
 
 ! Are any of these values bad?  If so just skip drawing the slope line.
    IF `($p1"0|bad>0|*>1") + ($p2"0|bad>0|*>1") + ($q1"0|bad>0|*>1") + ($q2"0|bad>0|*>1") EQ 4` THEN 
@@ -484,7 +475,11 @@ IF ($do_rsquare"1|0|*>1) THEN
 
 ENDIF
 
-ENDIF  ! all_missing or not...
+ELSE  ! all_missing, make a nominal plot so LAS_results has something to work with
+
+   plot/vs/nolab/noax/sym=dot/vlim=-1:1/hlim=-1:1 {-2,2}, {-2,2}
+
+ENDIF
 
 ! notation with number of cruises, trajectories, or profiles and obs.
 GO feature_labels
@@ -499,7 +494,8 @@ IF `($n_right_labels"0") GT 0 OR ($n_left_labels"0") GT 0` THEN GO labels_above_
 
 
 ! If it's a color-by-ID plot, make the webrowset file for the cruise key
-IF ($color_by_feature"0|*>1") THEN GO feature_key
+
+IF  `color_by_feature EQ 1`  THEN GO feature_key
 
 ! Save the results
 
@@ -511,8 +507,6 @@ IF ($note_num"0|*>1") THEN
     )
 ENDIF
 
-
 GO LAS_results box
 
 ! ----- End of prop_prop_plot.jnl ------------------------------------------------
-

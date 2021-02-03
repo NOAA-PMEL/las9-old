@@ -40,6 +40,6 @@ IF `($ferret_memory"25.6") LT 100` THEN SET MEM/SIZ=300
 ! If a Ferret property ferret_add_a_note is set, define a note that will
 ! be added to the annotations box. The note may contain a URL.
 
-GO LAS_note_from_property
+IF ($ferret_add_a_note"0|*>1") THEN GO LAS_note_from_property
 
 ! End of ------------LAS_initialize_data.jnl--------------------------

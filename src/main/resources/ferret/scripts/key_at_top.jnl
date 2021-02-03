@@ -10,13 +10,16 @@
 IF ($its_GE"0|*>1") THEN EXIT/SCRIPT
 IF `($ferret_plot_key"1|0|*>1") EQ 0` THEN EXIT/SCRIPT
 
+! If the setting is /NOKEY then quit out.
+IF `STRINDEX(UPCASE("($qualifiers%0%)"), "NOKEY") GT 0` THEN EXIT/SCRIPT
+
 DEFINE SYMBOL horizontal_key = 1
 
 IF `key_label_size,RETURN=defined` THEN CANCEL VAR key_label_size
-IF `x1,RETURN=defined` THEN  THEN CANCEL VAR x1
-IF `x2,RETURN=defined` THEN  THEN CANCEL VAR x2
-IF `y1,RETURN=defined` THEN  THEN CANCEL VAR y1
-IF `y2,RETURN=defined` THEN  THEN CANCEL VAR y2
+IF `x1,RETURN=defined` THEN  CANCEL VAR x1
+IF `x2,RETURN=defined` THEN  CANCEL VAR x2
+IF `y1,RETURN=defined` THEN  CANCEL VAR y1
+IF `y2,RETURN=defined` THEN  CANCEL VAR y2
 
 LET key_label_size = 0.08
 

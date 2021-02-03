@@ -29,15 +29,24 @@ IF ($ferret_plot_key"0|0>1|nokey>1|*>0") THEN
   DEFINE SYMBOL qualifiers = ($qualifiers)/NOKEY
 ENDIF
 
-! Graticule lines. For 1D plots, make them gray.
+! Graticule lines. For 1D plots, make them gray.  Multi-color line plots
+! may already have set more colors.
 
 ! TODO:  For time plots, either the configurer or the script might want to turn on 
 ! TODO:  graticules at the small tic marks.  /GRATICULE=(DASH)="small, large"
 
-DEFINE SYMBOL nlinecolors = 8
-SET MODE LINECOLORS:($nlinecolors)
-PPL COLOR,7,70,70,70     ! gray
-PPL COLOR,8,100,100,100  ! white
+DEFINE SYMBOL nlinecolors = ($nlinecolors"6") 
+IF `($nlinecolors) EQ 6` THEN
+   SET MODE LINECOLORS:`($nlinecolors)+2`
+
+   DEFINE SYMBOL gryclr = `($nlinecolors)+1`
+   PPL COLOR,($gryclr),70,70,70     !gray
+
+   DEFINE SYMBOL whtclr = `($nlinecolors)+2`
+   PPL COLOR,($whtclr),100,100,100  ! white
+
+   DEFINE SYMBOL nlinecolors = `($nlinecolors"6")+2`
+ENDIF
 
 ! For time plots, turn on horizontal graticule lines, unless graticules 
 ! have been turned off explicitly. Ignore choice of white - its in the menu 
@@ -46,25 +55,25 @@ PPL COLOR,8,100,100,100  ! white
 LET has_t = ($fview"0|T>1|*>0") 
 IF `STRLEN("($fview)") EQ 2 AND STRINDEX("($fview)", "T") GT 0` THEN LET has_t = 1
 
-IF `has_t AND ($ferret_use_graticules"1|none>0|notic>0|white>0|*>1)` THEN
+IF `has_t AND ($ferret_use_graticules"1|1|none>0|notic>0|white>0|*>1)` THEN
   DEFINE SYMBOL onegrat = HGRAT
   IF `STRLEN("($fview)") EQ 2 AND STRINDEX("($fview)", "X") GT 0` THEN DEFINE SYMBOL onegrat = VGRAT
   IF ($ferret_use_graticules"0|black>1|*>0") THEN \
      DEFINE SYMBOL qualifiers = ($qualifiers)/($onegrat)=(DASH,COLOR=black)
-  IF ($ferret_use_graticules"1|black>0|gray>1") THEN \
-     DEFINE SYMBOL qualifiers = ($qualifiers)/($onegrat)=(DASH,COLOR=7)
+  IF ($ferret_use_graticules"1|1|black>0|gray>1|*>0") THEN \
+     DEFINE SYMBOL qualifiers = ($qualifiers)/($onegrat)=(DASH,COLOR=($gryclr))
   DEFINE SYMBOL ferret_use_graticules = none  ! done, so skip the next IF block
 ENDIF
 
 ! Otherwise turn them on only if requested 
 
 ! Either none or notic removes graticules from the plot 
-IF ($ferret_use_graticules"1|none>0|notic>0|*>1") THEN
+IF ($ferret_use_graticules"1|1|none>0|notic>0|*>1") THEN
   DEFINE SYMBOL graticuleColor = black
-  IF ($ferret_use_graticules"1|default>1|gray>1|*>0") THEN
-     DEFINE SYMBOL graticuleColor = 7
+  IF ($ferret_use_graticules"1|1|default>1|gray>1|*>0") THEN
+     DEFINE SYMBOL graticuleColor = ($gryclr)
   ELIF ($ferret_use_graticules"0|white>1|*>0") THEN
-     DEFINE SYMBOL graticuleColor = 8
+     DEFINE SYMBOL graticuleColor = ($whtclr)
   ELIF ($ferret_use_graticules"0|black>1|*>0") THEN
      DEFINE SYMBOL graticuleColor = 1
   ENDIF
@@ -191,19 +200,22 @@ ENDIF ! end of options for twoDplot
 !                  Do not set a /COLOR qualifier for multi-line plots  
 !                  Default is blue for line, vector, contour plots. 
 !                  Line-color is red for difference plots. 
+!
+!                  IF there is already a /color in the qualifers don't add /COLOR
+!                  unless the ferret_line_color symbol is set to override everything
 !                  
 IF `($line_drawn"0|*>1") EQ 0` THEN \
 DEFINE SYMBOL line_drawn = `($oneDplot"0|*>1") OR ($itsa_vector_plot"0|*>1") OR ($plot_type"0|CONTOUR>1|*>0")`
 
-
-sh sym ferret_line_color
-IF `($line_drawn"0") AND ($itsa_multi_lineplot"0|*>1") EQ 0` THEN
+IF `($line_drawn"0") AND ($itsa_multi_lineplot"0|*>1") EQ 0 AND ($nstations"1") EQ 1` THEN
 
    IF ($ferret_diff_var"0|*>1") THEN DEFINE SYMBOL ferret_line_color = red
    IF ($ferret_line_color"0|multi>1|*>0") THEN 
       DEFINE SYMBOL qualifiers = ($qualifiers)/COLOR
    ELSE
-      DEFINE SYMBOL qualifiers = ($qualifiers)/COLOR=($ferret_line_color%blue|default>blue|black|red|blue|green|lightblue|purple|*%)
+      LET has_color = STRINDEX("`UPCASE("($qualifiers)")`", "/COLOR")
+      IF `has_color EQ 0` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/COLOR=($ferret_line_color%blue|default>blue|black|red|blue|green|lightblue|purple|*%)
+      IF ($ferret_line_color%0|*>1%) THEN DEFINE SYMBOL qualifiers = ($qualifiers)/COLOR=($ferret_line_color)
    ENDIF
 
 ENDIF ! skipped color setting if its a multi-line plot
@@ -328,7 +340,7 @@ IF `($itsa_vector_plot"0|*>1") AND ($ferret_view"0|xy>1|*>0")` THEN
    ENDIF
 ENDIF  ! end of XY vector plot settings.
 
-IF `($graticuleColor"0|*>1") EQ 0` THEN DEFINE SYMBOL graticuleColor = 7
+IF `($graticuleColor"0|*>1") EQ 0` THEN DEFINE SYMBOL graticuleColor = ($gryclr)
 
 
 !  ----------------- End of LAS_set_plot_qualifiers.jnl ------------------------------------

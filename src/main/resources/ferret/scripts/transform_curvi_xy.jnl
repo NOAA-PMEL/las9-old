@@ -55,13 +55,6 @@ IF `($region_x_lo) LT ($ferret_curv_lon_min)` THEN
 
 ENDIF
 
-! RHS 11/23/20
-! region_0_x_lo and region_0_x_hi were truncated, so the data set values also need
-! to be truncated or the comparison spills over and you get the wrong region.
-!
-define SYMBOL ferret_curv_lon_max = `INT(100000 * ($ferret_curv_lon_max)) / 100000`
-define SYMBOL ferret_curv_lon_min = `INT(100000 * ($ferret_curv_lon_min)) / 100000`
-
 IF `($region_x_hi) GT ($ferret_curv_lon_max)` THEN 
    DEFINE SYMBOL region_0_x_lo `($region_0_x_lo) - 360`
    DEFINE SYMBOL region_0_x_hi `($region_0_x_hi) - 360`

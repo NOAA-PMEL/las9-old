@@ -5,8 +5,8 @@
 
 let pq = p*q
 let pqmask = pq-pq  ! 0 or "missing" so all variables share the same missing
-let pmasked = p + pqmask
-let qmasked = q + pqmask
+let pmasked = XSEQUENCE(p + pqmask)
+let qmasked = XSEQUENCE(q + pqmask)
 
 let pave = pmasked[x=@ave]
 let qave = qmasked[x=@ave]
@@ -24,3 +24,4 @@ let qhat = slope*p + intercep
 let rsquare = (pqvar*pqvar) / (LAS_pvar*LAS_qvar)
 
 SET MODE/LAST VERIFY
+

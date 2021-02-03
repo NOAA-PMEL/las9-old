@@ -7,9 +7,15 @@ DEFINE SYMBOL ferret_thumb_qc2 = 1  ! Dont use finest-resolution map underlay.
 LET/UNITS="`longitude,RETURN=units`"/TITLE="`longitude,RETURN=title`" lon = longitude
 LET/UNITS="`latitude,RETURN=units`"/TITLE="`latitude,RETURN=title`" lat = latitude
 
-LET amin = `min(lon[i=@MIN]-5, 180)`
-LET amax = `max(lon[i=@MAX]+5, -180)`
+DEFINE SYMBOL lonlatshape = `lon,RETURN=shape`
 
+IF ($lonlatshape"|POINT>1|*>0") THEN 
+   LET amin = `min(lon-5,  180)`
+   LET amax = `max(lon+5, -180)`
+ELSE
+   LET amin = `min(lon[($lonlatshape)=@MIN]-5,  180)`
+   LET amax = `max(lon[($lonlatshape)=@MAX]+5, -180)`
+ENDIF
 GO LAS_is_range amin amax 
 
 LET xax_lo = ($ppl$range_low)
@@ -19,8 +25,13 @@ LET xax_del = ($ppl$range_inc)
 LET varnames = ..varnames
 IF `IS_ELEMENT_OF_STR(varnames, "lon360") GT 0` THEN
    
-   LET amin = `min(lon[i=@MIN]-5, 360)`
-   LET amax = `max(lon[i=@MAX]+5, 0)`
+   IF ($lonlatshape"|POINT>1|*>0") THEN 
+      LET amin = `min(lon-5, 360)`
+      LET amax = `max(lon+5, 0)`
+   ELSE
+      LET amin = `min(lon[($lonlatshape)=@MIN]-5, 360)`
+      LET amax = `max(lon[($lonlatshape)=@MAX]+5,   0)`
+   ENDIF
    
    GO LAS_is_range amin amax 
 
@@ -41,8 +52,14 @@ IF `ABS(xax_hi - xax_lo) LT 1` THEN DEFINE SYMBOL dm_labels = dm
 IF `ABS(xax_hi - xax_lo) LT 0.06` THEN DEFINE SYMBOL dm_labels = dms
 DEFINE AXIS/x=`xax_lo`:`xax_hi`:`del_ax`/units="($lon_units%degrees_east%)" haxis
 
-LET amin = `max(lat[i=@MIN]-5, -90)`
-LET amax = `min(lat[i=@MAX]+5,  90)`
+IF ($lonlatshape"|POINT>1|*>0") THEN 
+   LET amin = `max(lat-5, -90)`
+   LET amax = `min(lat+5,  90)`
+ELSE
+   LET amin = `max(lat[($lonlatshape)=@MIN]-5, -90)`
+   LET amax = `min(lat[($lonlatshape)=@MAX]+5,  90)`
+ENDIF
+
 GO LAS_is_range amin amax
 
 LET yax_lo = ($ppl$range_low)
@@ -77,10 +94,15 @@ GO LAS_fland ($land_palette)
 DEFINE SYMBOL symquals = /SIZE=0.12/THICK=1
 
 STAT lon
-LET lonconst = `($stat_std) LT 0.1`
+LET lonconst = `($stat_std"|bad>0.01|*") LT 0.1`
 STAT lat 
-LET latconst = `($stat_std) LT 0.1`
+LET latconst = `($stat_std"|bad>0.01|*") LT 0.1`
 IF `lonconst + latconst EQ 2` THEN DEFINE SYMBOL symquals = /SIZE=0.3/THICK=3
+
+! needed for annotations file
+IF `($ngood_data"-10|*>1") LT 0` THEN DEFINE SYMBOL ngood_data = ($stat_ngood)
+IF `($nbad_data"-10|*>1") LT 0` THEN DEFINE SYMBOL nbad_data = ($stat_nbad)
+
 
 IF ($zvar"0|*>1") THEN 
    RIBBON/VS/OVER/NOLAB/KEY=HORIZ,CONT,CENT/SYM=17($symquals)/\
@@ -88,4 +110,3 @@ PALETTE=($ferret_palette"red")/LEVELS=($ferret_fill_levels"v") lon, lat, ($zvar)
 ELSE
    PLOT/VS/OVER/NOLAB/NOKEY/SYM=17($symquals)/COLOR=($lonlatcolor"red") lon, lat
 ENDIF
-

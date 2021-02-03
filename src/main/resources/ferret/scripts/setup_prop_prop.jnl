@@ -17,14 +17,16 @@ LET vnames = ..varnames
 ! Define symbols associated with the region and data and perform any
 ! initialization needed for this dataset.
 
-! Initialize
+! Initialize mask
+
+LET constraints_mask = 1
 
 
+! Plot time only as the independent variable.  If they
+! have sent in time as the dependent var, swap it.
 
-!!! Plot time only as the independent variable.  If they
-!!! have sent in time as the dependent var, swap it.
-
-IF ($data_1_var"0|*>1") THEN GO LAS_var_lon_lat_time ($data_1_var)
+use ($DATA_0_URL)
+IF ($data_1_var"0|*>1") THEN GO LAS_var_lon_lat_z_time ($data_1_var)
 
 IF `($var_is_time"0") AND ($its_prop_plot"0|0|*>1")` THEN
    
@@ -34,6 +36,7 @@ IF `($var_is_time"0") AND ($its_prop_plot"0|0|*>1")` THEN
    DEFINE SYMBOL data_sw_units = ($data_0_units)
    DEFINE SYMBOL data_sw_url = ($data_0_url)
    DEFINE SYMBOL data_sw_var = ($data_0_var)
+   DEFINE SYMBOL data_sw_name = ($data_0_name)
    
    DEFINE SYMBOL data_0_dataset_url = ($data_1_url)
    DEFINE SYMBOL data_0_region = ($data_1_region)
@@ -41,6 +44,7 @@ IF `($var_is_time"0") AND ($its_prop_plot"0|0|*>1")` THEN
    DEFINE SYMBOL data_0_units = ($data_1_units)
    DEFINE SYMBOL data_0_url = ($data_1_url)
    DEFINE SYMBOL data_0_var = ($data_1_var)
+   DEFINE SYMBOL data_0_name = ($data_1_name)
    
    DEFINE SYMBOL data_1_dataset_url = ($data_sw_url)
    DEFINE SYMBOL data_1_region = ($data_sw_region)
@@ -48,6 +52,44 @@ IF `($var_is_time"0") AND ($its_prop_plot"0|0|*>1")` THEN
    DEFINE SYMBOL data_1_units = ($data_sw_units)
    DEFINE SYMBOL data_1_url = ($data_sw_url)
    DEFINE SYMBOL data_1_var = ($data_sw_var)
+   DEFINE SYMBOL data_1_name = ($data_sw_name)
+
+   CANCEL SYMBOL data_sw*
+
+ENDIF
+
+
+! Plot depth only on the vertical axis.  If they
+! have sent in depth as the independent var, swap it.
+
+
+IF ($data_0_var"0|*>1") THEN GO LAS_var_lon_lat_z_time ($data_0_var)
+
+IF `( ($var_is_dep"0") OR ($var_is_ht"0") ) AND ($its_prop_plot"0|0|*>1")` THEN
+   
+   DEFINE SYMBOL data_sw_dataset_url = ($data_0_url)
+   DEFINE SYMBOL data_sw_region = ($data_0_region)
+   DEFINE SYMBOL data_sw_title = ($data_0_title)
+   DEFINE SYMBOL data_sw_units = ($data_0_units)
+   DEFINE SYMBOL data_sw_url = ($data_0_url)
+   DEFINE SYMBOL data_sw_var = ($data_0_var)
+   DEFINE SYMBOL data_sw_name = ($data_0_name)
+   
+   DEFINE SYMBOL data_0_dataset_url = ($data_1_url)
+   DEFINE SYMBOL data_0_region = ($data_1_region)
+   DEFINE SYMBOL data_0_title = ($data_1_title)
+   DEFINE SYMBOL data_0_units = ($data_1_units)
+   DEFINE SYMBOL data_0_url = ($data_1_url)
+   DEFINE SYMBOL data_0_var = ($data_1_var)
+   DEFINE SYMBOL data_0_name = ($data_1_name)
+   
+   DEFINE SYMBOL data_1_dataset_url = ($data_sw_url)
+   DEFINE SYMBOL data_1_region = ($data_sw_region)
+   DEFINE SYMBOL data_1_title = ($data_sw_title)
+   DEFINE SYMBOL data_1_units = ($data_sw_units)
+   DEFINE SYMBOL data_1_url = ($data_sw_url)
+   DEFINE SYMBOL data_1_var = ($data_sw_var)
+   DEFINE SYMBOL data_1_name = ($data_sw_name)
 
    CANCEL SYMBOL data_sw*
 
@@ -101,6 +143,8 @@ IF ($error_status"0|*>1") THEN
   EXIT/PROGRAM
 ENDIF
 
+
+
 ! Here is variable 0 title 
 DEFINE SYMBOL ferret_title_0 = ($ferret_plot_title"($data_0_var)")
 IF `(STRINDEX("($ferret_title_0%0%)", "Time") GT 0) AND (STRINDEX("($ferret_title_0%0%)", " since ") GT 0)` THEN \
@@ -116,46 +160,11 @@ LET/TITLE="($ferret_title_0)" xvar = XSEQUENCE(($($fer_sym)_var))
 IF ($its_trajectory_corr"0|*>1") THEN LET/TITLE="($ferret_title_0)" xvar = ($($fer_sym)_var)
 
 
-DEFINE SYMBOL vshape = `($($fer_sym)_var),RETURN=SHAPE`
-IF `STRCMP("($vshape)", "E") EQ 0` THEN 
-   LET ne_var = `($($fer_sym)_var),RETURN=msize`
-   DEFINE AXIS/x=1:`ne_var`:1 exaxis
-   LET xxex = x[gx=exaxis]
-   LET/TITLE="($ferret_title_0)" xvar = RESHAPE(($($fer_sym)_var), xxex)
-ENDIF
 
-! Is it a varible on the E axis of a DSG file?
-
-DEFINE SYMBOL vshape = `($($fer_sym)_var_0),RETURN=shape`
-IF `($vshape"0|E>1|*>0)` THEN
-
-! Is there a rowsize variable?
-! Is it a Profile or Trajectory dataset?
+! Is it a varible from a DSG file?
+IF ($nfeatures"0|*>1") THEN
    GO LAS_setup_dsg
-   IF ($rowvar"0|*>1") THEN DEFINE SYMBOL rowvar = rowsize
-
-! Expand trajectory variable into obs axis
-   DEFINE SYMBOL vtype = 0
-   DEFINE SYMBOL vtype = `xvar,RETURN=dtype`
-   DEFINE SYMBOL is_string = ($vtype"0|CHAR>1|*>0")
-
-   IF ($is_string"0|0|*>1") THEN 
-      LET/TITLE="($ferret_title_0)" xvar = EXPND_BY_LEN_STR(($ferret_plot_var_0), ($rowvar),`($rowvar)[m=@sum]`)
-
-      IF ($its_prop_plot"0|*>1") THEN
-         IF `STRINDEX("($ferret_plot_var_0)", "WOCE") GT 0` THEN 
-            SET VAR/NAME = xvar_0 xvar
-	    LET/TITLE="($ferret_title_0)" xvar = STRFLOAT(xvar_0) 
-	    SET ATT/LIKE=xvar_0 xvar
-         ELSE  ! cannot use a string as plot argument
-	     LET mvar_0 = _m[ge=($ferret_plot_var_0)]
-	     LET/TITLE="($ferret_title_0)" xvar = EXPND_BY_LEN(mvar_0, ($rowvar),`($rowvar)[m=@sum]`)
-         ENDIF
-      ENDIF
-   ELSE
-      LET/TITLE="($ferret_title_0)" xvar = EXPND_BY_LEN(($ferret_plot_var_0), ($rowvar),`($rowvar)[m=@sum]`)
-   ENDIF
-   LET nx_var = `($rowvar)[m=@sum]`
+   LET/TITLE="($ferret_title_0)" xvar = ($ferret_plot_var_0)
 ENDIF
 
 ! Initialize the second variable.
@@ -179,7 +188,6 @@ IF ($error_status"0|*>1") THEN
   MESSAGE/ERROR **ERROR ($error_string)
   EXIT/PROGRAM
 ENDIF
-
 
 ! Here is variable 1 title 
 DEFINE SYMBOL ferret_title_1 = ($ferret_plot_title"($data_1_var)")
@@ -226,6 +234,7 @@ ENDIF
 ! Could analyze the axes, see if, without striding, they are in fact
 ! the same length, and if so apply striding to all grids. This is a rare
 ! case; not doing this now.
+
 LET nshape = STRLEN ("($vshape)")
 IF `($data_count"0") GE 2 AND ($its_prop_plot"0") AND nshape GT 1` THEN 
    SET DATA ($data_0_url)
@@ -245,47 +254,10 @@ IF `($data_count"0") GE 2 AND ($its_prop_plot"0") AND nshape GT 1` THEN
    ENDIF
 ENDIF
 
-
-
-DEFINE SYMBOL vshape = `($($fer_sym)_var_1),return=SHAPE`
-IF `STRCMP("($vshape)", "E") EQ 0` THEN 
-   LET ne_var = `($($fer_sym)_var),RETURN=msize`
-   DEFINE AXIS/x=1:`ne_var`:1 exaxis
-   LET xxex = x[gx=exaxis]
-   LET/TITLE="($ferret_title_0)" yvar = RESHAPE(($($fer_sym)_var_1), xxex)
-ENDIF
-
-! Is it a varible on the E axis of a DSG file?
-
-DEFINE SYMBOL vshape = `($($fer_sym)_var_1),RETURN=shape`
-IF `($vshape"0|E>1|*>0)` THEN
-
-! Is it a Profile or Trajectory dataset?
-   IF `($rowvar"0|*>1") EQ 0` THEN GO LAS_setup_dsg
-   IF ($rowvar"0|*>1") THEN DEFINE SYMBOL rowvar = rowsize
-
-! Expand trajectory variable into obs axis
-   DEFINE SYMBOL vtype = 0
-   DEFINE SYMBOL vtype = `yvar,RETURN=dtype`
-   DEFINE SYMBOL is_string = ($vtype"0|CHAR>1|*>0")
-
-   IF ($is_string"0|0|*>1") THEN 
-      LET yvar = EXPND_BY_LEN_STR(($ferret_plot_var_1), ($rowvar),`($rowvar)[m=@sum]`)
-
-      IF ($its_prop_plot"0|*>1") THEN
-         IF `STRINDEX("($ferret_plot_var_1)", "WOCE") GT 0` THEN 
-            SET VAR/NAME = yvar_0 yvar
-	    LET/TITLE="($ferret_title_1)" yvar = STRFLOAT(yvar_0) 
-	    SET ATT/LIKE=yvar_0 yvar
-         ELSE  ! cannot use a string as plot argument
-	     LET mvar_1 = _m[ge=($ferret_plot_var_1)]
-	     LET/TITLE="($ferret_title_1)" yvar = EXPND_BY_LEN(mvar_1, ($rowvar),`($rowvar)[m=@sum]`)
-         ENDIF
-      ENDIF
-
-   ELSE
-      LET/TITLE="($ferret_title_1)" yvar = EXPND_BY_LEN(($ferret_plot_var_1), ($rowvar),`($rowvar)[m=@sum]`)
-   ENDIF
+! Is it a varible from a DSG file?
+IF ($nfeatures"0|*>1") THEN
+   GO LAS_setup_dsg
+   LET/TITLE="($ferret_title_1)" yvar = ($ferret_plot_var_1)
 ENDIF
 
 IF ($its_prop_plot"0|*>1") THEN
@@ -363,36 +335,10 @@ IF `($data_count"0") GE 3` THEN ! color by 3rd variable
    DEFINE SYMBOL ferret_plot_var_2 = ($($fer_sym)_var)
    DEFINE SYMBOL ferret_plot_var = ($($fer_sym)_var)
 
-   LET/TITLE="($ferret_title_2)" zvar = XSEQUENCE(($ferret_plot_var_2))
-
-! Is it a varible on the E axis of a DSG file?
-
-   DEFINE SYMBOL vshape = `($ferret_plot_var_2),RETURN=shape`
-   IF `($vshape"0|E>1|*>0)` THEN
-
-! Is it a Profile or Trajectory dataset?
-      IF `($rowvar"0|*>1") EQ 0` THEN GO LAS_setup_dsg
-      IF ($rowvar"0|*>1") THEN DEFINE SYMBOL rowvar = rowsize
-
-! Expand trajectory variable into obs axis
-      DEFINE SYMBOL vtype = 0
-      DEFINE SYMBOL vtype = `zvar,RETURN=dtype`
-      DEFINE SYMBOL is_string = ($vtype"0|CHAR>1|*>0")
-
-      IF ($is_string"0|0|*>1") THEN 
-         LET zvar = EXPND_BY_LEN_STR(($ferret_plot_var_2), ($rowvar),`($rowvar)[m=@sum]`)
-
-! Set string var to a sequence number, unless its a qc_flag or region id.
-
-	 IF `(($data_2_var_in"0|region_ID>1|qc_flag>1|*>0") EQ 0) AND ($its_prop_plot"0|*>1")` THEN 
-	    LET mvar_2 = _m[ge=($ferret_plot_var_2)]
-	    LET zvar = EXPND_BY_LEN(mvar_2, ($rowvar),`($rowvar)[m=@sum]`)
-	 ELSE
-	    LET zvar = EXPND_BY_LEN(($ferret_plot_var_2), ($rowvar),`($rowvar)[m=@sum]`)
-	 ENDIF
-      ELSE
-         LET zvar = EXPND_BY_LEN(($ferret_plot_var_2), ($rowvar),`($rowvar)[m=@sum]`)
-      ENDIF
+   LET/TITLE="($ferret_title_2)" zvar = ($ferret_plot_var_2)
+   
+   IF `($its_trajectory_corr"0|*>1") EQ 0` THEN
+     LET/TITLE="($ferret_title_1)" zvar = XSEQUENCE(($ferret_plot_var_2)) 
 
    ELSE
 
@@ -402,16 +348,23 @@ IF `($data_count"0") GE 3` THEN ! color by 3rd variable
       DEFINE SYMBOL vtype = `gettype,RETURN=dtype`
       DEFINE SYMBOL is_string = ($vtype"0|CHAR>1|*>0")
 
-! If string, set to all-missing. (But custom scripts may do more later, e.g. for SOCAT)
+! If string, set to all-missing, or for DSG data, to index values (But custom scripts may do more later, e.g. for SOCAT)
       IF `($is_string) AND ($its_listing"0|*>1") EQ 0` THEN
          DEFINE SYMBOL zvar_is_string = 1  
-         LET zvar = 1./0 + 0*xvar
-         DEFINE SYMBOL note_num = `($note_num"0") + 1`
-         DEFINE SYMBOL note_($note_num)_lab = ($data_2_title) is not numeric. Plot without color.
-         CANCEL SYMBOL ferret_plot_var
+         LET zvar = 1./0 + 0*xvar 
+	 IF `($nfeatures"0|*") NE 0` THEN 
+	    DEFINE SYMBOL zshape = `($ferret_plot_var_2),return=shape`
+	    DEFINE SYMBOL zshape = ($zshape"|POINT>E|*")
+	    LET zvar = _($zshape"|X>i|Y>j|Z>k|T>l|E>m|F>n")[g($zshape)=($ferret_plot_var_2)]
+         ELSE
+	    DEFINE SYMBOL note_num = `($note_num"0") + 1`
+            DEFINE SYMBOL note_($note_num)_lab = ($data_2_title) is not numeric. Plot without color.
+            CANCEL SYMBOL ferret_plot_var
+	 ENDIF
      ENDIF
 
    ENDIF
+
    ! what about woce flags??
 
    DEFINE SYMBOL zvar = zvar
@@ -491,9 +444,24 @@ IF `($its_listing"0|1|*>0") EQ 0 AND ($ferret_plot_key"0|date_key>1|*>0")` THEN
       LET tunits = SUBSTRING("`($ferret_plot_var_($color_vnum)).units`",1,`since_loc`)
       DEFINE SYMBOL tunits = `tunits`
    ENDIF
-   DEFINE AXIS/T=`tmin`:`tmax`:1/T0="`($ferret_plot_var_($color_vnum)).time_origin`"/units=($tunits) time_axis 
-   IF ($tunits"0|seconds>1|*>0") THEN \
-   DEFINE AXIS/T=`tmin`:`tmax`:3600/T0="`($ferret_plot_var_($color_vnum)).time_origin`"/units=($tunits) time_axis 
+
+   IF ($dsg_t_var"0|*>1") THEN  ! dsg dataset: get the time data
+
+      let tvar = XSEQUENCE(($dsg_t_var))
+      LET tmin = tvar[i=@MIN]
+      LET tmax = tvar[i=@MAX]
+      DEFINE AXIS/T=`tmin`:`tmax`:1/T0="`($dsg_t_var).time_origin`"/units=($tunits) time_axis 
+        IF ($tunits"0|seconds>1|*>0") THEN \
+      DEFINE AXIS/T=`tmin`:`tmax`:3600/T0="`($dsg_t_var).time_origin`"/units=($tunits) time_axis 
+
+   ELSE
+
+      DEFINE AXIS/T=`tmin`:`tmax`:1/T0="`($ferret_plot_var_($color_vnum)).time_origin`"/units=($tunits) time_axis 
+      IF ($tunits"0|seconds>1|*>0") THEN \
+      DEFINE AXIS/T=`tmin`:`tmax`:3600/T0="`($ferret_plot_var_($color_vnum)).time_origin`"/units=($tunits) time_axis 
+
+   ENDIF
+
    DEFINE SYMBOL datekey = 1
 
    DEFINE SYMBOL ferret_key_annotate = 0
@@ -512,34 +480,43 @@ DEFINE SYMBOL yvar = yvar
 
 ! Apply any constraints
 
- LET npts = `xvar,return=isize`
+IF ($feature_type"0|*>1") THEN 
+   GO setup_dsg_constraints
+
+! constraints_mask will be applied later, in prop_prop_plot.
+   LET constraints_mask = text_mask * var_mask
+
+ELSE
+
+   LET npts = `xvar,return=isize`
 ! Initialize mask variables
 
-LET var_mask = 1+0*x[gx=xvar,i=1:`nx_var`]
+   LET var_mask = 1+0*x[gx=xvar,i=1:`nx_var`]
 
-IF `($subset_mask"0|*>1") EQ 0` THEN LET subset_mask = {1}
-LET text_mask = {1}
-LET ntext_masks = 0
+   IF `($subset_mask"0|*>1") EQ 0` THEN LET subset_mask = {1}
+   LET text_mask = {1}
+   LET ntext_masks = 0
 
-IF ($constraint_0_lhs"0|*>1) THEN
-   GO prop_prop_constraints
+   IF ($constraint_0_lhs"0|*>1) THEN
+      GO prop_prop_constraints
+   ENDIF
+
+   LET constraints_mask = text_mask * var_mask
+   IF ($have_feature_mask"0|*>1") THEN LET constraints_mask = text_mask * var_mask * feature_mask_obs
+
+   IF ($color_by"0|*>1") THEN 
+
+      DEFINE SYMBOL zvar = constraints_mask*zvar
+      DEFINE SYMBOL color_by_title = `zvar,RETURN=title`
+
+      DEFINE SYMBOL plot_arg = ($xvar), ($yvar), ($zvar)
+
+   ENDIF  ! color-by 3rd var
+
+   DEFINE SYMBOL xvar = constraints_mask*xvar
+   DEFINE SYMBOL yvar = constraints_mask*yvar
+
 ENDIF
-
-LET constraints_mask = text_mask * var_mask
-IF ($have_feature_mask"0|*>1") THEN LET constraints_mask = text_mask * var_mask * feature_mask_obs
-
-IF ($color_by"0|*>1") THEN 
-
-   DEFINE SYMBOL zvar = constraints_mask*zvar
-   DEFINE SYMBOL color_by_title = `zvar,RETURN=title`
-
-   DEFINE SYMBOL plot_arg = ($xvar), ($yvar), ($zvar)
-
-ENDIF  ! color-by 3rd var
-
-DEFINE SYMBOL xvar = constraints_mask*xvar
-DEFINE SYMBOL yvar = constraints_mask*yvar
-
 
 ! Set up annotations for the space-time region if this is a correletion plot
 ! from gridded variables. Do PLOT/SET to get Ferret's formatted version 

@@ -5,6 +5,7 @@
 ! 9/16 Set Y spacing to 0.07 throughout, needed for Time labels using PPLUS
 ! 9/17 Tall skinny plots need a bit more left-margin space for axis labels
 
+
 ! Google Earth plots need no margins. This has already been set up.
 IF ($its_GE"0|*>1") THEN 
    DEFINE VIEW/AXES/XLIM=0:1/YLIM=0:1 full_view
@@ -16,22 +17,47 @@ DEFINE SYMBOL text_size = ($ferret_text_size"0.09")
 
 CAN view
 
+let y_dn = 0.08
 LET y_up = 0.92
-IF `STRLEN("($ferret_view)") GE 2 AND ($win_aspect"1") LT 0.2` THEN LET y_up = 0.9
+LET y_up_t = 0.99
 
-DEFINE VIEW/AXES/X=0.08:0.99/y=0.08:`y_up` full_view
-DEFINE VIEW/AXES/X=0.08:0.99/y=0.08:`y_up` full_view2
+IF `STRLEN("($ferret_view)") GE 2 AND ($win_aspect"1") LT 0.2` THEN 
+   LET y_up = 0.9
+   LET y_up_t = 0.99
+ENDIF
+
+IF ($wmark_loc"0|*>1") THEN 
+
+! These settings to make space for a watermark.
+! Give the margin some extra vertial space. Note the 
+! viewport settings are in percentage of the window.
+
+! These if putting it in the upper left corner.
+   IF ($wmark_loc%|ulc>1|*>0%) THEN
+      LET y_up = `y_up - 0.07`
+      LET y_up_t = `y_up_t - 0.1`
+   ENDIF
+
+! These if putting it in the lower left
+   IF ($wmark_loc%|llc>1|*>0%) THEN
+      LET y_dn = 0.16
+   ENDIF
+
+ENDIF
+
+DEFINE VIEW/AXES/X=0.08:0.99/y=`y_dn`:`y_up` full_view
+DEFINE VIEW/AXES/X=0.08:0.99/y=`y_dn`:`y_up` full_view2
 
 ! tall skinny plots get the vertical axis labels chopped off.
 IF `($win_aspect) GT 2` THEN
-   DEFINE VIEW/AXES/X=0.11:0.99/y=0.08:`y_up` full_view
-   DEFINE VIEW/AXES/X=0.11:0.99/y=0.08:`y_up` full_view2
+   DEFINE VIEW/AXES/X=0.11:0.99/y=`y_dn`:`y_up` full_view
+   DEFINE VIEW/AXES/X=0.11:0.99/y=`y_dn`:`y_up` full_view2
 ENDIF
 
 ! Give prop-prop plots a little more space at the left for labels.
 IF ($its_prop_prop_plot"0|*>1") THEN
-   DEFINE VIEW/AXES/X=0.1:0.99/y=0.08:`y_up` full_view
-   DEFINE VIEW/AXES/X=0.1:0.99/y=0.08:`y_up` full_view2
+   DEFINE VIEW/AXES/X=0.1:0.99/y=`y_dn`:`y_up` full_view
+   DEFINE VIEW/AXES/X=0.1:0.99/y=`y_dn`:`y_up` full_view2
 ENDIF
 
 IF ($ferret_thumb"0|*>1") THEN  
@@ -40,26 +66,24 @@ IF ($ferret_thumb"0|*>1") THEN
 ENDIF
 
 IF ($ferret_view%0|yt>1|zt>1|t>1|*>0%) THEN 
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:`y_up`  full_view
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:`y_up`  full_view2
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up`  full_view
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up`  full_view2
 ENDIF
 
 IF ($ferret_view%0|xt>1|*>0%) THEN 
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:`y_up`  full_view
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:`y_up`  full_view2
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up`  full_view
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up`  full_view2
 ENDIF
 
 IF ($ferret_view%0|t>1|*>0%) THEN 
-!   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:0.99  full_view  ! for tics outside the plot box
-!   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:0.99  full_view2
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:0.99  full_view
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:0.99  full_view2
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up_t`  full_view
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up_t`  full_view2
 ENDIF
 
 ! Thumbnail plots need bigger axis labels. Make the margins bigger.
 IF ($ferret_view%0|x>1|y>1|z>1|*>0%) THEN 
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:0.99  full_view
-   DEFINE VIEW/AXES/X=0.08:0.98/y=0.08:0.99  full_view2
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up_t`  full_view
+   DEFINE VIEW/AXES/X=0.08:0.98/y=`y_dn`:`y_up_t`  full_view2
 ENDIF
 
 SET VIEW full_view

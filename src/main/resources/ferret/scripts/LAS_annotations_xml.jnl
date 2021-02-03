@@ -32,7 +32,8 @@ DEFINE SYMBOL out = <annotations>
 GO write_to_xml
 
 ! orthogonal axis labels
-IF `($longitude_lab%0|*>1%)+($latitude_lab%0|*>1%)+($depth_lab%0|*>1%)+($time_lab%0|*>1%)+($ens_lab%0|*>1%)+($forecast_lab%0|*>1%) GT 0` THEN \
+
+IF `($longitude_lab%0|*>1%)+($latitude_lab%0|*>1%)+($depth_lab%0|*>1%)+($time_lab%0|*>1%)+($year_lab%0|*>1%)+($ens_lab%0|*>1%)+($forecast_lab%0|*>1%) GT 0` THEN \
     GO annotation_orthogonal_axes 
 
 ! variable and dataset labels

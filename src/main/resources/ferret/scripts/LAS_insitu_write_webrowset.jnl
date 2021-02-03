@@ -2,7 +2,7 @@
 ! LAS_insitu_write_webrowset.jnl
 !
 !
-! Make a LIST/QUIET of the ID number and Cruise ID to go back 
+! Make a LIST/QUIET of the ID number and Feature ID to go back 
 ! for possible subsets of this set of cruises.
 
 CANCEL MODE VERIFY
@@ -12,21 +12,22 @@ IF `($result_icon_webrowset_filename"0|*>1") EQ 0` THEN
   EXIT/SCRIPT
 ENDIF
 
+IF ($subset_mask"0|*>1") THEN CANCEL DATA/FMASK 1
+
 ! Write all the counter numbers and the cruise IDs in the webrowset format.
-! For SOCAT 3, cruise_id cruise_name are identical to cruise_expocode
+! For SOCAT 3, feature_id feature_name are identical to expocode
 
-IF ($feature_variable"0|*>1") THEN 
+IF ($feature_name"0|*>1") THEN 
 
-   let imask = i[gx=xmask_axis]
-
-   let webrow_mask = XSEQUENCE(feature_mask)* imask
+   define axis/x=1:`nfeatures`:1 xaxtest
+   let imask = x[gx=xaxtest]
 
 ! What do we want here? write_webrow with imask would put out the full key,
 ! or write_webrow_icon with webrow_mask would make a subset key, listing names and numbers 1, 3, 5, ...
 
 ! If writing the whole key, we can use write_webrow:
 
-   LOAD write_webrow_gwt(XSEQUENCE(($feature_variable)), XSEQUENCE(($feature_variable)), XSEQUENCE(imask), "($result_icon_webrowset_filename)")
+   LOAD write_webrow_gwt(XSEQUENCE(($feature_name)), XSEQUENCE(($feature_name)), imask, "($result_icon_webrowset_filename)")
 
 ENDIF
 
@@ -38,8 +39,5 @@ IF ($debug_mode"0|*>1") THEN
    LET yloc_db = `yloc_db - 0.16`
    SAY ----- debug mode Webrowset xml ($secs) -----
 ENDIF
-
-
-!!!!
 
 ! End of file ------------ LAS_insitu_write_webrowset.jnl --------------------------

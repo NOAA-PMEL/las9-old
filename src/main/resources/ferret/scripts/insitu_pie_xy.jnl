@@ -22,7 +22,7 @@ define symbol n3colocate = `ismdup[i=@sum]`
 define symbol size_creep_factor `(($ngood_data)+300)/(($ngood_data)+150) - 1`  ! [0,1] range
 
 ! Instead base this on the number of profiles. Under ~50 start to increase the size.
-define symbol size_creep_factor `(featuresize+100)/(featuresize+50) - 1`  ! [0,1] range
+define symbol size_creep_factor `(nfeatures+100)/(nfeatures+50) - 1`  ! [0,1] range
 
 let/quiet sym_size = 0.9 + 1.5*($size_creep_factor)
 LET/QUIET PLMdflt_scale = 0.1

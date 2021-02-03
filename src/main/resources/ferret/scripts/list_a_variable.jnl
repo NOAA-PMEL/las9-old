@@ -101,6 +101,10 @@ IF `($ferret_points_zt%0|*>1%) AND ($frmt%0|/format=cdf>1|*>0%) AND ($data_count
    CANCEL ATTRIBUTE/OUTPUT (`($data_0_var),return=zaxis`).standard_name
 ENDIF
 
+LET/UNITS="`($ferret_list_var),RETURN=units)`"\
+  the_list_var = ($ferret_list_var)
+!SET ATT/LIKE=($data_var) the_list_var
+
 IF ($data_var_transform"0|*>1") THEN 
     DEFINE attribute ($ferret_list_var).transform_history  "($data_var)($data_var_transform)"
     SET ATTRIBUTE/OUTPUT ($ferret_list_var).transform_history

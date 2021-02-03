@@ -86,12 +86,24 @@ IF ($math_sym_convert"1|no_convert>0") THEN GO op_math_sym ($translate_math) ($o
 DEFINE SYMBOL mask_title_($nmask_labels) = Where ($lhs) ($math_op_sym) ($rhs)
 
 ! Show time constraint as a formatted time
+! Currently we do not have any products that do a constraint in time.
+
 IF `($lhs"|time>1|TIME>1|*>0")` THEN
    IF `($timevar"0|*>1") EQ 0` THEN DEFINE SYMBOL timevar = time
    CANCEL SYMBOL rhsdate
    IF `($timeaxis"0|*>1") EQ 0` THEN 
-      LET amin = ($timevar)[i=@MIN]
-      LET amax = ($timevar)[i=@MAX]
+      DEFINE SYMBOL shape `($timevar),RETURN=shape`
+      LET amin = ($timevar)[($shape)=@MIN]
+      LET amax = ($timevar)[($shape)=@MAX]
+
+      ! Is this a multi-feature timeseries dataset? If so @MIN and @MAX are for each timeseries
+      DEFINE SYMBOL eshape `amin,RETURN=shape`
+      IF ($eshape"0|E>1|*>0") THEN 
+        LET amin_featr = ($timevar)[($shape)=@MIN]
+        LET amax_featr = ($timevar)[($shape)=@MAX]
+        LET amin  = `amin_featr[e=@min]`
+        LET amax  = `amax_featr[e=@max]`
+      ENDIF
       DEFINE SYMBOL is_time = 1
       GO LAS_is_range amin amax
       CANCEL SYMBOL is_time
@@ -103,18 +115,19 @@ IF `($lhs"|time>1|TIME>1|*>0")` THEN
       DEFINE AXIS/T=`ax_lo`:`ax_hi`:`del_ax`/T0="`($data_t_var"time").time_origin`"/units=($tunits) timeaxis
       DEFINE SYMBOl timeaxis = timeaxis
    ENDIF
+
    LET tt = t[gt=($timeaxis)]
    LET nt = `tt,RETURN=lsize`
    LET tn = tt[L=`nt`]
    DEFINE SYMBOL tn = `tn`
    IF `($rhs) GE tt[L=1] AND ($rhs) LE ($tn)` THEN
-      DEFINE SYMBOL rhsdate = `TAX_DATESTRING( tt[t=($rhs)], tt, "hours")`
+      DEFINE SYMBOL rhsdate = `TAX_DATESTRING( tt[t=($rhs)], tt, "minutes")`
       DEFINE SYMBOL mask_title_($nmask_labels) = Where ($lhs) ($math_op_sym) ($rhsdate)
    ELIF `($rhs) LT tt[L=1]` THEN
-      DEFINE SYMBOL rhsdate = `TAX_DATESTRING( tt[L=1], tt, "hours")`
+      DEFINE SYMBOL rhsdate = `TAX_DATESTRING( tt[L=1], tt, "minutes")`
       DEFINE SYMBOL mask_title_($nmask_labels) = Where ($lhs) ($math_op_sym) ($rhsdate)
    ELIF `($rhs) GT ($tn)` THEN
-      DEFINE SYMBOL rhsdate = `TAX_DATESTRING( ($tn), tt, "hours")`
+      DEFINE SYMBOL rhsdate = `TAX_DATESTRING( ($tn), tt, "minutes")`
       DEFINE SYMBOL mask_title_($nmask_labels) = Where ($lhs) ($math_op_sym) ($rhsdate)
    ENDIF
    IF ($rhsdate"0|*>1") THEN DEFINE SYMBOL rhs ($rhsdate)

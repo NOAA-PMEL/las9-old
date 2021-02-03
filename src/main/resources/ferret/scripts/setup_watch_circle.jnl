@@ -117,20 +117,21 @@ let q_var = q + pqmask
 ! Define axes for both variables using the range in the data
 
 !---------
-LET amin = p_var[i=@MIN]
-LET amax = p_var[i=@MAX]
-LET bmin = q_var[i=@MIN]
-LET bmax = q_var[i=@MAX]
+LET amin = p_var[t=@MIN]
+LET amax = p_var[t=@MAX]
+LET bmin = q_var[t=@MIN]
+LET bmax = q_var[t=@MAX]
+list amin,amax,bmin,bmax
 
 
-LET locx = ($deploy_lon)[i=1]
-LET locy = ($deploy_lat)[i=1]
+LET locx = ($deploy_lon)[e=1]
+LET locy = ($deploy_lat)[e=1]
 
 ! Compute radius of circle: max excursion from the deployment location.
 ! The plot range is the max of this size and the watch circle radius
 
-LET radii = ((p_var - locx)^2 + (q_var - locy)^2)^0.5
-LET wc_rad_compute = radii[i=@max]
+LET radii = ((p_var - (`locx`))^2 + (q_var - (`locy`))^2)^0.5
+LET wc_rad_compute = radii[t=@max]
 LET wc_rad = wc_rad_compute
 LET axis_add =  wc_rad_compute
 
@@ -208,7 +209,7 @@ PPL SHADE
 
 PLOT/VS/OVER/NOLAB/THICK=3/sym=21/SIZ=0.2/color=lightblue locx, locy
 PLOT/VS/OVER/NOLAB/THICK=3/sym=27/SIZ=0.18/color=black locx, locy
-PLOT/VS/OVER/NOLAB/LINE/k=1:628/COLOR=6/pal=rnb locx + wc_rad*cos(k/100), locy + wc_rad*sin(k/100)
+PLOT/VS/OVER/NOLAB/LINE/k=1:628/COLOR=6/pal=rnb `locx` + `wc_rad`*cos(k/100), `locy` + `wc_rad`*sin(k/100)
 
 ! If put_label was defined, something caused one or both variables to be all BAD.
 IF ($put_label"0|*>1") THEN 
@@ -268,5 +269,7 @@ DEFINE SYMBOL xvar = constraints_mask*xvar
 DEFINE SYMBOL yvar = constraints_mask*yvar
 LET p = ($xvar) 
 LET q = ($yvar)
+
+define symbol watch_plot = 1
 
 ! End of file setup_watch_circle.jnl--------------------------

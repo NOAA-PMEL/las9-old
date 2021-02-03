@@ -1,7 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! 
 ! Author: ACM 
-! 10/14 Call one of the Waterfal Plots in XZ, YZ, or ZT.
+! 10/14 Call one of the Waterfall Plots in XZ, YZ, or ZT.
 !
 !
 ! Set the gif filename, changing it from .gif to the name from this request
@@ -9,12 +9,12 @@
 GO LAS_initial_setup
 
 !! Make a 2d plot...
-IF ($ferret_view"0|xzt>1|*>0") THEN
-define symbol ferret_view = xz
-ENDIF
-IF ($ferret_view"0|yzt>1|*>0") THEN
-define symbol ferret_view = yz
-ENDIF
+IF ($ferret_view"0|xzt>1|*>0") THEN DEFINE SYMBOL ferret_view = xz
+IF ($ferret_view"0|yzt>1|*>0") THEN DEFINE SYMBOL ferret_view = yz
+
+! Set aspect ratio
+DEFINE SYMBOL win_aspect = 0.6
+
 IF ($ferret_view"0|xz>1|yz>1|zt>1|*>0") THEN
    GO insitu_waterfall_($ferret_view)
 ELSE

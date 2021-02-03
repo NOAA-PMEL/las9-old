@@ -29,31 +29,35 @@ GO LAS_initial_setup 0
 CANCEL SYMBOL frmt 
 DEFINE SYMBOL frmt ($frmt)/($ferret_format%format=cdf|txt>heading|cdf>format=cdf|asc>width=1024|%)
 
-IF ($ferret_format%0|asc>1|*>0) THEN DEFINE SYMBOL frmt ($frmt)/format=(5G12.5)
+IF ($ferret_format%0|asc>1|*>0) THEN
+  DEFINE SYMBOL frmt ($frmt)/format=(5G12.5)
+  
+  IF ($ferret_data_format"0|tsv>1|csv>1|asc>1|*>0") THEN 
+     DEFINE SYMBOL frmt ($frmt) = ($frmt)/($ferret_data_format"|tsv>format=tab|csv>format=comma|asc>heading=enhanced")
+     SET LIST/PREC=7
 
-IF ($ferret_data_format%0|tsv>1|csv>1|asc>1|*>0%) THEN 
-   DEFINE SYMBOL frmt ($frmt) = ($frmt)/($ferret_data_format%|tsv>format=tab|csv>format=comma|asc>heading=enhanced%)
-   SET LIST/PREC=7
-   IF ($ferret_points_zt%0|*>1%) THEN 
-      LIST/APPEND/FILE="($result_ferret_listing_filename)" "Data Is Listed at fixed z-levels. Adding pressure to this listing"
-      DEFINE SYMBOL nzt = ($data_count)
-      DEFINE SYMBOL data_count = `($data_count) + 1`
-      DEFINE SYMBOL data_($nzt)_dataset_name = ($data_0_dataset_name)
-      DEFINE SYMBOL data_($nzt)_url = ($data_0_url)
-      USE ($data_0_url)
-      DEFINE SYMBOL data_($nzt)_name = `($ferret_points_zt),return=title`
-      DEFINE SYMBOL data_($nzt)_region = ($data_0_region)
-      DEFINE SYMBOL data_($nzt)_title = `($ferret_points_zt),return=title`
-      DEFINE SYMBOL data_($nzt)_units = `($ferret_points_zt),return=units`
-      DEFINE SYMBOL data_($nzt)_var = ($ferret_points_zt)
-      DEFINE SYMBOL data_($nzt)_t_hi = ($region_0_t_hi)
-      DEFINE SYMBOL data_($nzt)_t_lo = ($region_0_t_lo)
-      DEFINE SYMBOL data_($nzt)_x_hi = ($region_0_x_hi)
-      DEFINE SYMBOL data_($nzt)_x_lo = ($region_0_x_lo)
-      DEFINE SYMBOL data_($nzt)_y_hi = ($region_0_y_hi)
-      DEFINE SYMBOL data_($nzt)_y_lo = ($region_0_y_lo)
-      DEFINE SYMBOL data_($nzt)_z_hi = ($region_0_z_hi)
-      DEFINE SYMBOL data_($nzt)_z_lo = ($region_0_z_lo)
+      IF ($ferret_points_zt%0|*>1%) THEN 
+         LIST/APPEND/FILE="($result_ferret_listing_filename)" "Data Is Listed at fixed z-levels. Adding pressure to this listing"
+         DEFINE SYMBOL nzt = ($data_count)
+         DEFINE SYMBOL data_count = `($data_count) + 1`
+         DEFINE SYMBOL data_($nzt)_dataset_name = ($data_0_dataset_name)
+         DEFINE SYMBOL data_($nzt)_url = ($data_0_url)
+         USE ($data_0_url)
+         DEFINE SYMBOL data_($nzt)_name = `($ferret_points_zt),return=title`
+         DEFINE SYMBOL data_($nzt)_region = ($data_0_region)
+         DEFINE SYMBOL data_($nzt)_title = `($ferret_points_zt),return=title`
+         DEFINE SYMBOL data_($nzt)_units = `($ferret_points_zt),return=units`
+         DEFINE SYMBOL data_($nzt)_var = ($ferret_points_zt)
+         DEFINE SYMBOL data_($nzt)_t_hi = ($region_0_t_hi)
+         DEFINE SYMBOL data_($nzt)_t_lo = ($region_0_t_lo)
+         DEFINE SYMBOL data_($nzt)_x_hi = ($region_0_x_hi)
+         DEFINE SYMBOL data_($nzt)_x_lo = ($region_0_x_lo)
+         DEFINE SYMBOL data_($nzt)_y_hi = ($region_0_y_hi)
+         DEFINE SYMBOL data_($nzt)_y_lo = ($region_0_y_lo)
+         DEFINE SYMBOL data_($nzt)_z_hi = ($region_0_z_hi)
+         DEFINE SYMBOL data_($nzt)_z_lo = ($region_0_z_lo)
+      ENDIF
+
    ENDIF
 ENDIF
 
@@ -66,3 +70,6 @@ IF ($ferret_data_format"0|csv>1|*>0") THEN
 ELSE
    REPEAT/RANGE=1:($data_count"1")/NAME=outvar (GO list_a_variable `outvar-1`; CANCEL SYMBOL ferret_list_var)
 ENDIF
+
+
+! End of file ------------ list_data.jnl --------------------------

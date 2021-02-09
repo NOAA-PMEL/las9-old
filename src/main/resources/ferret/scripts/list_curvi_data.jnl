@@ -133,20 +133,16 @@ LET/TITLE="($data_title)($data_var_transform)"/UNITS="`old_($var_num),RETURN=uni
 ($data_($var_num)_var) = old_($var_num)[d=($data_num),i=($clon_imin):($clon_imax),j=($clat_jmin):($clat_jmax)]
 SET ATTR/LIKE=old_($var_num) ($data_($var_num)_var)
 
-IF `size LE max_size` THEN
 
+
+! See the github history for how this was done.
+! It was not working in all cases so I removed the section for doing it in one chunk
+! and left the section to do it in "small" chunks.
+! RHS - 2021-02-09
    ! ... list in one big chunk
    !     This special case is not strictly necessary -- the logic for listing
    !     large files also works for small ... but with some overhead
 
-   DEFINE SYMBOL ferret_list_var ($data_($var_num)_var)
-
-   IF `($ferret_format"0|asc>1|*>0") + ($ferret_format"0|txt>1|*>0") GT 0` THEN  
-      IF ($var_history"0|*>1") THEN LIST($listqual)/APPEND/NOHEAD/FORMAT=(A)/FILE="($result_ferret_listing_filename)" var_hist
-   ENDIF
-
-   LIST($listqual)/APPEND/FILE/($frmt) ($data_($var_num)_var)
-ELSE
 
    DEFINE SYMBOL ferret_list_var ($data_var)[d=($data_num)]
 
@@ -175,7 +171,6 @@ ELSE
      ! ... netCDF output in chunks
    REPEAT/L=($lmin):($lmax):`lchunk` REPEAT/K=($kmin):($kmax):`kchunk` REPEAT/J=($clat_jmin):($clat_jmax):`jchunk` (LIST($listqual)/APPEND/FILE/($frmt)/J=`j`:`jtop`/K=`k`:`ktop`/L=`l`:`ltop`/JLIMITS=($clat_jmin):($clat_jmax)/KLIMITS=($kmin):($kmax)/I=($clon_imin):($clon_imax) ($data_($var_num)_var); CANC MEM/ALL)
 
-ENDIF
 
 ! End of script ---------- list_curvi_data.jnl----------------------------
 

@@ -660,6 +660,7 @@ public class ComparePanel extends Composite {
         autocolors.setText(levels);
     }
     public void setAutoLevelsOn(boolean value) {
+        autocolors.setText("");
         useAutoColors.setValue(value);
     }
     public int countAnnotations() {

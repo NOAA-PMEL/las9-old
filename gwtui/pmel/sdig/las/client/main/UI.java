@@ -19,6 +19,7 @@ import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.EventBus;
+import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.json.client.JSONArray;
@@ -274,6 +275,10 @@ public class UI implements EntryPoint {
         initialHistory = getAnchor();
         xDataURL = Util.getParameterString("data_url");
 
+        String start_url = Window.Location.getHref();
+        if ( start_url.endsWith("las/"))
+            setUrl(start_url + "UI.html");
+
         animateDateTimeWidget.setTitle("Time Range for Animation");
         downloadDateTime.setTitle("Time Range for Data Download.");
 
@@ -457,6 +462,11 @@ public class UI implements EntryPoint {
                     } else {
                         lasRequest = makeRequest(5, "Animation_2D_XY");
                     }
+                    RequestProperty animp = new RequestProperty();
+                    animp.setType("batch");
+                    animp.setName("wait");
+                    animp.setValue("true");
+                    lasRequest.addProperty(animp);
                     state.getPanelState(5).setLasRequest(lasRequest);
                     state.getPanelState(5).setFrameIndex(0);
                     state.getPanelState(5).clearFrames();
@@ -585,6 +595,12 @@ public class UI implements EntryPoint {
                         datasetService.getDataset( hash + ".json", panel2DatasetCallback);
                     }
 
+                } else if ( count == 1 ) {
+                    layout.panel2.setDifference(false);
+                    layout.panel2.clearBreadcrumbs();
+                    layout.panel2.setAutoLevelsOn(false);
+                    layout.panel2.clearAnnotations();
+                    layout.panel2.getOutputPanel().clearPlot();
                 }
             }
         });
@@ -608,7 +624,7 @@ public class UI implements EntryPoint {
                         // This was the home button...
 
                         info = false;
-                        siteService.getSite("1.json", siteCallback);
+                        siteService.getSite("first.json", siteCallback);
                         layout.panel1.clearPlot();
                         layout.panel1.clearAnnotations();
                         layout.removeBreadcrumbs(1);
@@ -616,6 +632,12 @@ public class UI implements EntryPoint {
                         advancedSearch = true;
                         layout.clearDatasets();
                         layout.showDataProgress();
+
+                        // Always clear even if it's not open
+                        layout.panel2.setDifference(false);
+                        layout.panel2.setAutoLevelsOn(false);
+                        layout.panel2.clearAnnotations();
+                        layout.panel2.getOutputPanel().clearPlot();
 
 
                     }
@@ -632,7 +654,7 @@ public class UI implements EntryPoint {
                     } else {
                         if ( panel == 1 ) {
                             layout.panel2.openSettings();
-                            siteService.getSite("1.json", layout.panel2.siteCallback);
+                            siteService.getSite("first.json", layout.panel2.siteCallback);
                         }
                     }
                 }
@@ -807,7 +829,7 @@ public class UI implements EntryPoint {
             public void onPanelControlOpen(PanelControlOpen event) {
                 ComparePanel panel = (ComparePanel) event.getSource();
                 if ( event.getTargetPanel() == 2 ) {
-                    siteService.getSite("1.json", panel.siteCallback);
+                    siteService.getSite("first.json", panel.siteCallback);
                 }
             }
         });
@@ -875,25 +897,29 @@ public class UI implements EntryPoint {
                 if ( v.getGeometry().equals(GRID) ) {
                     LASRequest lasRequest = makeRequest(6, "Data_Extract");
                     requestQueue.add(lasRequest);
+                    layout.openShowValues();
                     processQueue();
                 } else {
-                    List<String> urls = makeERDDAP_urls(".xhtml");
-                    String url = Constants.stream + "?";
+                    List<String> urls = makeERDDAP_urls(".htmlTable");
                     for (int i = 0; i < urls.size(); i++) {
-                        String q = urls.get(i);
-                        q = q.replaceAll("&","_amp_");
-                        String url_query = url + "datalink=" + q;
-                        Frame frame = new Frame(url_query);
-                        frame.setWidth("100%");
-                        frame.setHeight("98%");
-                        frame.addLoadHandler(new LoadHandler() {
-                            @Override
-                            public void onLoad(LoadEvent loadEvent) {
-                                layout.showValuesProgress.setDisplay(Display.NONE);
-                            }
-                        });
-                        layout.showValuesWindow.add(frame);
+                        Window.open(urls.get(i), "_blank", "");
                     }
+//                    String url = Constants.stream + "?";
+//                    for (int i = 0; i < urls.size(); i++) {
+//                        String q = urls.get(i);
+//                        q = q.replaceAll("&","_amp_");
+//                        String url_query = url + "datalink=" + q;
+//                        Frame frame = new Frame(url_query);
+//                        frame.setWidth("100%");
+//                        frame.setHeight("98%");
+//                        frame.addLoadHandler(new LoadHandler() {
+//                            @Override
+//                            public void onLoad(LoadEvent loadEvent) {
+//                                layout.showValuesProgress.setDisplay(Display.NONE);
+//                            }
+//                        });
+//                        layout.showValuesWindow.add(frame);
+//                    }
                 }
             }
         });
@@ -1102,6 +1128,11 @@ public class UI implements EntryPoint {
                         } else {
                             lasRequest = makeRequest(8, "prop_prop_plot");
                         }
+                        RequestProperty coorp = new RequestProperty();
+                        coorp.setType("batch");
+                        coorp.setName("wait");
+                        coorp.setValue("true");
+                        lasRequest.addProperty(coorp);
                         requestQueue.add(lasRequest);
                     }
                     processQueue();
@@ -1136,10 +1167,11 @@ public class UI implements EntryPoint {
             }
         });
 
+
         // Call for the site now
         if ( toast )
             MaterialToast.fireToast("Getting initial site information.");
-        siteService.getSite("1.json", siteCallback);
+        siteService.getSite("first.json", siteCallback);
         layout.showDataProgress();
 
 
@@ -1335,7 +1367,7 @@ public class UI implements EntryPoint {
                         eventBus.fireEventFromSource(new ChangeConstraint("add", "text", sname, "eq", svalue), link);
                     }
                 });
-                layout.possibleValues.add(link);
+                layout.addPossibleValue(link);
             }
 
         }
@@ -1456,19 +1488,19 @@ public class UI implements EntryPoint {
                 layout.panel1.setVisible(true);
                 state.getPanelState(tp).setResultSet(results);
                 layout.setState(tp, state);
-                if ( historyRequest != null ) {
+                if (historyRequest != null) {
                     // First set the UI to multi-panel
 
-                    if ( historyRequestPanel2 != null ) {
+                    if (historyRequestPanel2 != null) {
                         eventBus.fireEvent(new PanelCount(2));
                         layout.setPlotCount(2);
                     }
                     // TODO other panels
-                    if ( historyRequestPanel8 != null ) {
+                    if (historyRequestPanel8 != null) {
                         layout.openCorrelation();
                     }
 
-                    if ( historyRequestPanel5 != null ) {
+                    if (historyRequestPanel5 != null) {
                         layout.startAnimation();
 
                     }
@@ -1477,15 +1509,13 @@ public class UI implements EntryPoint {
                     historyVariable = null;
                 }
                 if (tp == 2) {
-                    layout.panel2.scale();
-                    if ( historyRequestPanel2 != null ) {
+//                    layout.panel2.scale();
+                    if (historyRequestPanel2 != null) {
                         historyRequestPanel2 = null; // We're finally done with the second panel setup and product request.
                     }
                     makeAnnotationsEven();
                     // TODO other panels... 5 is the animation window
                 }
-
-
             } else if ( tp == 5 ) {
                 // Only do things in panel 5 if the animate window is open... Otherwise just ignore them
                 if ( layout.animateWindow.isOpen() ) {
@@ -1512,6 +1542,11 @@ public class UI implements EntryPoint {
                         String dep_axis_scale = animation.getDep_axis_scale();
 
                         LASRequest lasRequest = makeRequest(5, products.getSelected());
+                        RequestProperty animp = new RequestProperty();
+                        animp.setType("batch");
+                        animp.setName("wait");
+                        animp.setValue("true");
+                        lasRequest.addProperty(animp);
                         lasRequest.getAxesSets().get(0).setTlo(t);
                         lasRequest.getAxesSets().get(0).setThi(t);
 
@@ -1645,6 +1680,7 @@ public class UI implements EntryPoint {
                 layout.correlationAxisItem.collapse();
                 layout.correlationConstraintsItem.expand();
             }
+
             processQueue();
         }
     };
@@ -1890,7 +1926,7 @@ public class UI implements EntryPoint {
             } else {
                 MaterialToast.fireToast("No data sets found matching your search terms.");
                 info = false;
-                siteService.getSite("1.json", siteCallback);
+                siteService.getSite("first.json", siteCallback);
                 layout.removeBreadcrumbs(1);
             }
         }
@@ -3145,8 +3181,8 @@ public class UI implements EntryPoint {
             if (variable.getVerticalAxis() != null) {
 
 
-                // Z is in the view and the main variable has z, use it's values
-                if ( variables.get(0).getVerticalAxis() != null && pview.contains("z") ) {
+                // Use z initially as same from main panel && !pview.contains("z")
+                if ( variables.get(0).getVerticalAxis() != null ) {
                     layout.panel2.setZlo(zAxisWidget.getLo());
                     layout.panel2.setZhi(zAxisWidget.getHi());
                 } else {
@@ -3392,4 +3428,7 @@ public class UI implements EntryPoint {
             layout.panel1.padAnnotations(lines2 - lines1);
         }
     }
+    private static native void setUrl(String newUrl) /*-{
+        $wnd.history.pushState(newUrl, "", newUrl);
+    }-*/;
 }

@@ -93,6 +93,8 @@ public class OutputPanel extends AbsolutePanel {
 
     State state = new State();
 
+    int scale_width = Constants.navWidth;
+
     public OutputPanel() {
         super();
         imageCanvas = Canvas.createIfSupported();
@@ -108,11 +110,11 @@ public class OutputPanel extends AbsolutePanel {
     }
     public void scale() {
         // Decide the image scale based on the available width
-        scale(Constants.navWidth);
+        scale(scale_width);
     }
     public void scale(int navWidth) {
         // Decide the image scale based on the available width
-
+        scale_width = navWidth;
         int w = Window.getClientWidth() - (navWidth + Constants.imageBorderFactor) ;
 
         if (state.getPanelCount() == 1) {

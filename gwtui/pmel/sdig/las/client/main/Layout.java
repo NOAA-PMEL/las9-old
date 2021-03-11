@@ -4,6 +4,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
@@ -22,6 +23,7 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.SuggestOracle;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import gwt.material.design.addins.client.autocomplete.MaterialAutoComplete;
 import gwt.material.design.addins.client.window.MaterialWindow;
@@ -309,6 +311,10 @@ public class Layout extends Composite {
     @UiField
     MaterialButton progressCancel;
 
+    @UiField
+    TextBox filter;
+    List<MaterialLink> allPossibleValues = new ArrayList<>();
+
     int advancedSearchTotal;
     int advancedSearchCount = Constants.PAGE;
     int advancedSearchOffset = 0;
@@ -390,6 +396,7 @@ public class Layout extends Composite {
     private static LayoutUiBinder ourUiBinder = GWT.create(LayoutUiBinder.class);
 
     public Layout() {
+
         root = ourUiBinder.createAndBindUi(this);
 
         initWidget(root);
@@ -414,28 +421,13 @@ public class Layout extends Composite {
         sideNav.addOpenedHandler(new SideNavOpenedEvent.SideNavOpenedHandler() {
             @Override
             public void onSideNavOpened(SideNavOpenedEvent sideNavOpenedEvent) {
-//                outputRow01.setMarginLeft(Constants.navWidth);
-//                outputRow02.setMarginLeft(Constants.navWidth);
                 scale(Constants.navWidth);
-                // with header=false use Constants.navWidth
-//                main.setPaddingLeft(Constants.navWidth);
-                // else use this
-
-
-                // TODO DEBUG
-//                main.setMarginLeft(4);
-//                setBrandWidth(Constants.navWidth);
             }
         });
         sideNav.addClosedHandler(new SideNavClosedEvent.SideNavClosedHandler() {
             @Override
             public void onSideNavClosed(SideNavClosedEvent sideNavClosedEvent) {
-//                outputRow01.setMarginLeft(2);
-//                outputRow02.setMarginLeft(2);
                 scale(8);
-                // TODO DEBUG
-//                main.setPaddingLeft(4);
-//                setBrandWidth(4);
             }
         });
 
@@ -467,6 +459,34 @@ public class Layout extends Composite {
                 showValuesWindow.clear();
             }
         });
+
+        filter.addKeyUpHandler(new KeyUpHandler() {
+            @Override
+            public void onKeyUp(KeyUpEvent keyUpEvent) {
+                String filterText = filter.getText();
+                if ( filterText.isEmpty() ) {
+                    possibleValues.clear();
+                    for (int i = 0; i < allPossibleValues.size(); i++) {
+                        possibleValues.add(allPossibleValues.get(i));
+                    }
+                } else {
+                    List<Widget> matches = new ArrayList<>();
+                    for (int i = 0; i < allPossibleValues.size(); i++) {
+                        if ( allPossibleValues.get(i).getText().toLowerCase().contains(filterText) ) {
+                            matches.add(allPossibleValues.get(i));
+                        }
+                    }
+                    possibleValues.clear();
+                    for (int i = 0; i < matches.size(); i++) {
+                        possibleValues.add(matches.get(i));
+                    }
+                }
+            }
+        });
+    }
+    public void addPossibleValue(MaterialLink link) {
+        allPossibleValues.add(link);
+        possibleValues.add(link);
     }
     public void scale(int navWidth) {
         State state = panel1.getOutputPanel().getState();
@@ -1434,11 +1454,6 @@ public class Layout extends Composite {
 
     @UiHandler("showValuesButton")
     public void onShowValues(ClickEvent event) {
-        showValuesWindow.clear();
-        showValuesWindow.setLayoutPosition(Style.Position.ABSOLUTE);
-        showValuesWindow.setLeft(0);
-        showValuesWindow.setTop(0);
-        showValuesWindow.open();
         eventBus.fireEventFromSource(new ShowValues(), showValuesButton);
     }
 
@@ -1455,6 +1470,13 @@ public class Layout extends Composite {
     public void onBack(ClickEvent event) {
         goBack();
         event.stopPropagation();
+    }
+    public void openShowValues() {
+        showValuesWindow.clear();
+        showValuesWindow.setLayoutPosition(Style.Position.ABSOLUTE);
+        showValuesWindow.setLeft(0);
+        showValuesWindow.setTop(0);
+        showValuesWindow.open();
     }
     public void goBack(){
         if ( getBreadcrumbCount(1) > 0 ) {
@@ -1641,6 +1663,7 @@ public class Layout extends Composite {
         byVariable.clear();
         subsetColumn.clear();
         possibleValues.clear();
+        allPossibleValues.clear();
     }
     @UiHandler("advancedSearchLaunch")
     void onAdvancedSearch(ClickEvent event) {

@@ -75,6 +75,7 @@ import pmel.sdig.las.client.openlayers.DrawSingleFeature.FeatureAddedListener;
 import pmel.sdig.las.client.openlayers.HorizontalPathHandler;
 import pmel.sdig.las.client.openlayers.JumpPathHandler;
 import pmel.sdig.las.client.openlayers.VerticalPathHandler;
+import pmel.sdig.las.client.util.Util;
 import pmel.sdig.las.shared.autobean.Region;
 
 
@@ -886,6 +887,10 @@ public class OLMapWidget extends Composite {
         double e_selection = bounds.getUpperRightX();
         double s_selection = bounds.getLowerLeftY();
         double n_selection = bounds.getUpperRightY();
+        if ( w_data >= 180.0 || e_data >= 180.0) {
+            e_selection = Util.angle0360(e_selection);
+            w_selection = Util.angle0360(w_selection);
+        }
         // Always check the north/south against the data range.
         if (s_selection < s_data || s_selection > n_data) {
             s_selection = s_data;

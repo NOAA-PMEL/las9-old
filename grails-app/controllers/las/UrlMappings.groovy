@@ -22,7 +22,7 @@ class UrlMappings {
         /*
         set line below for sending the bare URL to the ui
         */
-        "/"("UI.html")
+        "/"('/UI.html')
 
         // Directs admin URL to index.gsp which loads the angular app.
         // Access to admin URL space protected by shiro grails plugin

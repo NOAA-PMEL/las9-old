@@ -385,15 +385,30 @@ class FerretService {
             def result = results[i]
             def name = result.name
             if (name == "map_scale") {
-                def mapScale = productService.makeMapScale(result.filename)
-                allResults.setMapScale(mapScale)
+                File mapscaleFile = new File(result.filename)
+                if (mapscaleFile.exists()) {
+                    def mapScale = productService.makeMapScale(mapscaleFile)
+                    allResults.setMapScale(mapScale)
+                } else {
+                    allResults.setError("Unknown error running PyFerret while making product. Mapscale file missing.")
+                }
             } else if (name == "annotations") {
-                def annotationGroups = productService.makeAnnotations(result.filename);
-                allResults.setAnnotationGroups(annotationGroups)
+                File ann = new File(result.filename)
+                if ( ann.exists() ) {
+                    def annotationGroups = productService.makeAnnotations(ann);
+                    allResults.setAnnotationGroups(annotationGroups)
+                } else {
+                    allResults.setError("Unknown error running PyFerret while making product. Annotations file missing.")
+                }
                 // TODO this name has to be more specific to the animation product
             } else if (name == "ferret_listing" && (product == "Animation_2D_XY" || product == "Animation_2D_XY_vector") ) {
-                def animation = productService.makeAnimationList(result.filename)
-                allResults.setAnimation(animation)
+                File anim = new File(result.filename)
+                if ( anim.exists() ) {
+                    def animation = productService.makeAnimationList(anim)
+                    allResults.setAnimation(animation)
+                } else {
+                    allResults.setError("Unknown error running PyFerret while making product. Animation list file missing.")
+                }
             }
             allResults.addToResults(result)
         }

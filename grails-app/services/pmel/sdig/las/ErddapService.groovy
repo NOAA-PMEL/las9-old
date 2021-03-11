@@ -260,14 +260,17 @@ class ErddapService {
                     }
                 }
 
-
                 // If lat, lon and z are included as data variables, knock them out of this list.
                 vars.remove(latname);
                 vars.remove(lonname);
                 vars.remove(zname);
                 vars.remove(time);
 
-                if (productName != null && (productName.equals("Profile_2D_poly") || productName.equals("Time_Series_Location_Plot") || productName.equals("Trajectory_2D_poly"))) {
+                if (productName != null && (productName.equals("Profile_2D_poly") ||
+                                            productName.equals("Time_Series_Location_Plot") ||
+                                            productName.equals("Trajectory_2D_poly") ||
+                                            productName.equals("Trajectory_Profile_Plot_2D") ||
+                                            productName.equals("Trajectory_profile_interactive_plot"))) {
                     String mapvars = dataset.getDatasetPropertyValue("tabledap_access", "map_variables")
                     if (mapvars != null && !mapvars.equals("")) {
                         if (mapvars.contains(",")) {
@@ -434,27 +437,26 @@ class ErddapService {
                 }
             }
 
-            // Leave point data unordered
-            if (!dataset.getGeometry().equals(GeometryType.POINT)) {
-                if (orderby != null) {
-                    if (!orderby.equals("") && !orderby.equals("none")) {
-                        query.append("&orderBy(\"" + orderby + "\")");
-                    } else {
-                        if (!orderby.equals("none") && cruiseid != null) {
-                            query.append("&orderBy(\"" + cruiseid + "," + time + "\")");
-                        } else {
-                            query.append("&orderBy(\"" + time + "\")");
-                        }
-                    }
-                } else {
-                    if (cruiseid != null) {
-                        query.append("&orderBy(\"" + cruiseid + "," + time + "\")");
-                    } else {
-                        query.append("&orderBy(\"" + time + "\")");
-                    }
-                }
-            }
-
+            // I think this is unneccessary for ncCF as the convention implies it, but maybe not... testing. Leave point data unordered
+//            if (!dataset.getGeometry().equals(GeometryType.POINT)) {
+//                if (orderby != null) {
+//                    if (!orderby.equals("") && !orderby.equals("none")) {
+//                        query.append("&orderBy(\"" + orderby + "\")");
+//                    } else {
+//                        if (!orderby.equals("none") && cruiseid != null) {
+//                            query.append("&orderBy(\"" + cruiseid + "," + time + "\")");
+//                        } else {
+//                            query.append("&orderBy(\"" + time + "\")");
+//                        }
+//                    }
+//                } else {
+//                    if (cruiseid != null) {
+//                        query.append("&orderBy(\"" + cruiseid + "," + time + "\")");
+//                    } else {
+//                        query.append("&orderBy(\"" + time + "\")");
+//                    }
+//                }
+//            }
 
             //get the data
             causeOfError = "Could not convert the data source to a netCDF file: ";

@@ -27,6 +27,7 @@ import { DatasetHideComponent } from './dataset-hide/dataset-hide.component';
 import { DatasetDeleteComponent } from './dataset-delete/dataset-delete.component';
 import { SiteEditComponent } from './site-edit/site-edit.component';
 import { DatasetUpdateComponent } from './dataset-update/dataset-update.component';
+import { BackupRestoreComponent } from './backup-restore/backup-restore.component';
 
 
 @NgModule({
@@ -43,6 +44,7 @@ import { DatasetUpdateComponent } from './dataset-update/dataset-update.componen
     DatasetDeleteComponent,
     SiteEditComponent,
     DatasetUpdateComponent,
+    BackupRestoreComponent,
   ],
   imports: [
     BrowserModule,

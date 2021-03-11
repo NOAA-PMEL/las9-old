@@ -7,6 +7,7 @@ import com.google.visualization.datasource.base.DataSourceException
 import com.google.visualization.datasource.base.ReasonType
 import com.google.visualization.datasource.datatable.value.ValueType
 import grails.gorm.transactions.Transactional
+import grails.util.Environment
 import grails.util.Holders
 import org.apache.commons.lang3.tuple.ImmutablePair
 import org.apache.commons.lang3.tuple.Pair
@@ -247,7 +248,18 @@ class ProductController {
 
         Product product = Product.findByName(lasRequest.operation, [fetch: [operations: 'eager']])
 
+        boolean wait_forever = false;
         def operations = product.getOperations()
+        List<RequestProperty> batch = lasRequest.getPropertyGroup("batch")
+        if ( batch && batch.size() > 0 ) {
+            // Wait and do not return the intermediate response for animation or correlation.
+            // Use will close window to cancel.
+            RequestProperty rp = batch.find{it.name=="wait"}
+            if ( rp && rp.getValue().equals("true") ) {
+                wait_forever = true
+            }
+        }
+
         for (int i = 0; i < operations.size(); i++) {
             Operation operation = operations.get(i)
             ResultSet rs = operation.getResultSet()
@@ -260,62 +272,71 @@ class ProductController {
         }
 
         def resultSet
-        if ( pulse.hasPulse ) {
-            // If it has a pulse, check it status and return the appropriate response
-            if (pulse.getState().equals(PulseType.COMPLETED) ) {
-                Map cacheMap = productService.cacheCheck(product, hash, outputPath)
-                resultSet = cacheMap.resultSet
-                resultSet.setTargetPanel(lasRequest.getTargetPanel())
-                resultSet.setProduct(product.getName())
-                if ( !cacheMap.cache ) {
-                    // Cache was invalid, so start the job again
-                    // TODO NOT DRY see below
-                    // If the current request does not have a pulse, start of request and wait 20 seconds for it to finish
-                    def p = task {
-                        productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
-                    }
-                    try {
-                        resultSet = p.get(10l, TimeUnit.SECONDS)
-                        // End of request
-                        log.debug("Finished product request, rendering response...")
-                    } catch (TimeoutException e) {
-                        resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product)
-                    }
-                }
-            } else if ( pulse.getState().equals(PulseType.ERROR) ) {
-                resultSet = productService.errorResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product);
-                File pulseFile = new File(pulse.getPulseFile())
-                pulseFile.delete()
-            } else {
-                // If there is a download file and no ferret script update download, otherwise
-                // update the ferret progress iff ferretScript
-                String downloadFile = pulse.getDownloadFile()
-                String ferretScript = pulse.getFerretScript()
-                if ( downloadFile && !ferretScript ) {
-                    productService.writePulse(hash, outputPath, "Downloading data from ERDDAP", ferretScript, downloadFile, null, PulseType.STARTED)
-                } else if ( ferretScript ) {
-                    def pinfo = productService.getProcessInfo(ferretScript)
-                    productService.writePulse(hash, outputPath, "PyFerret process is running", ferretScript, null, pinfo, PulseType.STARTED)
-                }
-                resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product)
-            }
+        // Do animation and correlation requests without pulse; user should be able to just close the window to cancel3
+        if ( wait_forever ) {
+            resultSet = productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
         } else {
-            // If the current request does not have a pulse, start of request and wait 20 seconds for it to finish
-            def p = task {
-                productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
-            }
-            try {
-                // DEBUG always get a response
-                resultSet = p.get(20l, TimeUnit.SECONDS)
-                // End of request
-                log.debug("Finished product request, rendering response...")
-            } catch (TimeoutException e) {
-                String ferretScript = pulse.getFerretScript()
-                if ( ferretScript ) {
-                    def pinfo = productService.getProcessInfo(ferretScript)
-                    productService.writePulse(hash, outputPath, "PyFerret process is running", ferretScript, null, pinfo, PulseType.STARTED)
+            if (pulse.hasPulse) {
+                // If it has a pulse, check it status and return the appropriate response
+                if (pulse.getState().equals(PulseType.COMPLETED)) {
+                    Map cacheMap = productService.cacheCheck(product, hash, outputPath)
+                    resultSet = cacheMap.resultSet
+                    resultSet.setTargetPanel(lasRequest.getTargetPanel())
+                    resultSet.setProduct(product.getName())
+                    if (!cacheMap.cache) {
+                        // Cache was invalid, so start the job again
+                        // TODO NOT DRY see below
+                        // If the current request does not have a pulse, start of request and wait 20 seconds for it to finish
+                        def p = task {
+                            productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
+                        }
+                        try {
+                            resultSet = p.get(10l, TimeUnit.SECONDS)
+                            // End of request
+                            log.debug("Finished product request, rendering response...")
+                        } catch (TimeoutException e) {
+                            resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product)
+                        }
+                    }
+                } else if (pulse.getState().equals(PulseType.ERROR)) {
+                    resultSet = productService.errorResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product);
+                    File pulseFile = new File(pulse.getPulseFile())
+                    pulseFile.delete()
+                } else {
+                    // If there is a download file and no ferret script update download, otherwise
+                    // update the ferret progress iff ferretScript
+                    String downloadFile = pulse.getDownloadFile()
+                    String ferretScript = pulse.getFerretScript()
+                    if (downloadFile && !ferretScript) {
+                        productService.writePulse(hash, outputPath, "Downloading data from ERDDAP", ferretScript, downloadFile, null, PulseType.STARTED)
+                    } else if (ferretScript) {
+                        def pinfo = productService.getProcessInfo(ferretScript)
+                        productService.writePulse(hash, outputPath, "PyFerret process is running", ferretScript, null, pinfo, PulseType.STARTED)
+                    }
+                    resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product)
                 }
-                resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product);
+            } else {
+                // If the current request does not have a pulse, start of request and wait 20 seconds for it to finish
+                def p = task {
+                    productService.doRequest(lasRequest, product, hash, ferret.getTempDir(), base, outputPath, ferret_temp);
+                }
+                try {
+                    long to = 20l
+                    if (Environment.isDevelopmentMode()) {
+                        to = Long.MAX_VALUE
+                        to = 10l // DEBUG DEBUG DEBUG the DEBUG
+                    }
+                    resultSet = p.get(to, TimeUnit.SECONDS)
+                    // End of request
+                    log.debug("Finished product request, rendering response...")
+                } catch (TimeoutException e) {
+                    String ferretScript = pulse.getFerretScript()
+                    if (ferretScript) {
+                        def pinfo = productService.getProcessInfo(ferretScript)
+                        productService.writePulse(hash, outputPath, "PyFerret process is running", ferretScript, null, pinfo, PulseType.STARTED)
+                    }
+                    resultSet = productService.pulseResult(lasRequest, hash, ferret.getTempDir(), base, outputPath, product);
+                }
             }
         }
         if (resultSet) {

@@ -22,7 +22,18 @@ class SiteController {
 
     def show() {
         def sid = params.id
-        Site site = Site.get(sid)
+        try {
+            sid = Long.parseLong(sid)
+        } catch (Exception e) {
+            sid = null
+        }
+        Site site
+        if ( sid ) {
+            site = Site.get(sid)
+        } else {
+            def sites = Site.withCriteria{ne('title', 'Private Data')}
+            site = sites[0]
+        }
 
         // Don't bother to compute now as we're not going to display them.
 

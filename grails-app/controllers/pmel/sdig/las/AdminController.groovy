@@ -3,18 +3,23 @@ package pmel.sdig.las
 import grails.converters.JSON
 import grails.gorm.transactions.Transactional
 import groovy.json.JsonSlurper
+import org.apache.commons.io.FileUtils
+
+import java.text.SimpleDateFormat
 
 @Transactional
 class AdminController {
     IngestService ingestService
     UpdateDatasetJobService updateDatasetJobService;
+    def jsonSlurper = new JsonSlurper()
     def index() {
         respond "You logged in."
     }
     def saveSite() {
         def requestJSON = request.JSON
         def map = requestJSON as Map
-        def site = Site.get(1);
+        def sites = Site.withCriteria{ne('title', 'Private Data')}
+        def site = sites[0]
         site.properties = map;
         site.save(flush: true, failOnError: true);
         JSON.use("deep") {
@@ -404,6 +409,251 @@ class AdminController {
             }
         } else {
             log.error("No site found for this installation.")
+        }
+    }
+    def listBackups() {
+        def backups = backup_list();
+        render backups as JSON
+    }
+    private def backup_list() {
+        def backups = []
+        Ferret ferret = Ferret.first()
+        def tmp = ferret.tempDir;
+        def backupDir = new File(tmp + File.separator + "backups")
+        if ( backupDir.exists() ) {
+            backupDir.eachFile { file ->
+                if (file.isDirectory()) {
+                    Backup b = new Backup();
+                    b.setDirectory(file.getAbsolutePath())
+                    backups.add(b)
+                }
+            }
+        }
+        backups
+    }
+    def deleteBackup() {
+        def requestJSON = request.JSON
+        Backup bkup = new Backup(requestJSON)
+        def f = bkup.getDirectory()
+        Ferret ferret = Ferret.first()
+        def tmp = ferret.tempDir;
+        def backupDir
+        if ( f.startsWith("/") ) {
+            backupDir = new File(f)
+        } else {
+            backupDir = new File(tmp + File.separator + "backups" + File.separator + f)
+        }
+        if ( !backupDir.exists() ) {
+            log.debug("Could not find backup directory." + backupDir.getAbsolutePath())
+        } else {
+            FileUtils.deleteDirectory(backupDir)
+        }
+        def backups = backup_list()
+        render backups as JSON
+    }
+    def restore() {
+        def requestJSON = request.JSON
+        Backup bkup = new Backup(requestJSON)
+        def f = bkup.getDirectory()
+        Ferret ferret = Ferret.first()
+        def tmp = ferret.tempDir;
+        def backupDir
+        if ( f.startsWith("/") ) {
+            backupDir = new File(f)
+        } else {
+            backupDir = new File(tmp + File.separator + "backups" + File.separator + f)
+        }
+        if ( !backupDir.exists() ) {
+            log.debug("Could not find backup directory." + backupDir.getAbsolutePath())
+        } else {
+            def sites = Site.withCriteria{ne('title', 'Private Data')}
+            Site site = sites[0]
+            Site nsite
+            backupDir.eachFile { file ->
+                if (file.isFile() && file.getName().contains("site_")) {
+                    def siteJsonObj = jsonSlurper.parse(file)
+                    removeIds(siteJsonObj)
+                    nsite = new Site(siteJsonObj)
+                    nsite.footerLinks = null;
+                    nsite.datasets = null;
+                }
+            }
+            // Find datasets and see which ones have children
+            backupDir.eachFile { file ->
+                if ( file.isDirectory() && file.getName().contains("dataset_")) {
+                    def dsJsonFile = new File(file.getAbsolutePath() + File.separator + "dataset.json")
+                    def json = jsonSlurper.parse(dsJsonFile)
+                    removeIds(json)
+                    Dataset ds = new Dataset(json)
+                    ds.datasets = null;
+                    nsite.addToDatasets(ds)
+                    ds.save(flush: true);
+                    log.debug("Added top level data set: " + file.getName())
+                    addChildren(ds, file)
+                } else if (file.isFile() && file.getName().contains("link_") ) {
+                    def json = jsonSlurper.parse(file)
+                    removeIds(json)
+                    FooterLink footerLink = new FooterLink(json)
+                    nsite.addToFooterLinks(footerLink)
+                }
+            }
+            if ( !nsite.validate() ) {
+                log.debug("Site read from disk did not validate.")
+                nsite.errors.allErrors.each {
+                    println it
+                }
+            } else {
+                if ( site ) site.delete(flush: true)
+                nsite.save(flush: true)
+            }
+        }
+    }
+    private def removeIds(def jsonObject) {
+        if ( jsonObject instanceof Map ) {
+            if ( jsonObject.containsKey("id") ) {
+                jsonObject.remove('id')
+            }
+            jsonObject.keySet().each {
+                removeIds(jsonObject.get(it))
+            }
+        } else if ( jsonObject instanceof Collection) {
+            jsonObject.each {
+                removeIds(it)
+            }
+        }
+    }
+    private def addChildren(Dataset dataset, File datasetDirectory) {
+        datasetDirectory.eachFile { file ->
+            if ( file.isDirectory() && file.getName().contains("dataset_") ) {
+                def dsJsonFile = new File(file.getAbsolutePath() + File.separator + "dataset.json")
+                def json = jsonSlurper.parse(dsJsonFile)
+                removeIds(json)
+                Dataset ds = new Dataset(json)
+                if ( ds.getVariableChildren() ) {
+                    ds.variables = null;
+                    ds.vectors = null; // TODO save and add these
+                    processVariables(ds, file)
+                } else {
+                    ds.datasets = null;
+                }
+                dataset.addToDatasets(ds)
+                ds.save(flush: true)
+                addChildren(ds, file)
+            }
+        }
+    }
+    private def processVariables(Dataset dataset, File datasetDirectory) {
+        datasetDirectory.eachFile { file ->
+            if ( file.isFile() && file.getName().contains("variable_") ) {
+                def json = jsonSlurper.parse(file)
+                removeIds(json)
+                Variable variable = new Variable(json)
+                if ( variable.getGeoAxisX() ) {
+                    variable.getGeoAxisX().setVariable(variable)
+                }
+                if ( variable.getGeoAxisY() ) {
+                    variable.getGeoAxisY().setVariable(variable)
+                }
+                if ( variable.getTimeAxis() ) {
+                    variable.getTimeAxis().setVariable(variable)
+                }
+                if ( variable.getVerticalAxis() ) {
+                    variable.getVerticalAxis().setVariable(variable)
+                }
+                dataset.addToVariables(variable)
+                variable.setDataset(dataset)
+                variable.save(flush: true)
+            }
+        }
+    }
+    def backup() {
+        def backups = backup_list();
+        def sites = Site.withCriteria{ne('title', 'Private Data')}
+        Site site = sites[0]
+        Ferret ferret = Ferret.first()
+        def tmp = ferret.tempDir;
+        def backupDir = new File(tmp + File.separator + "backups" + File.separator + "db-backup-" + new SimpleDateFormat("yyyy-MM-dd-HHmm").format(new Date()))
+        if ( !backupDir.exists() ) backupDir.mkdirs()
+        def siteFile = new File(backupDir.getAbsolutePath() + File.separator + "site_" + site.id + ".json")
+        def siteJson = site as JSON
+        siteFile.write(siteJson.toString(true))
+        List<FooterLink> footers = site.getFooterLinks()
+        if ( footers ) {
+            footers.each { FooterLink link ->
+                def linkJson = link as JSON
+                def linkFile = new File(backupDir.getAbsolutePath() + File.separator + "link_" + link.id + ".json")
+                linkFile.write(linkJson.toString(true))
+            }
+        }
+        Map<String, List<String>> attributes = site.getAttributes()
+        if ( attributes ) {
+            def attrJson = attributes as JSON
+            def attrFile = new File(backupDir.getAbsolutePath() + File.separator + "attributes.json")
+            attrFile.write(attrJson.toString(true))
+        }
+        def properties = site.getSiteProperties()
+        if ( properties ) {
+            properties.each{ SiteProperty prop ->
+                def propJson = prop as JSON
+                def propFile = new File(backupDir.getAbsolutePath() + File.separator + "prop_" + prop.id + ".json")
+                propFile.write(propJson.toString(true))
+            }
+        }
+
+        def datasets = site.getDatasets()
+        if ( datasets ) {
+            backupDatasetTree(datasets, backupDir.getAbsolutePath())
+        }
+
+        def ferretFile = new File(backupDir.getAbsolutePath() + File.separator + "ferret_" + ferret.id + ".json")
+        JSON.use("deep") {
+            def ferretJson = ferret as JSON
+            ferretFile.write(ferretJson.toString(true))
+        }
+        Backup backup = new Backup(['directory':backupDir, 'highlight': true])
+        backups.add(backup)
+        render backups as JSON
+    }
+    private def backupDatasetTree(def datasets, String backupDir){
+        datasets.each { Dataset dataset ->
+            backupDataset(dataset, backupDir)
+            def children = dataset.getDatasets();
+            if ( children ) {
+                backupDatasetTree(children, backupDir + File.separator + "dataset_"+dataset.id)
+            }
+        }
+    }
+    private def backupDataset(Dataset dataset, String backupDir) {
+        def datasetJson = dataset as JSON
+        def datasetDir = new File(backupDir + File.separator + "dataset_" + dataset.id)
+        if (!datasetDir.exists()) {
+            datasetDir.mkdirs();
+        }
+        def datasetFile = new File(backupDir + File.separator + "dataset_" + dataset.id + File.separator + "dataset.json")
+        datasetFile.write(datasetJson.toString(true))
+        // Write the member domain objects separately
+        if (dataset.datasetProperties) {
+
+            dataset.datasetProperties.each { DatasetProperty dp ->
+
+                def dpJson = dp as JSON
+                def dpFile = new File(backupDir + File.separator + "dataset_" + dataset.id + File.separator + "dataset_property_" + dp.id + ".json")
+                dpFile.write(dpJson.toString(true))
+            }
+        }
+        if ( dataset.variableChildren ) {
+            // A variable is the most complicated hierarchy, but it only ever goes one level deep so this should work fine
+            dataset.variables.each {Variable variable ->
+                def variableJson
+                JSON.use("deep") {
+                    variableJson = variable as JSON
+                    // Don't need the either of these and this keeps them out of the toString !!! Sweet
+                    variableJson.excludes = ['parent', 'dataset']
+                }
+                def varFile = new File(backupDir + File.separator + "dataset_" + dataset.id + File.separator + "variable_" + variable.id + ".json")
+                if ( variableJson )
+                    varFile.write(variableJson.toString(true))
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ import {AdminService} from "../../admin.service";
 import {Util} from "../util/Util";
 import {FooterLink} from "../json/Site";
 import {ApplicationStateService} from "../application-state.service";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-site-edit',
@@ -29,23 +30,34 @@ export class SiteEditComponent implements OnInit {
   footerLinkToEdit: FooterLink;
   edit_footerLink: boolean = false;
   linkProperties = [];
-
+  stateChanges: Subscription;
   ngOnInit() {
+    this.stateChanges = this.applicationStateService.stateChanged.subscribe(state => {
+      if (state) {
+        if (state.parent && !state.showProgress) {
+          this.loadSite(state.parent)
+        }
+      }
+    });
     this.datasetService.getSite().subscribe(site => {
-      for (let prop in site) {
-        if (site[prop]) {
-          if (site[prop] instanceof String || typeof site[prop] === 'string') {
-            let sp: StringProperty = new StringProperty({label: prop, value: site[prop], key: prop})
-            this.site_properties.push(sp);
-          } else if (Util.isArray(site[prop])) {
-            if (prop === "footerLinks") {
-              this.footerLinks = site[prop];
-            }
+      this.loadSite(site);
+    })
+  }
+  loadSite(site) {
+    this.site_properties = []
+    for (let prop in site) {
+      if (site[prop]) {
+        if (site[prop] instanceof String || typeof site[prop] === 'string') {
+          let sp: StringProperty = new StringProperty({label: prop, value: site[prop], key: prop})
+          this.site_properties.push(sp);
+        } else if (Util.isArray(site[prop])) {
+          if (prop === "footerLinks") {
+            this.footerLinks = site[prop];
           }
         }
       }
-      this.siteForm = this.formService.makeFormGroup(this.site_properties);
-    })
+    }
+    this.siteForm = this.formService.makeFormGroup(this.site_properties);
   }
   editLink(flink: FooterLink) {
     this.linkProperties = [];

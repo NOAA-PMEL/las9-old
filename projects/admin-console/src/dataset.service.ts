@@ -10,7 +10,7 @@ export class DatasetService {
 
   constructor(private httpClient: HttpClient) { }
   getSite() {
-    return this.httpClient.get<Site>('/las/site/show/1.json');
+    return this.httpClient.get<Site>('/las/site/show/first.json');
   }
   getPrivate() {
     return this.httpClient.get<Site>('/las/site/show/2.json');

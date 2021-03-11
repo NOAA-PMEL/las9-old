@@ -23,6 +23,9 @@
   <p-tabPanel header="Auto Update Data">
     <app-dataset-update></app-dataset-update>
   </p-tabPanel>
+  <p-tabPanel header="Backup and Restore">
+    <app-backup-restore></app-backup-restore>
+  </p-tabPanel>
 </p-tabView>
 <p-dialog [(visible)]="applicationStateService.error" style="width: 40%" header="An error occurred.">
   {{applicationStateService.getErrorMessage()}}

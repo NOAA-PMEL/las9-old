@@ -526,6 +526,31 @@ class InitializationService {
 
             profile.save(failOnError: true)
         }
+        // Make a profile from a trajectory profile data set
+        Product traj_profile = Product.findByName("Trajectory_Profile_Plot_2D")
+        if ( !traj_profile ) {
+            traj_profile = new Product([name:"Trajectory_Profile_Plot_2D", title: "Profile Plot", view: "zt", data_view: "xyzt", ui_group: "Profile Plots", geometry: GeometryType.TRAJECTORY_PROFILE, product_order: "100001"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_profile = new Operation([name: "Proflie_plot", service_action: "Plot_2D_Profile", type: "ferret", output_template: "zoom"])
+            operation_plot_profile.setResultSet(resultsService.getPlotResults())
+
+            //
+            operation_plot_profile.addToTextOptions(optionsService.getExpression())
+            operation_plot_profile.addToTextOptions(optionsService.getDep_axis_scale())
+            operation_plot_profile.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_plot_profile.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_profile.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_plot_profile.addToMenuOptions(optionsService.getLine_or_sym())
+            operation_plot_profile.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_profile.addToMenuOptions(optionsService.getLine_thickness())
+
+            traj_profile.addToOperations(operation_extract_data)
+            traj_profile.addToOperations(operation_plot_profile)
+
+            traj_profile.save(failOnError: true)
+        }
         /*
 
   <!-- This is the default XY plot. -->
@@ -591,6 +616,33 @@ class InitializationService {
             trajectory.addToOperations(operation_plot_traj)
 
             trajectory.save(failOnError: true)
+        }
+
+        // Make a trajectory plot from a trajectoryprofile data set
+        Product trajectory_profile = Product.findByName("Trajectory_profile_interactive_plot")
+        if ( !trajectory_profile ) {
+            trajectory_profile = new Product([name:"Trajectory_profile_interactive_plot", title: "Trajectory Plot", view: "xy", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.TRAJECTORY_PROFILE, product_order: "100001"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_traj = new Operation([name: "Trajectory_plot", service_action: "Trajectory_2D_poly", type: "ferret", output_template: "zoom"])
+            operation_plot_traj.setResultSet(resultsService.getPlotResults())
+
+            //
+            operation_plot_traj.addToTextOptions(optionsService.getExpression())
+            operation_plot_traj.addToTextOptions(optionsService.getDep_axis_scale())
+            operation_plot_traj.addToYesNoOptions(optionsService.getInterpolate_data())
+            operation_plot_traj.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_traj.addToYesNoOptions(optionsService.getDeg_min_sec())
+            operation_plot_traj.addToMenuOptions(optionsService.getLine_or_sym())
+            operation_plot_traj.addToMenuOptions(optionsService.getLine_color())
+            operation_plot_traj.addToYesNoOptions(optionsService.getSet_aspect())
+            operation_plot_traj.addToMenuOptions(optionsService.getLine_thickness())
+
+            trajectory_profile.addToOperations(operation_extract_data)
+            trajectory_profile.addToOperations(operation_plot_traj)
+
+            trajectory_profile.save(failOnError: true)
         }
 
 /*
@@ -800,7 +852,7 @@ class InitializationService {
 
         Product traj_time_series = Product.findByName("Trajectory_timeseries_plot")
         if ( !traj_time_series ) {
-            traj_time_series = new Product([name:"Trajectory_timeseries_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TRAJECTORY, product_order: "100001"])
+            traj_time_series = new Product([name:"Trajectory_timeseries_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TRAJECTORY, product_order: "100002"])
             Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
             operation_extract_data.setResultSet(resultsService.getNetcdfFile())
 
@@ -820,6 +872,11 @@ class InitializationService {
 
             traj_time_series.save(failOnError: true)
         }
+
+/*
+
+TODO DEBUG DEBUG DEBUG
+Does not work with 7.6.3 for ALCIM data
 
         Product dsg_time_series = Product.findByName("Timeseries_station_plot")
         if ( !dsg_time_series ) {
@@ -843,6 +900,8 @@ class InitializationService {
 
             dsg_time_series.save(failOnError: true)
         }
+*/
+
         Product z_line_plot = Product.findByName("Longitude")
         if (!z_line_plot) {
 
@@ -1354,7 +1413,10 @@ class InitializationService {
 
             // Set up the default LAS
             // We're going to use fer_data to find them, so Ferret must be configured first.
-            Site site = Site.first();
+            def sites = Site.withCriteria{ne('title', 'Private Data')}
+            Site site
+            if ( sites && sites.size() > 0)
+                site = sites[0]
             if (!site) {
 
                 site = new Site([title: "Example LAS Site from Initial Installation"])

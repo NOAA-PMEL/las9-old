@@ -1,4 +1,8 @@
-﻿export interface Dataset {
+﻿export interface Backup {
+  directory: string;
+  highlight: boolean;
+}
+export interface Dataset {
   datasetProperties?: (DatasetProperty)[] | null;
   datasets?: (Dataset)[] | null;
   geometry: string;

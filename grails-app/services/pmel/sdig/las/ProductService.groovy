@@ -34,12 +34,12 @@ class ProductService {
         products.sort{it.product_order}
         products
     }
-    def makeAnnotations(String filename) {
+    def makeAnnotations(File file) {
 
         List<AnnotationGroup> annotationGroups = new ArrayList<AnnotationGroup>();
 
         Random r = new Random()
-        def root = new XmlSlurper().parse(filename)
+        def root = new XmlSlurper().parse(file)
         root.annotation_group.each {group ->
             AnnotationGroup aGroup = new AnnotationGroup()
             aGroup.setType(group.@type.toString())
@@ -54,10 +54,10 @@ class ProductService {
         }
         annotationGroups;
     }
-    private def Animation makeAnimationList(String filename) {
+    private def Animation makeAnimationList(File file) {
         Document doc = new Document();
         Animation animation = new Animation();
-        JDOMUtils.XML2JDOM(new File(filename), doc)
+        JDOMUtils.XML2JDOM(file, doc)
         Element root = doc.getRootElement();
         if ( root == null ) {
             return animation;
@@ -112,10 +112,10 @@ class ProductService {
         }
         animation
     }
-    def makeMapScale(String filename) {
+    def makeMapScale(File mapscaleFile) {
         HashMap<String, String> scale = new HashMap<String, String>();
 
-        new File(filename).eachLine{String line ->
+        mapscaleFile.eachLine{String line ->
 
             if (line.contains("[1-9]:") && line.contains(" / ")) {
                 // Split on the : and use the second half...

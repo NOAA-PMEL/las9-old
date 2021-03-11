@@ -1359,6 +1359,8 @@ class IngestService {
         Dataset timeseries = new Dataset([title: "Timeseries Data", url: tsurl, hash: getDigest(tsurl)])
         def trurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/trajectory/"
         Dataset trajectories = new Dataset([title: "Trajectory Data", url: trurl, hash: getDigest(trurl)])
+        def trpurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/trajectoryprofile/"
+        Dataset trajectorieprofiles = new Dataset([title: "Trajectory Profile Data", url: trurl, hash: getDigest(trurl)])
         def pturl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/point/"
         Dataset point = new Dataset([title: "Point Data", url: pturl, hash: getDigest(pturl)])
         def prurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/profile/"
@@ -1417,6 +1419,8 @@ class IngestService {
                                 point.addToDatasets(tabledapItem)
                             } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
                                 profile.addToDatasets(tabledapItem)
+                            } else if ( tabledapItem.getGeometry() == GeometryType.TRAJECTORY_PROFILE ) {
+                                trajectorieprofiles.addToDatasets(tabledapItem)
                             }
                         }
                         // If not, just use the DSG type
@@ -1429,6 +1433,8 @@ class IngestService {
                             point.addToDatasets(tabledapItem)
                         } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
                             profile.addToDatasets(tabledapItem)
+                        } else if ( tabledapItem.getGeometry() == GeometryType.TRAJECTORY_PROFILE ) {
+                            trajectorieprofiles.addToDatasets(tabledapItem)
                         }
                     }
                 }
@@ -1444,6 +1450,9 @@ class IngestService {
             }
             if ( profile.datasets &&  profile.datasets.size() > 0 ) {
                 dsg.addToDatasets(profile)
+            }
+            if ( trajectorieprofiles.datasets && trajectorieprofiles.datasets.size() > 0 ) {
+                dsg.addToDatasets(trajectorieprofiles)
             }
         }
         dsg
@@ -1584,13 +1593,36 @@ class IngestService {
             }
         }
 
-        String dsgIDVariablename = metadata.getVariableWithCf_role()
+        def trajectoryId
+        def profileId
+        def dsgid
+        if ( dataset.getGeometry().equals(GeometryType.TRAJECTORY_PROFILE) ) {
+            trajectoryId = metadata.getVariableWithCf_role("trajectory_id")
+            profileId = metadata.getVariableWithCf_role("profile_id")
+            log.debug("Setting trajectory id = " + trajectoryId + " and profile_id = " + profileId + " for trajectory profile data set.")
+        } else {
+            dsgid = metadata.getVariableWithCf_role()
+            log.debug("id var = " + dsgid)
+        }
+        def id_var_list = []
+        if ( trajectoryId ) {
+            id_var_list.push(trajectoryId)
+            dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "trajectory_id", value: trajectoryId]))
+
+        }
+        if ( profileId ) {
+            id_var_list.push(profileId)
+            dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "profile_id", value: profileId]))
+        }
+        if ( dsgid ) id_var_list.push(dsgid)
+
         String timeVar = metadata.getAssociatedVariable("_CoordinateAxisType", "time")
         String latVar = metadata.getAssociatedVariable("_CoordinateAxisType", "lat")
         String lonVar = metadata.getAssociatedVariable("_CoordinateAxisType", "lon")
         String zVar = metadata.getAssociatedVariable("_CoordinateAxisType", "height")
 
-        log.debug("id var = " + dsgIDVariablename + ", time var = " + timeVar + ", lat var = " + latVar + ", lon var = " + lonVar + ", z var = " + zVar)
+        log.debug("time var = " + timeVar + ", lat var = " + latVar + ", lon var = " + lonVar + ", z var = " + zVar)
+
         for (int i = 0; i < subsetNames.size(); i++) {
             log.debug("Subset variable " + subsetNames.get(i) + " found.")
         }
@@ -1784,7 +1816,7 @@ class IngestService {
             long fsize = 3l
             if (size < 355.0) {
                 double fudge = size * 0.15
-                if (size < 1.0d) {
+                if (size < 3.0d) {
                     fudge = 0.25
                 }
                 dstart = dstart - fudge
@@ -1948,10 +1980,11 @@ class IngestService {
             }
         }
 
-        Variable idvb = new Variable()
-        dataset.setVariableChildren(true)
-        if (dsgIDVariablename != null) {
 
+        dataset.setVariableChildren(true)
+        id_var_list.each {dsgIDVariablename ->
+
+            Variable idvb = new Variable()
 
             idvb.setName(dsgIDVariablename)
             idvb.setUrl(url+"#"+dsgIDVariablename)
@@ -1993,10 +2026,13 @@ class IngestService {
             idvb.setIntervals(intervals)
 
             dataset.addToVariables(idvb)
+            subsetNames.remove(dsgIDVariablename)
+            dataset.addToDatasetProperties(new DatasetProperty([type: "thumbnails", name: "metadata", value: dsgIDVariablename]))
         }
 
 
-        subsetNames.remove(dsgIDVariablename)
+
+
 
         // Add any subset variables that are not the id and are not a XYZT variable
         subsetNames.each {subsetVariable ->
@@ -2054,10 +2090,6 @@ class IngestService {
 
 
         dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "all_variables", value: allv.toString()]))
-
-        if (dsgIDVariablename != null) {
-            dataset.addToDatasetProperties(new DatasetProperty([type: "thumbnails", name: "metadata", value: dsgIDVariablename]))
-        }
 
         StringBuilder pairs = new StringBuilder()
         StringBuilder vnames = new StringBuilder()
@@ -2161,9 +2193,7 @@ class IngestService {
 
         }
 
-        if (dsgIDVariablename != null) {
-            dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: grid_type.toLowerCase(Locale.ENGLISH) + "_id", value: dsgIDVariablename]))
-        }
+
         dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "server", value: "TableDAP " + grid_type.toLowerCase(Locale.ENGLISH)]))
         dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "title", value: title]))
         dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "id", value: id]))

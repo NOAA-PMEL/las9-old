@@ -38,4 +38,16 @@ export class AdminService {
   addVectors(id: number): Observable<any> {
     return this.httpClient.get('/las/admin/addVectors/' + id);
   }
+  listBackups(): Observable<any> {
+    return this.httpClient.get('/las/admin/listBackups');
+  }
+  backup(): Observable<any> {
+    return this.httpClient.get('/las/admin/backup');
+  }
+  restore(backup): Observable<any> {
+    return this.httpClient.post<any>('/las/admin/restore', backup)
+  }
+  deleteBackup(backup): Observable<any> {
+    return this.httpClient.post<any>('/las/admin/deleteBackup', backup)
+  }
 }

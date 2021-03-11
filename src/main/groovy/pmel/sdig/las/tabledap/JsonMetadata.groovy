@@ -44,6 +44,18 @@ class JsonMetadata {
         }
         return null
     }
+    String getVariableWithCf_role(String role) {
+        JSONArray rows = metadata.get("table").get("rows")
+        for (int i = 0; i < rows.size(); i++) {
+            JSONArray row = rows.get(i)
+            if ( row.get(0).toString().equals("attribute") && row.get(2).equals("cf_role") ) {
+                if ( row.get(4).equals(role) ) {
+                    return row.get(1).toString()
+                }
+            }
+        }
+        return null
+    }
     List<String> getVariables() {
         List<String> variables = new ArrayList<>()
         JSONArray rows = metadata.get("table").get("rows")

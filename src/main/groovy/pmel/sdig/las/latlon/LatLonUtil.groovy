@@ -14,8 +14,8 @@ class LatLonUtil {
         if (!Double.isFinite(degrees))
             return 0;
 
-        while (degrees < -180) degrees += 360;
-        while (degrees >= 180) degrees -= 360;
+        while (degrees < -180.0d) degrees += 360.0d;
+        while (degrees > 180.0d) degrees -= 360.0d;
 
         return degrees;
     }
@@ -30,10 +30,10 @@ class LatLonUtil {
         if (!Double.isFinite(degrees))
             return 0;
 
-        while (degrees < 0)
-            degrees += 360;
-        while (degrees >= 360)
-            degrees -= 360;
+        while (degrees < 0.0d)
+            degrees += 360.0d;
+        while (degrees >= 360.0d)
+            degrees -= 360.0d;
 
         //causes slight bruising
         //degrees = frac(degrees / 360) * 360;

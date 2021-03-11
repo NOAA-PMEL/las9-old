@@ -25,7 +25,26 @@ public class Task {
 	protected String workDirPath;
 
 	public boolean hasErrors() {
-		return stderr.length() > 0 && stderr.toString().contains("ERR");
+		if ( stderr.length() > 0 ) {
+			String error_messages = stderr.toString();
+			boolean error = error_messages.contains("ERR");
+			error = error || error_messages.contains("netCDF error")
+			error = error || error_messages.contains("PPL+ error");
+			error = error || error_messages.contains("NOTE: unrepairable repeated axis coords");
+			error = error || error_messages.contains("NOTE: Coordinates out of order or missing");
+			error = error || error_messages.contains("NOTE: calendar attribute on axis");
+			error = error || error_messages.contains("NOTE: A dummy value of 1");
+			error = error || error_messages.contains("**Error");
+			error = error || error_messages.contains("STOP");
+			error = error || error_messages.contains("Segmentation");
+			error = error || error_messages.contains("No such");
+			error = error || error_messages.contains("Internet data error");
+			error = error || error_messages.contains("netCDF error");
+			error = error || error_messages.contains("Internet Data error");
+			return error;
+		} else {
+			return false;
+		}
 	}
 	public StringBuffer getErrors() {
 		return stderr;

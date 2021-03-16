@@ -2218,6 +2218,8 @@ public class UI implements EntryPoint {
             useVariable = newVector.getU();
             geometry = newVector.getGeometry();
         }
+        // Start with the XY tool. May change later below.
+        refMap.setTool("xy");
         refMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
         downloadMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
         correlationMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
@@ -2563,15 +2565,16 @@ public class UI implements EntryPoint {
 
         }
         if (v.getVerticalAxis() != null) {
+            String zname = v.getVerticalAxis().getName();
             if (zAxisWidget.isRange()) {
-                if ( !vars.contains("depth") ) vars = vars + ",depth";
+                if ( !vars.contains(zname) ) vars = vars + ","+zname;
                 if (!constraints.endsWith("&")) constraints = constraints + "&";
-                constraints = constraints + "depth>=" + zAxisWidget.getLo();
-                constraints = constraints + "&depth<=" + zAxisWidget.getHi();
+                constraints = constraints + zname +">=" + zAxisWidget.getLo();
+                constraints = constraints + "&"+zname+"<=" + zAxisWidget.getHi();
             } else {
-                if ( !vars.contains("depth") ) vars = vars + ",depth";
+                if ( !vars.contains(zname) ) vars = vars + ","+zname;
                 if (!constraints.endsWith("&")) constraints = constraints + "&";
-                constraints = constraints + "depth=" + zAxisWidget.getLo();
+                constraints = constraints + zname +"=" + zAxisWidget.getLo();
             }
         }
         if (v.getTimeAxis() != null) {
@@ -3233,6 +3236,11 @@ public class UI implements EntryPoint {
     // for the previous variable.
     private void setUpForProduct(Product p, boolean clearConstraints) {
 
+        if ( p.getMaxArgs() > 1 ) {
+            layout.toDatasetChecks();
+        } else {
+            layout.toDatasetRadios();
+        }
         String view = "xy";
 
         if ( p != null ) {

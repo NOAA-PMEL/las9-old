@@ -4,10 +4,8 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.OptionElement;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.logical.shared.CloseEvent;
@@ -22,10 +20,8 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.SuggestOracle;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
-import gwt.material.design.addins.client.autocomplete.MaterialAutoComplete;
 import gwt.material.design.addins.client.window.MaterialWindow;
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.Display;
@@ -54,7 +50,6 @@ import gwt.material.design.client.ui.MaterialPreLoader;
 import gwt.material.design.client.ui.MaterialProgress;
 import gwt.material.design.client.ui.MaterialRange;
 import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.MaterialSearch;
 import gwt.material.design.client.ui.MaterialSideNavPush;
 import gwt.material.design.client.ui.MaterialSwitch;
 import gwt.material.design.client.ui.MaterialTextBox;
@@ -66,7 +61,6 @@ import pmel.sdig.las.client.event.PanelCount;
 import pmel.sdig.las.client.event.Search;
 import pmel.sdig.las.client.event.ShowValues;
 import pmel.sdig.las.client.map.OLMapWidget;
-import pmel.sdig.las.client.oracle.VariableOracle;
 import pmel.sdig.las.client.state.State;
 import pmel.sdig.las.client.util.Constants;
 import pmel.sdig.las.client.widget.AxisWidget;
@@ -82,7 +76,6 @@ import pmel.sdig.las.client.widget.ResultsPanel;
 import pmel.sdig.las.client.widget.TextOptionsWidget;
 import pmel.sdig.las.client.widget.VariableConstraintWidget;
 import pmel.sdig.las.client.widget.YesNoOptionsWidget;
-import pmel.sdig.las.client.oracle.DatasetOracle;
 import pmel.sdig.las.shared.autobean.Analysis;
 import pmel.sdig.las.shared.autobean.AnalysisAxis;
 import pmel.sdig.las.shared.autobean.DataConstraint;
@@ -90,7 +83,6 @@ import pmel.sdig.las.shared.autobean.Dataset;
 import pmel.sdig.las.shared.autobean.DatasetProperty;
 import pmel.sdig.las.shared.autobean.RequestProperty;
 import pmel.sdig.las.shared.autobean.SearchRequest;
-import pmel.sdig.las.shared.autobean.LASSuggestion;
 import pmel.sdig.las.shared.autobean.Variable;
 import pmel.sdig.las.shared.autobean.VariableProperty;
 import pmel.sdig.las.shared.autobean.Vector;
@@ -820,7 +812,7 @@ public class Layout extends Composite {
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem di = (DataItem) datasets.getWidget(i);
             Object s = di.getSelection();
-            if ( s instanceof Variable && di.getRadioSelected() ) {
+            if ( s instanceof Variable && di.isSelected() ) {
                 return (Variable) s;
             }
         }
@@ -830,7 +822,7 @@ public class Layout extends Composite {
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem di = (DataItem) datasets.getWidget(i);
             Object s = di.getSelection();
-            if ( s instanceof Vector && di.getRadioSelected() ) {
+            if ( s instanceof Vector && di.isSelected() ) {
                 return (Vector) s;
             }
         }
@@ -1411,7 +1403,7 @@ public class Layout extends Composite {
         for (int i = 0; i < datasets.getWidgetCount(); i++) {
             DataItem d = (DataItem) datasets.getWidget(i);
             DataItem dd = new DataItem(d.getSelection(), 10);
-            if ( d.getRadioSelected() ) {
+            if ( d.isSelected() ) {
                 dd.setRadioSelected();
             }
             dd.toCheck();

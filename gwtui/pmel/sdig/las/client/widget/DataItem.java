@@ -170,9 +170,6 @@ public class DataItem extends MaterialCollectionItem {
     public Object getSelection() {
         return selection;
     }
-    public boolean getRadioSelected() {
-        return radio.getValue();
-    }
     public void setSelected() {
         if ( radio.isAttached() ) {
             radio.setValue(true);

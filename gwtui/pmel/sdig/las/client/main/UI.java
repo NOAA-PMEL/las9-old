@@ -601,7 +601,9 @@ public class UI implements EntryPoint {
                     layout.panel2.setAutoLevelsOn(false);
                     layout.panel2.clearAnnotations();
                     layout.panel2.getOutputPanel().clearPlot();
+                    state.getPanelState(2).setLasRequest(null);
                 }
+                pushHistory();
             }
         });
         eventBus.addHandler(BreadcrumbSelect.TYPE, new BreadcrumbSelect.Handler() {

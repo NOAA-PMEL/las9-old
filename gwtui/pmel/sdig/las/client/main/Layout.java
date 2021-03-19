@@ -830,6 +830,7 @@ public class Layout extends Composite {
     }
     //
     public void addBreadcrumb(Breadcrumb breadcrumb, int panel) {
+        Object selected = breadcrumb.getSelected();
         if ( panel == 1 ) {
             panel1.addBreadcrumb(breadcrumb);
         } else if ( panel == 2 ) {
@@ -839,7 +840,6 @@ public class Layout extends Composite {
 
     public void removeBreadcrumbs(Object selected, int targetPanel) {
         int index = 0;
-
         List<Breadcrumb> crumbs = new ArrayList<>();
         if ( targetPanel == 1 ) {
             crumbs = panel1.getBreadcrumbs();

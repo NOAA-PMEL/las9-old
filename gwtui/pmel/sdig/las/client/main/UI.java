@@ -602,6 +602,9 @@ public class UI implements EntryPoint {
                     layout.panel2.clearAnnotations();
                     layout.panel2.getOutputPanel().clearPlot();
                     state.getPanelState(2).setLasRequest(null);
+                    if ( layout.getSelectedVariable() == null ) {
+                        layout.plotsDropdown.setEnabled(false);
+                    }
                 }
                 pushHistory();
             }
@@ -613,7 +616,7 @@ public class UI implements EntryPoint {
                 Object selected = event.getSelected();
                 if (panel == 1) {
                     if (selected != null) {
-                        layout.removeBreadcrumbs(selected, 1);
+                        removeBreadcrumbsFromSelection(selected, 1);
                         if (selected instanceof Dataset) {
                             Dataset dataset = (Dataset) selected;
                             datasetService.getDataset(dataset.getId() + ".json", datasetCallback);
@@ -647,7 +650,7 @@ public class UI implements EntryPoint {
                     if ( selected != null ) {
                         if ( selected instanceof Dataset ) {
                             Dataset p2ds = (Dataset) selected;
-                            layout.removeBreadcrumbs(selected, panel);
+                            removeBreadcrumbsFromSelection(selected, panel);
                             if ( panel == 2 ) {
                                 layout.panel2.openSettings();
                                 datasetService.getDataset(p2ds.getId() + ".json", layout.panel2.datasetCallback);
@@ -2179,6 +2182,17 @@ public class UI implements EntryPoint {
             }
         }
     };
+    private void removeBreadcrumbsFromSelection(Object selected, int panel) {
+        // We have stuff we need to do before removing a paticular breadcrumb.
+        int count = state.getPanelCount();
+        // If we're removing then top menu must be disabled.
+        layout.topMenuEnabled(false);
+        // If we're at two, allow going back to one, but not the other way around.
+        if ( count == 2 ) {
+            layout.plotsDropdown.setEnabled(true);
+        }
+        layout.removeBreadcrumbs(selected, panel);
+    }
     private void applyConfig() {
 
         TimeAxis tAxis = null;

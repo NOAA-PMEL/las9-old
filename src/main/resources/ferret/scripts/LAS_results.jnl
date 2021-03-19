@@ -223,7 +223,7 @@ IF ($insitu_blankvar"0|*>1) THEN SHADE($insitu_blankvar_qual) ($insitu_blankvar)
       ENDIF
       LIST/APPEND/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals
    ELSE
-      IF ($ax_horiz"0|T>1|*>0") THEN
+      IF `($ax_horiz"0|T>1|*>0") OR ($ax_horiz"0|E>1|*>0")` THEN
          SET DATA 1
 	 LET time_map_var = ($data_0_var)[($region_full)]
 	 IF ($insitu_blankvar"0|*>1) THEN LET time_map_var = ($insitu_blankvar)

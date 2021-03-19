@@ -387,7 +387,8 @@ public class OutputPanel extends AbsolutePanel {
                     mouse.updateTime(miny, maxy, time_origin, time_units, calendar);
                 }
             }
-            if ( axisHorizontal.equals("t") ) {
+                                               // Time in a set of profiles
+            if ( axisHorizontal.equals("t") || axisHorizontal.equals("e")) {
                 for (Iterator<UI.Mouse> mouseIt = mouseMoves.iterator(); mouseIt.hasNext();) {
                     UI.Mouse mouse = mouseIt.next();
                     mouse.updateTime(minx, maxx, time_origin, time_units, calendar);

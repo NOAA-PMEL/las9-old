@@ -872,15 +872,74 @@ class InitializationService {
 
             traj_time_series.save(failOnError: true)
         }
-
 /*
+<!-- Time series (station) data operations -->
+  <!-- This is the default XY plot. -->
+  <operation name="Timeseries Location Plot" ID="Timeseries_interactive_plot" output_template="zoom" default="true" category="visualization">
+    <operation name="Database Extraction" ID="DBExtract" output_template="" service_action="Timeseries_interactive_plot">
+      <response ID="DBExtractResponse">
+        <result type="debug" ID="db_debug" file_suffix=".txt"/>
+        <result type="netCDF" ID="netcdf" file_suffix=".nc"/>
+        <result type="cancel" ID="cancel"/>
+      </response>
+      <service>tabledap</service>
+    </operation>
+    <operation chained="true" name="Timeseries Plot" ID="Time_Series_Location_Plot" output_template="output" service_action="Profile_2D_poly">
+      <args>
+        <arg chained="true" type="variable" index="1" operation="DBExtract" result="netcdf" file_suffix=".nc"/>
+        <arg type="region" index="1" ID="in-situ-Region"/>
+      </args>
+      <response ID="PlotResp" type="HTML" index="1">
+        <result type="image" ID="plot_image" streamable="true" mime_type="image/png" file_suffix=".png"/>
+        <result type="svg" ID="plot_svg" file_suffix=".svg"/>
+        <result type="ps" ID="plot_ps" file_suffix=".ps"/>
+        <result type="pdf" ID="plot_pdf" file_suffix=".pdf"/>
+        <result type="map_scale" ID="map_scale" file_suffix=".xml"/>
+        <result type="js_total" ID="js_total" file_suffix=".js"/>
+        <result type="map_data" ID="map_data" file_suffix=".txt"/>
+        <result type="image" ID="ref_map" file_suffix=".png"/>
+        <result type="debug" ID="debug" file_suffix=".txt"/>
+        <result type="cancel" ID="cancel"/>
+        <result type="xml" ID="webrowset" file_suffix=".xml"/>
+      </response>
+      <service>ferret</service>
+    </operation>
+    <optiondef IDREF="Timeseries_Options"/>
+    <region>
+      <intervals name="xyt" type="Maps" title="Latitude-Longitude"/>
+    </region>
+  </operation>
 
-TODO DEBUG DEBUG DEBUG
-Does not work with 7.6.3 for ALCIM data
-
+ */
+        Product dsg_time_series_location = Product.findByName("Timeseries_station_location_plot")
+        if ( !dsg_time_series_location ) {
+            dsg_time_series_location = new Product([name: "Timeseries_station_location_plot", title: "Timeseries Locations", view: "xy", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.TIMESERIES, product_order: "100002"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+            Operation operation_plot_ts_loc = new Operation([name: "Timeseries_station_plot", service_action: "Profile_2D_poly", type: "ferret", output_template: "zoom"])
+            operation_plot_ts_loc.setResultSet(resultsService.getPlotResults())
+            operation_plot_ts_loc.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_ts_loc.addToYesNoOptions(optionsService.getDeg_min_sec())
+            dsg_time_series_location.addToOperations(operation_extract_data)
+            dsg_time_series_location.addToOperations(operation_plot_ts_loc)
+            dsg_time_series_location.save(failOnError: true)
+        }
+        Product dsg_profile_location = Product.findByName("Profile_location_plot")
+        if ( !dsg_profile_location ) {
+            dsg_profile_location = new Product([name: "Timeseries_station_location_plot", title: "Profile Locations", view: "xy", data_view: "xyzt", ui_group: "Maps", geometry: GeometryType.PROFILE, product_order: "100002"])
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+            Operation operation_plot_ts_loc = new Operation([name: "Profile_station_plot", service_action: "Profile_2D_poly", type: "ferret", output_template: "zoom"])
+            operation_plot_ts_loc.setResultSet(resultsService.getPlotResults())
+            operation_plot_ts_loc.addToMenuOptions(optionsService.getUse_graticules())
+            operation_plot_ts_loc.addToYesNoOptions(optionsService.getDeg_min_sec())
+            dsg_profile_location.addToOperations(operation_extract_data)
+            dsg_profile_location.addToOperations(operation_plot_ts_loc)
+            dsg_profile_location.save(failOnError: true)
+        }
         Product dsg_time_series = Product.findByName("Timeseries_station_plot")
         if ( !dsg_time_series ) {
-            dsg_time_series = new Product([name:"Timeseries_station_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TIMESERIES, product_order: "100001"])
+            dsg_time_series = new Product([name:"Timeseries_station_plot", title: "Timeseries Plot", view: "t", data_view: "xyzt", ui_group: "Line Plots", geometry: GeometryType.TIMESERIES, product_order: "100001", maxArgs: 10])
             Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
             operation_extract_data.setResultSet(resultsService.getNetcdfFile())
 
@@ -900,7 +959,6 @@ Does not work with 7.6.3 for ALCIM data
 
             dsg_time_series.save(failOnError: true)
         }
-*/
 
         Product z_line_plot = Product.findByName("Longitude")
         if (!z_line_plot) {
@@ -1229,7 +1287,7 @@ Does not work with 7.6.3 for ALCIM data
         }
         Product charts_timeseries_plot = Product.findByNameAndTitle("Charts Timeseries Plot", "Timeseries Plot");
         if ( !charts_timeseries_plot ) {
-            charts_timeseries_plot = new Product([name: "Charts Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "100001"])
+            charts_timeseries_plot = new Product([name: "Charts Timeseries Plot", title: "Timeseries Plot", ui_group: "Interactive Line Plots", view: "t", data_view: "xyt", geometry: GeometryType.TIMESERIES, product_order: "100001", maxArgs: 10])
             Operation operation_timeseries_plot = new Operation([service_action: "client_plot", type: "client"])
             charts_timeseries_plot.addToOperations(operation_timeseries_plot)
             charts_timeseries_plot.save(failOnError: true)

@@ -2656,7 +2656,7 @@ public class UI implements EntryPoint {
     }
     private LASRequest makeRequest(int panel, String productName) {
         LASRequest lasRequest = new LASRequest();
-
+        String view = products.getSelectedProduct().getView();
         lasRequest.setTargetPanel(panel);
 
         lasRequest.setOperation(productName);
@@ -2694,7 +2694,7 @@ public class UI implements EntryPoint {
         lasRequest.getAxesSets().add(a1);
 
         Variable v = variables.get(0);
-        if (v.getGeometry().equals(TIMESERIES)) {
+        if (v.getGeometry().equals(TIMESERIES) && view.equals("t")) {
             double[] exts = refMap.getDataExtent();
             lasRequest.getAxesSets().get(0).setXlo(String.valueOf(exts[2]));
             lasRequest.getAxesSets().get(0).setXhi(String.valueOf(exts[3]));
@@ -2767,7 +2767,7 @@ public class UI implements EntryPoint {
 
         // Replace any axes setting orthogonal to the view for any panel other than 1
 
-        String view = products.getSelectedProduct().getView();
+
 
         if ( panel != 1 ) {
 

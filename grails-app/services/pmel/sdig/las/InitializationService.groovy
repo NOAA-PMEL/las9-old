@@ -689,6 +689,21 @@ class InitializationService {
     </grid_types>
   </operation>
  */
+        Product prop_prop_profile = Product.findByName("profile_prop_prop_plot")
+        if (!prop_prop_profile) {
+            prop_prop_profile = new Product([name: "profile_prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.PROFILE, product_order: "99999", hidden: "true"])
+
+            Operation operation_extract_data = new Operation([name: "ERDDAPExtract", type: "erddap", service_action: "erddap"])
+            operation_extract_data.setResultSet(resultsService.getNetcdfFile())
+
+            Operation operation_plot_profile = new Operation([name: "Trajectory_correlation_plot", service_action: "Trajectory_correlation", type: "ferret", output_template: "zoom"])
+            operation_plot_profile.setResultSet(resultsService.getPlotResults())
+
+            prop_prop_profile.addToOperations(operation_extract_data)
+            prop_prop_profile.addToOperations(operation_plot_profile)
+            prop_prop_profile.save(failOnError: true)
+        }
+
         Product prop_prop_traj = Product.findByName("trajectory_prop_prop_plot")
         if (!prop_prop_traj) {
             prop_prop_traj = new Product([name: "trajectory_prop_prop_plot", title: "Property-Property Plot", ui_group: "button", data_view: "xyzt", view: "xyzt", geometry: GeometryType.TRAJECTORY, product_order: "99999", hidden: "true"])

@@ -139,6 +139,7 @@ import java.util.Queue;
 
 import static pmel.sdig.las.client.util.Constants.GRID;
 import static pmel.sdig.las.client.util.Constants.TIMESERIES;
+import static pmel.sdig.las.client.util.Constants.PROFILE;
 import static pmel.sdig.las.client.util.Constants.navWidth;
 
 /**
@@ -1130,6 +1131,8 @@ public class UI implements EntryPoint {
                             lasRequest = makeRequest(8, "trajectory_prop_prop_plot");
                         } else if (geom.equals(TIMESERIES)) {
                             lasRequest = makeRequest(8, "time_series_prop_prop_plot");
+                        } else if (geom.equals(PROFILE)) {
+                            lasRequest = makeRequest(8, "profile_prop_prop_plot");
                         } else {
                             lasRequest = makeRequest(8, "prop_prop_plot");
                         }

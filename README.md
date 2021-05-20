@@ -11,7 +11,7 @@ The design goals include:
       4. Incorporate interactive client-side plotting capability
       5. Simple deployment using a single war file (including F-TDS).
       6. Dynamic data set configuration where appropriate (including on background thread).
-      7. Multiple sites deployable from a single instance.
+      7. ~~Multiple sites deployable from a single instance.~~
 2. Easy rest URL's for basic plots (useful for thumbnails and HTML image references).
 3. Simplified client-server interaction using JSON messages automatically marshalled to and from Java.
 4. Nicely styled, modern client UI look-and-feel.

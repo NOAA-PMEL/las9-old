@@ -72,10 +72,6 @@ ELSE
    LET datmin = ($stat_min)
    LET datmax = ($stat_max)
 ENDIF
-IF ($no_dsg"0|*>1") THEN 
-   DEFINE SYMBOL save_plot_var = ($ferret_plot_var)
-   DEFINE SYMBOL ferret_plot_var ($data_x_var), ($data_y_var), ($ferret_plot_var)
-ENDIF
 
 ! Special color-by-time key
 IF ($ferret_plot_key"0|date_key>1|*>0") THEN 
@@ -214,11 +210,7 @@ IF `IS_ELEMENT_OF_STR(lonattnames, "actual_range") GT 0 AND \
    LET latmin `lvar[i=@min],PREC=9`
 
    IF `lonmax-lonmin LT 0.1 AND latmax-latmin LT 0.1` THEN 
-      IF `STRINDEX("($qualifiers)", "SYM") EQ 0` THEN
-         DEFINE SYMBOL qualifiers = ($qualifiers)/SYM=21/SIZ=0.1
-      ELSE
-         DEFINE SYMBOL  qualifiers = ($qualifiers)/SIZ=0.1
-      ENDIF
+      DEFINE SYMBOL qualifiers = ($qualifiers)/SYM=21/SIZ=0.1
       DEFINE SYMBOL is_mooring = 1
    ENDIF
 ENDIF
@@ -228,7 +220,7 @@ IF ($single_color"0|*>1") THEN
 ENDIF
 
 ! When there are just a few points (missing or valid), draw a colored symbol as well as the ribbon line.
-!IF `($numobs) LE 30 and (STRINDEX("($qualifiers)", "SYM") EQ 0)` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/SYM=17
+!IF `($numobs) LE 30` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/SYM=17
 
 ! Points will mark location of missing data if needed
 ! Use color=1 for black...
@@ -261,6 +253,7 @@ ELSE
    PPL RIBBON/OVER
 ENDIF
 
+
 ! Hack: histogram levels
  IF `STRINDEX("($ferret_fill_levels)", "H") GT 0 OR STRINDEX("($ferret_fill_levels)", "h") GT 0` THEN \
 PLOT($qualifiers)/missing=black/nokey  var_data 
@@ -270,70 +263,13 @@ SAY _________________ total time for line plot, seconds                         
 
 ! For the results script,
 IF ($ferret_plot_var"0|*>1") THEN
-   IF ($save_plot_var"0|*>1") THEN DEFINE SYMBOL ferret_plot_var = ($save_plot_var) 
    DEFINE SYMBOL data_plotted_min = `datmin,prec=7`
    DEFINE SYMBOL data_plotted_max = `datmax,prec=7`
 ENDIF
- 
-! Create labels for the Z and T region
 
-! Is there a Z region to label?
+! Add labels at the top for the dataset name etc if they exist  
 
-IF `($no_dsg"0|*>1")  EQ 0 AND ($region_z_lo"0") NE 0` THEN
-
-   DEFINE SYMBOL n_left_labels = `($n_left_labels"0") + 1`
-   DEFINE SYMBOL zcoord =  `($ferret_plot_var),return=zcoord`
-
-   IF `($region_z_lo"0") EQ ($region_z_hi"($zf)")` THEN
-      let zq = ($region_z_lo"0") 
-      DEFINE SYMBOL upper_left_($n_left_labels) = Depth: `zq,PREC=4` `($zcoord),RETURN=units`
-   ELSE
-      DEFINE AXIS/z=($region_z_lo"0"):($region_z_hi"0"):0.1/units="`($zcoord),RETURN=units`" zqencode
-      LET zq = z[gz=zqencode]
-      DEFINE SYMBOL upper_left_($n_left_labels) = Depth: `zq,RETURN=zstart,PREC=4` to `zq,RETURN=zend,PREC=4` `($zcoord),RETURN=units`
-   ENDIF
-   
-   DEFINE SYMBOL depth_lab = ($upper_left_($n_left_labels"0"))
-
-   CANCEL VAR zq
-   CANCEL AXIS zqencode
-ENDIF
-
-! There will always be a T region
-
-DEFINE SYMBOL n_left_labels = `($n_left_labels"0") + 1`
-
-IF `STRCMP("($region_t_lo)",  "($region_t_hi)") EQ 0` THEN
-   DEFINE SYMBOL upper_left_($n_left_labels) = Time: ($region_t_lo) 
-ELSE
-   DEFINE SYMBOL upper_left_($n_left_labels) = Time: ($region_t_lo):($region_t_hi)
-ENDIF
-DEFINE SYMBOL time_lab = ($upper_left_($n_left_labels)) 
-
-! IF it's a profile-as map plot, etc, then add a note about the data shown.
-
-IF `STRINDEX("($qualifiers)", "ALONG") GT 0` THEN
-   DEFINE SYMBOL note_num = `($note_num"0") + 1`
-   Define symbol dat_direction = Z
-   IF ($feature_type"0|Timeseries>1|*>0") THEN DEFINE SYMBOL dat_direction = T 
-   DEFINE SYMBOL note_($note_num)_lab = Colored by data in each ($feature_type) averaged over the ($dat_direction) region selected
-ENDIF
-
-
-DEFINE SYMBOL note_num = `($note_num"0") + 1`
-IF ($its_profile_map"0|*>1") THEN
-   DEFINE SYMBOL note_($note_num)_lab =  ($prof_traj_shown) ($feature_type)($c_s) locations shown
-ELSE
-   DEFINE SYMBOL note_($note_num)_lab =  ($prof_traj_shown) ($feature_type)($c_s), ($ngood_data) points shown 
-ENDIF
-
-
-
-! Add labels at the top for the dataset name etc if they exist 
 GO labels_above_plot
-
-! if constraints are shown via constraint_0_lhs etc, define labels for those
-GO set_constraint_labels
 
 ! Draw extra points, e.g. moorings as dots. Do this last so these 
 ! marks will be on top of everything else.

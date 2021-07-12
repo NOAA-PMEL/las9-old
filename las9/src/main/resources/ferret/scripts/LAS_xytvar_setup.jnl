@@ -22,6 +22,7 @@ DEFINE SYMBOL yvar = yvar
 LET p = ($xvar) 
 LET q = ($yvar)
 
+
 ! Are the variables longitude and latitude (when the dataset is not of trajectory type)
 ! If so then connect the dots and do not draw the regression line
 
@@ -55,6 +56,7 @@ IF ($variable_1_lab"0|*>1") THEN
    DEFINE SYMBOL ax_label_y @AC($variable_1_lab)
    IF `itsa_lon_plot OR itsa_lat_plot` THEN  CANCEL SYMBOL ax_label_y
 ENDIF
+
 
 ! If the axis labels are long, make the text size smaller
 LET labfac = 1.

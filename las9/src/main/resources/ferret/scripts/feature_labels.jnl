@@ -11,6 +11,7 @@
 
 IF `($feature_type"0|*>1") EQ 0` THEN EXIT/SCRIPT
 
+
 IF ($feature_type"0|point>1|*>0") THEN
    DEFINE SYMBOL note_num = `($note_num"0") + 1`
    DEFINE SYMBOL note_($note_num)_lab = ($ngood_data) points shown 
@@ -86,4 +87,3 @@ ENDIF! first_feature_only
 
 
 !---------------- end of feature_labels.jnl -------------------------
-

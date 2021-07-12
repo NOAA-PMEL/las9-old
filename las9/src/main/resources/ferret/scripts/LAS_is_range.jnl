@@ -5,8 +5,6 @@
 ! and use them to define axis min,max, delta. If min and max are not
 ! valid then return nominal 0:100 and set an error flag.
 ! 8/19 *acm* more bad-value handling
-! 2/25/2020 ACM robust method usin Ferret/PyFerret internal method 
-!           to set range for constant-valued data
 
 LET baddat = 0
 
@@ -101,19 +99,15 @@ ELSE
 !  PPL %RANGE `ax_lo`, `ax_hi`, 50
    PPL %RANGE `ax_lo`, `ax_hi`, 30
    IF `($ppl$range_low) EQ ($ppl$range_high)` THEN
-      CANCEL SYMBOL yaxis*  ! Ferret adds +/- a bit for const value plots
-      PLOT/SET {($ppl$range_low), ($ppl$range_high)}
-      LET ax_lo = ($yaxis_min)
-      LET ax_hi = ($yaxis_max)
-      PPL %RANGE `ax_lo`, `ax_hi`, 30
+      LET del_ax = `(ax_hi - ax_lo)/10`
    ELSE
       LET ax_lo = ($ppl$range_low)
       LET ax_hi = ($ppl$range_high)
+      LET del_ax = ($ppl$range_inc)
    ENDIF
-   LET del_ax = ($ppl$range_inc)
+   say `ABS(ax_hi - ax_lo)`
    IF `ABS(ax_hi - ax_lo) LT 1` THEN DEFINE SYMBOL dm_labels = dm
    IF `ABS(ax_hi - ax_lo) LT 0.06` THEN DEFINE SYMBOL dm_labels = dms
 
 ENDIF
 ! End of file ------------ LAS_is_range.jnl--------------------------
-

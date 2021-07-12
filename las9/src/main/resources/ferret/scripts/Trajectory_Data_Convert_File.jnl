@@ -17,10 +17,11 @@
 GO LAS_initial_setup 0
 
 
-DEFINE SYMBOL frmt width=1024  ! /norow?
+DEFINE SYMBOL frmt width=1024
 
 IF ($ferret_data_format"0|csv>1|tsv>1|asc>1|*>0") THEN 
    DEFINE SYMBOL frmt = ($frmt)/($ferret_data_format"|tsv>format=tab|csv>format=comma|asc>heading=enhanced")
+
 ENDIF
 
 CANCEL MODE INTERPOLATE  ! important when evaluating the size limits
@@ -29,5 +30,3 @@ SET LIST/FILE="($result_ferret_listing_filename)"
 
 GO list_traj_data
 
-
-! End of file ------------ Trajectory_Data_Convert_File.jnl--------------------------

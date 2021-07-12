@@ -40,11 +40,8 @@ IF ($fer_last_error"0|0|1|*>1") THEN
   IF `($error_status"0|*>1") EQ 0` THEN  ! if errors not yet set.
      DEFINE SYMBOL error_status = ERROR
      DEFINE SYMBOL error_type = DATA
-     DEFINE SYMBOL error_string = The source file -- ($data_url) did not open uccessfully.
-     IF `STRINDEX(($data_url), "_expr_") GT 0 AND STRINDEX(($data_url), "analysed_") GT 0` THEN\
-      DEFINE SYMBOL error_string = Failed setting up computation for `($data_($num)_var).long_name`. Try a smaller region.
-  ENDIF
-
+     DEFINE SYMBOL error_string = The ($data_var) source file -- ($data_url) did not open uccessfully.
+  ENDIFs
   EXIT/SCRIPT
 ENDIF
 
@@ -220,7 +217,7 @@ ENDIF
 ! Check for single quotes and remove them. They are
 ! not needed on units strings
 
-GO LAS_unquote_string data_($num)_units
+GO LAS_unquote_string lhs data_($num)_units
 
 IF ($data_units"0|*>1") THEN 
    DEFINE SYMBOL data_units (($data_($num)_units))

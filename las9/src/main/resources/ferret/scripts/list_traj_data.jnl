@@ -6,9 +6,8 @@
 !      12/2016 set list precision to 7
 !
 !
-! Called by Trajectory_Data_Convert_File.jnl for "SAVE AS" to write csv
-! or tsv data from a DSG dataset (trajectory, profile, or timeseries): 
-! date/time, X, Y, Z, var1, var2, ...
+! Called by Trajectory_Data_Convert_File.jnl 
+! Write csv data: date/time, X, Y, Z, var1, var2, ...
 
 ! Cannot list out a pseudo-variable, e.g. Z. In the loop,
 ! check for pseutonames. If the variable name is a pseudo-var name, 
@@ -23,10 +22,10 @@ GO LAS_initialize_data 0
 GO LAS_setup_dsg
 
 LET skip_names = {"($feature_variable)", "($rowvar)",  "($dsg_x_var)", "($dsg_y_var)", \
-"($dsg_t_var)", "tmonth", "lon360"}
+"($dsg_t_var)", "tmonth", "day_of_year", "sample_number", "lon360"}
 
 IF ($dsg_z_var"0|*>1") THEN LET skip_names = {"($feature_variable)", "($rowvar)",  "($dsg_x_var)", "($dsg_y_var)", \
-"($dsg_z_var)", "($dsg_t_var)", "tmonth", "lon360"}
+"($dsg_z_var)", "($dsg_t_var)", "tmonth", "day_of_year", "sample_number", "lon360"}
 
 
 IF ($custom_skip_listnames"0|*>1") THEN LET skip_names = {"($feature_variable)", "($rowvar)", ($custom_skip_listnames)}

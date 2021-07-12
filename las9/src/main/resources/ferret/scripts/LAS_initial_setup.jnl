@@ -30,14 +30,8 @@ SHOW MEMORY
 
 IF `($initialize_script_arg) EQ 0` THEN EXIT/SCRIPT
 
-! add the operation script name to the debug output.
-
-SAY
-SAY The operation script is ($operation_service_action)
-SAY
 
 IF ($program_name"0|PyFerret>1|*>0") THEN EXIT/SCRIPT
-
 
 ! Reset the default gif filename used internally by Ferret.
 ! This must be done before PPLUS is opened.  Some of the scripts use PPL

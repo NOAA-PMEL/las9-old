@@ -1,10 +1,6 @@
 ! prop_prop_constraints.jnl
 ! Define a mask that captures variable constraints for Prop-Prop plots
 
-! Argument 1 is the variable id
-! Argument 2 is the variable to apply constraints to.  This is 
-! the variable after region, striding and XSEQUENCE are applied.
-
 ! A constraint comesas a set of 4 symbols
 ! each var ge one value and le another value.
 

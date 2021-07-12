@@ -354,13 +354,11 @@ IF `($data_count"0") GE 3` THEN ! color by 3rd variable
          LET zvar = 1./0 + 0*xvar 
 	 IF `($nfeatures"0|*") NE 0` THEN 
 	    DEFINE SYMBOL zshape = `($ferret_plot_var_2),return=shape`
-	    DEFINE SYMBOL zshape = ($zshape"|POINT>E|*")
-	    LET zvar = _($zshape"|X>i|Y>j|Z>k|T>l|E>m|F>n")[g($zshape)=($ferret_plot_var_2)]
-         ELSE
-	    DEFINE SYMBOL note_num = `($note_num"0") + 1`
-            DEFINE SYMBOL note_($note_num)_lab = ($data_2_title) is not numeric. Plot without color.
-            CANCEL SYMBOL ferret_plot_var
-	 ENDIF
+	    let zvar = _($zshape"|X>i|Y>j|Z>k|T>l|E>m|F>n")[g($zshape)=($ferret_plot_var_2)]
+         ENDIF
+	 DEFINE SYMBOL note_num = `($note_num"0") + 1`
+         DEFINE SYMBOL note_($note_num)_lab = ($data_2_title) is not numeric. Plot without color.
+         CANCEL SYMBOL ferret_plot_var
      ENDIF
 
    ENDIF

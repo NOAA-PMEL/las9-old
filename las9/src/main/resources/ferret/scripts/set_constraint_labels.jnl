@@ -77,4 +77,3 @@ IF ($ferret_annotate_with"0|*>1") THEN
 ENDIF
 
 !-----------------End of set_constraint_labels ---------------------------------
-

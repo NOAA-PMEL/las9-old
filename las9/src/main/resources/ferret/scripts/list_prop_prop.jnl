@@ -4,9 +4,6 @@
 ! Author: ansley
 ! Date: 08-2013
 
-! Called by Trajectory_corr_file.jnl
-! Make "show data" listings from a DSG dataset (trajectory, profile, or timeseries).
-
 ! lists prop_prop_plot.jnl creates an ascii listing of the data from a 
 ! property-property plot, using the data variable in symbol ferret_plot_var_0,
 ! the second variable from ferret_plot_var_1 and optionally colored by ferret_plot_var_2.
@@ -45,30 +42,9 @@ CANCEL DATA `($data_0_var),RETURN=dsetnum`
 
 GO setup_prop_prop
 
-! set up any constraint labels
-GO set_constraint_labels
-
 IF `($dsgshape"0|*>1") EQ 0` THEN
    MESSAGE/ERROR **ERROR Expecting Discrete Sampling Geometries data
    EXIT/PROGRAM
-ENDIF
-
-
-! set up any constraint labels
-GO set_constraint_labels
-
-! apply mask to list variables
-
-LET size = `constraints_mask[i=@ngd]`
-
-LIST/NOHEAD/NOROW/FILE/CLOBBER/FORMAT=("Total Number of Records", F10.0) `size`
-
-! Constraint labels
-
-IF `($note_num"0") GT 0` THEN
-   REPEAT/RANGE=1:($note_num)/name=q (\
-     DEFINE SYMBOL qq = `q`; \
-     SAY/OUTFILE="($result_ferret_listing_filename)"/APPEND   ($note_($qq)_lab) )
 ENDIF
 
 ! Set up the list of variables to plot.

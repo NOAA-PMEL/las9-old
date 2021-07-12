@@ -9,7 +9,6 @@
 ! 11/2017 back off finding direction variables based on attributes for now
 ! 12/2017 changes for efficiency getting variable types
 !  1/2018 Time will only be the independent variable - no vertical time axis.
-!  8/2020 Updates for working with DSG datasets
 
 ! prop_prop_plot.jnl creates a property-property plot, using the 
 ! data variable in symbol data_0_var and the second variable from
@@ -92,7 +91,7 @@ ENDIF
 ! Set the plot argument. 
 DEFINE SYMBOL plot_arg = ($xvar), ($yvar)
 DEFINE SYMBOL plot_arg = x_plot_var, y_plot_var
-DEFINE SYMBOL qualifiers = ($qualifiers)/NOLAB
+DEFINE SYMBOL qualifiers = ($qualifier)/NOLAB
 
 IF `($ferret_thumb"0|*>1") AND ($data_count"0") LE 2` THEN DEFINE SYMBOL qualifiers = ($qualifiers)/COLOR=red
 
@@ -229,12 +228,11 @@ DEFINE SYMBOL size_creep_factor `(($ngood_data)+300)/(($ngood_data)+100) - 1`  !
 LET sym_factr = 0.9 + 1.5*($size_creep_factor)
 
 DEFINE SYMBOL plot_command = PLOT/NOLAB/VS/sym=17/SIZE=`.12*sym_factr`
-DEFINE SYMBOL underlay_command = PLOT/NOLAB/RIBBON/VS/sym=17/palette=gray_light/NOKEY/SIZE=`.08*sym_factr`
+DEFINE SYMBOL underlay_command = PLOT/NOLAB/RIBBON/VS/sym=17/palette=gray_light/NOKEY/SIZE=`.08*sym_factr` 
 DEFINE SYMBOL underlay_vars = x_plot_var, y_plot_var, y_plot_var
 
 ! gray dashed line underlying trajectories or time series
 
-DEFINE SYMBOL under_line = /VS/LINE=6/DASH=(0.1,0.04,0.1,0.04)/NOLAB($vlim) x_plot_var, y_plot_var
 IF `itsa_map_plot` THEN 
    DEFINE SYMBOL under_line = /pal=gray_light/DASH=(0.1,0.04,0.1,0.04)/NOLAB($vlim) x_plot_var
    DEFINE SYMBOL underlay_command = ($underlay_command)/OVER
@@ -245,7 +243,7 @@ ENDIF
 
 IF  `itsa_tim_prop AND ($connect_dots"0|0|1|*>1")` THEN  !! not a /VS plot.
    DEFINE SYMBOL under_line = /COLOR=7/DASH=(0.1,0.04,0.1,0.04)/NOLAB($vlim) y_plot_var
-   DEFINE SYMBOL underlay_command = PLOT/NOLAB/sym=17/COLOR=7/NOKEY/SIZE=`.08*sym_factr`/THICK=1
+   DEFINE SYMBOL underlay_command = PLOT/OVER/NOLAB/sym=17/COLOR=7/NOKEY/SIZE=`.08*sym_factr`/THICK=1
    DEFINE SYMBOL underlay_vars = y_plot_var
    
    DEFINE SYMBOL plot_arg = ($data_0_var), ($data_1_var), z_plot_var
@@ -278,7 +276,7 @@ IF `color_by_feature` THEN
    GO LAS_pp_colorby_feature
 
 !   put_label has been set if all data is missing or constraints return no data.
-ELIF ($ferret_thumb"0|*>1") THEN 
+ELIF ($ferret_thumb) THEN 
    IF `itsa_tim_prop ` THEN
       PLOT/color=red/sym=17/title=" "/set y_plot_var
 	 ppl ylab "($ferret_title_1)"
@@ -341,12 +339,7 @@ ELSE
 ! valid ones from data already on the page
 
    PPL COLOR,6,60,60,60 ! grey
-   IF `($data_count"0") GT 2 AND itsa_map_plot EQ 0 AND ($watch_plot"0|*>1") EQ 0` THEN
-      ($underlay_command)/set ($underlay_vars)
-      IF ($ax_label_x"0|*>1") THEN PPL xlab ($ax_label_x)
-      IF ($ax_label_y"0|*>1") THEN PPL ylab ($ax_label_y)
-      PPL PLOT
-   ENDIF
+   IF `($data_count"0") GT 2` THEN ($underlay_command) ($underlay_vars)
 
    DEFINE SYMBOL qualifiers = ($qualifiers)/OVER/SET
 
@@ -480,6 +473,7 @@ ELSE  ! all_missing, make a nominal plot so LAS_results has something to work wi
    plot/vs/nolab/noax/sym=dot/vlim=-1:1/hlim=-1:1 {-2,2}, {-2,2}
 
 ENDIF
+
 
 ! notation with number of cruises, trajectories, or profiles and obs.
 GO feature_labels

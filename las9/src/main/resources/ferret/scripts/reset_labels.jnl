@@ -3,11 +3,7 @@
 ! Define symbols used by the annotations xml
 ! 1/2018 issue 1854 Inside of a SHADE/SET, LET commands that redefine a variable can
 ! cause curvi coord data to be wiped out. As a workaround, cancel any vars we define
-! 3/2020 Issue 1773 If the data is really monthly or yearly, can configure with the
-!        ferret property <timelab_res>month</timelab_res> or <timelab_res>year</timelab_res> 
-!        Here, implement a hack for datasets with timesteps defined e.g. 
-!        as month-since 1-Jan-1990 so timesteps fall near the startor end of month 
-!        THEN a request for Nov-1990 gets the timestep at 31-Oct-1990:15:00
+
 
 IF ($xform_dms"0|*>1") THEN PPL XFOR (($xform_dms))
 IF ($yform_dms"0|*>1") THEN PPL YFOR (($yform_dms))
@@ -39,28 +35,8 @@ IF `($data_count"1") EQ 1` THEN
    ENDIF
    IF ($labnum_t"0|*>1") THEN
       DEFINE SYMBOL time_lab ($lab($labnum_t))
-
-! HACK: does the time match the region request down to month/year?
-      IF `($ferret_timelab_res"0|month>1|*>0") AND \
-       STRCMP("($region_t_lo)", "($region_t_hi)") EQ 0`  THEN
-         LET month = SUBSTRING("($time_lab)", 1, 3)
-	 LET dash = STRINDEX("($REGION_T_LO)", "-")
-	 LET rmonth = SUBSTRING ("($REGION_T_LO)", dash+1, 3)
-         IF `STRCMP(month, rmonth) NE 0` THEN
-	    LET ryear = SUBSTRING ("($REGION_T_LO)", dash+5, 4)
-	    DEFINE SYMBOL time_lab = TIME : `UPCASE(rmonth)`-`ryear`
-	 ENDIF
-      ENDIF
-      IF `($ferret_timelab_res"0|year>1|*>0") AND \
-       STRCMP("($region_t_lo)", "($region_t_hi)") EQ 0`  THEN
-	 LET dash = STRINDEX("($REGION_T_LO)", "-")
-	 LET ryear = SUBSTRING ("($REGION_T_LO)", dash+5, 4)
-         IF `STRCMP("($time_lab)", ryear) NE 0` THEN
-	    DEFINE SYMBOL time_lab = TIME : `ryear`
-	 ENDIF
-      ENDIF
    ENDIF
-
+   
    IF ($labnum_calend"0|*>1") THEN
       DEFINE SYMBOL calendar_lab ($lab($labnum_calend))
    ENDIF

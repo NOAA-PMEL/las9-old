@@ -25,7 +25,6 @@
 ! second in comparisons etc. Keep this behavior.
 !
 ! 10/2017 Expand the map if the region is super skinny, only for insitu data
-!  2/2020 Check for existence of global attributes before using global_attnames.
 
 DEFINE SYMBOL num ($1"0")
 DEFINE SYMBOL region_name data_($num)_region
@@ -65,14 +64,8 @@ IF `($win_aspect"0|*>1") EQ 0` THEN DEFINE SYMBOL win_aspect = 1
 
 SET DATA "($data_0_url)"
 LET global_attnames = ..attnames
-LET nglobal_atts = ..nattrs
 
-LET featr = 0
-IF `nglobal_atts GT 0` THEN
-  IF `IS_ELEMENT_OF_STR_N(global_attnames, "featureType") ` THEN LET featr = 1
-ENDIF
-
-IF `featr GT 0` THEN
+IF `IS_ELEMENT_OF_STR_N(global_attnames, "featureType") ` THEN
 
 IF `($win_aspect) LT 0.3` THEN 
    DEFINE SYMBOL win_aspect = 0.3

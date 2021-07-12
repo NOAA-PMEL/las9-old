@@ -1,6 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! LAS_initialize_feature_id.jnl
-! ACM 8/2020 version for DSG datasets
 !
 ! Define variables and symbols based on feature (trajecotory or profile)
 ! identification variables
@@ -20,19 +19,32 @@ IF `($ferret_memory"25.6") LT 200` THEN SET MEM/siz=200
 DEFINE SYMBOL feature_max_labels = 200
 LET featurevar = ($rowvar)
 
-IF `($have_feature_nums"0|*>1") EQ 0` THEN LET feature_numbers = _m[ge=featurevar]
+!If undefined, set up the feature_numbers variable
+DEFINE AXIS/X=1:`nfeatures`:1 xfeature_axis
+
+IF `($have_feature_nums"0|*>1") EQ 0` THEN LET feature_numbers = x[gx=xfeature_axis]
 
 ! rind is direction of rowsize, defined in feature_initialize
-LET longest = `rowsize[e=@max]` + 2
+LET longest = `featurevar[($rind)=@max]` + 2
+
+LET data_var_c =  EXPNDI_BY_Z_COUNTS(longitude, xsequence(featurevar),`longest`)
+LET id_by_c =  EXPNDI_ID_BY_Z_COUNTS(xsequence(featurevar),`longest`)
 
 ! If dsg file then these symbols are set up.
 IF `($data_($num)_var"0|($feature_variable)>1|*>0") AND ($rowvar"0|*>1")` THEN 
-   DEFINE SYMBOL data_var = feature_numbers
+   LET data_var_expnd = EXPND_BY_LEN(feature_numbers,($rowvar), `($rowvar)[M=@sum]`)
+   LET data_var_id = RESHAPE (data_var_expnd, ($dsgshape_var))
+   IF ($feature_type"0|*>1") THEN SET VAR/TITLE="($feature_type) ID" data_var_id
+   DEFINE SYMBOL data_var = data_var_id
    EXIT/SCRIPT
 ENDIF
 
 IF `($its_prop_prop_plot"0|*>1") EQ 0` THEN
-   DEFINE SYMBOL data_var = feature_numbers
+   LET data_var_expnd = EXPND_BY_LEN(feature_numbers, XSEQUENCE(featurevar), `featurevar[M=@sum]`)
+   LET data_var_id = RESHAPE (data_var_expnd, ($dsgshape_var))
+   IF ($feature_type"0|*>1") THEN SET VAR/TITLE="($feature_type) ID" data_var_id
+   DEFINE SYMBOL data_var = data_var_id
+  
    EXIT/SCRIPT
 ENDIF
 
@@ -42,13 +54,19 @@ ENDIF
 
    IF ($ferret_traj_list"0|*>1") THEN
       LET subset_ids = {($ferret_traj_list)}
+      LET n_subset = `subset_ids,RETURN=isize`
 
 ! Define a mask to use on the entire list of values: plot or not to plot
 ! the polygons on the prop-prop plot.
      
       LET subm_ids = IF ELEMENT_INDEX(traj_numbers,subset_ids) THEN 1
       IF `($subset_mask"0|*>1") EQ 0` THEN LET subset_mask = subm_ids + 0*x[x=1:`ntrajs`]  ! put it on a non-abstract axis. 
-      SET DATA/FMASK=subset_mask ($num)
+
+! apply mask as data_var_c* subset_mask
+
+      LET n_subset = `subset_mask[I=@NGD]`
+      DEFINE SYMBOL features_shown = `n_subset`
+      DEFINE SYMBOL prof_traj_shown = `n_subset`
    ELSE
 
 ! There may be a subset already defined from ferret_feature_list

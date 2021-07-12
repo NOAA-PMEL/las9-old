@@ -137,10 +137,9 @@ IF `( ($features_shown) LE ($feature_max_labels) ) AND ( ($DATA_COUNT) eq 3 )` T
    LET yplt_var = XSEQUENCE(($yvar))
    LET zplt_var = XSEQUENCE(ids_on_obs)
 
-
-!  LET xplt_var = ($xvar)
-!  LET yplt_var = ($yvar)
-!  LET zplt_var = ($zvar)
+   LET xplt_var = ($xvar)
+   LET yplt_var = ($yvar)
+   LET zplt_var = ($zvar)
 
    DEFINE SYMBOL plot_arg = xplt_var, yplt_var, zplt_var
 

@@ -86,8 +86,6 @@ IF ($math_sym_convert"1|no_convert>0") THEN GO op_math_sym ($translate_math) ($o
 DEFINE SYMBOL mask_title_($nmask_labels) = Where ($lhs) ($math_op_sym) ($rhs)
 
 ! Show time constraint as a formatted time
-! Currently we do not have any products that do a constraint in time.
-
 IF `($lhs"|time>1|TIME>1|*>0")` THEN
    IF `($timevar"0|*>1") EQ 0` THEN DEFINE SYMBOL timevar = time
    CANCEL SYMBOL rhsdate
@@ -101,8 +99,8 @@ IF `($lhs"|time>1|TIME>1|*>0")` THEN
       IF ($eshape"0|E>1|*>0") THEN 
         LET amin_featr = ($timevar)[($shape)=@MIN]
         LET amax_featr = ($timevar)[($shape)=@MAX]
-        LET amin  = `amin_featr[e=@min]`
-        LET amax  = `amax_featr[e=@max]`
+	LET amin  = `amin_featr[e=@min]`
+	LET amax  = `amax_featr[e=@max]`
       ENDIF
       DEFINE SYMBOL is_time = 1
       GO LAS_is_range amin amax
@@ -115,7 +113,7 @@ IF `($lhs"|time>1|TIME>1|*>0")` THEN
       DEFINE AXIS/T=`ax_lo`:`ax_hi`:`del_ax`/T0="`($data_t_var"time").time_origin`"/units=($tunits) timeaxis
       DEFINE SYMBOl timeaxis = timeaxis
    ENDIF
-
+   
    LET tt = t[gt=($timeaxis)]
    LET nt = `tt,RETURN=lsize`
    LET tn = tt[L=`nt`]

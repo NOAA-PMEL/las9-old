@@ -16,7 +16,6 @@
 ! 10/2017   fixes for map-scale file, monthly time axis such as monthly_navy_winds
 ! 11/2017   add report map resolution to the log if this was a map plot
 ! 10/2018   changing animation product to make all the frames in one PyFerret session
-!  5/2020   Define time_map_var to access time units etc without loading so much data.
 ! .......................................................................................
 !
 ! LAS_results.jnl creates the result files. 
@@ -31,15 +30,8 @@ set data 1
 IF ($have_las_plotvar"0") THEN 
    LET the_plot_var = las_plotvar  ! from LAS_auto_levels
 ELSE
-   IF ($native_curvilinear_xy"0|0|*>1") THEN
-      ! When checking for no data, stat only works to find good data in the XY plane
-      ! Don't do the check for other views
-      ! RHS - 2021-02-03
-      IF ($ferret_view"0|xy>1|*>0") THEN
-        LET the_plot_var = plot_var
-      ELSE
-        DEFINE SYMBOL no_novalid_lab = 1
-      ENDIF
+   IF ($native_curvilinear_xy"0|0|*>1") THEN 
+      LET the_plot_var = plot_var
    ELIF ($do_hybrid_z"0|0|*>1") THEN
       LET the_plot_var = ($ferret_plot_base_var_noregion)
    ELIF ($native_Z_plot"0|0|*>1") THEN
@@ -223,9 +215,9 @@ IF ($insitu_blankvar"0|*>1) THEN SHADE($insitu_blankvar_qual) ($insitu_blankvar)
       ENDIF
       LIST/APPEND/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals
    ELSE
-      IF `($ax_horiz"0|T>1|*>0") OR ($ax_horiz"0|E>1|*>0")` THEN
+      IF ($ax_horiz"0|T>1|*>0") THEN
          SET DATA 1
-	 LET time_map_var = ($data_0_var)[($region_full)]
+	 LET time_map_var = ($data_0_var)
 	 IF ($insitu_blankvar"0|*>1) THEN LET time_map_var = ($insitu_blankvar)
          LET tt= t[GT=time_map_var]
 
@@ -287,10 +279,9 @@ IF ($insitu_blankvar"0|*>1) THEN SHADE($insitu_blankvar_qual) ($insitu_blankvar)
 
 	 DEFINE SYMBOL vaxis_tstart = `TAX_DATESTRING(t1, tt, "seconds")`
          DEFINE SYMBOL vaxis_tend = `TAX_DATESTRING(t2, tt, "seconds")`
-         LET time_map_var = ($data_0_var)[($region_full)]
-	 DEFINE SYMBOL vaxis_tunits = `time_map_var,RETURN=tunits`
-         DEFINE SYMBOL vaxis_torigin = `time_map_var,RETURN=t0`
-         DEFINE SYMBOL vaxis_tcalendar = `time_map_var,RETURN=calendar`
+         DEFINE SYMBOL vaxis_tunits = `($data_0_var),RETURN=tunits`
+         DEFINE SYMBOL vaxis_torigin = `($data_0_var),RETURN=t0`
+         DEFINE SYMBOL vaxis_tcalendar = `($data_0_var),RETURN=calendar`
          LET syms_names = {"VAXIS_TSTART", "VAXIS_TEND", "VAXIS_TUNITS", "VAXIS_TORIGIN", "VAXIS_TCALENDAR"}
          LET syms_vals = {"($VAXIS_TSTART)", "($VAXIS_TEND)", "($VAXIS_TUNITS)", "($VAXIS_TORIGIN)", "($VAXIS_TCALENDAR)"}
          LIST/APPEND/FILE="($result_map_scale_filename)"/NOHEAD/NOROWLAB syms_names, syms_vals
@@ -436,26 +427,6 @@ IF ($ferret_annotations%0|*>1%) THEN GO LAS_annotations_xml
 
 ! Result "colorbar" is the legend of the plot_image...only for Google Earth
 IF ($result_colorbar_filename%0|*>1%) THEN GO colorbar
-
-
-! Result ref_map is a ref map. Save to result_ref_map_filename
-
-IF  ($ferret_use_ref_map%0|false>0|*>1%) THEN 
-  CAN VIEW
-  SET VIEW full
-  GO std_refmap ($region_0_x_lo) ($region_0_x_hi) ($region_0_y_lo) ($region_0_y_hi) $1%box% ($ref_magnify%0%) ($ref_xcompress%0%) ($ref_ycompress%0%)
-  FRAME/FORMAT=gif/FILE="($result_ref_map_filename)"
-
-ENDIF
-
-! If this was a map plot, report on the topo resolution used
-IF ($fland_area"0|*>1") THEN
-   SAY _________________Map plot:  Region and topo file used:
-   SAY _________________Map plot:    XY region      ($region_xy)
-   SAY _________________Map plot:    $fland_area    ($fland_area)
-   SAY _________________Map plot:    topo file      ($topo_url)
-ENDIF
-
 
 ! End of file ------------LAS_results.jnl--------------------------
 

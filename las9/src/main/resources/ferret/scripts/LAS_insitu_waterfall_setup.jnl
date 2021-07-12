@@ -2,7 +2,6 @@
 
 ! Initialize the dataset and set up for profile plots from DSG 
 ! datasets using native-DSG enabled Ferret. 
-! ACM 8/2020 version for DSG datasets
 
 GO LAS_initialize_region 0
 
@@ -20,7 +19,7 @@ GO LAS_initialize_data 0
 
 IF ($error_status"0|*>1") THEN
   MESSAGE/ERROR **ERROR ($error_string)
-  PROGRAM
+  EXIT/PROGRAM
 ENDIF
 
 ! Find the xyzt variables 
@@ -29,6 +28,40 @@ GO feature_get_direction_vars
 
 ! Set the URL label for the first dataset.
 GO LAS_url_label 0
+
+! Range for z variable
+
+LET ntic = 10
+PPL %range ($region_z_lo),  ($region_z_hi), `ntic`
+LET dlo = ($ppl$range_low)
+LET dhi = ($ppl$range_high)
+
+DEFINE AXIS/z=`dlo`:`dhi`/depth/npoints=100 vaxis
+
+! Are the depths positive or negative
+
+DEFINE SYMBOL shape = `($data_z_var),RETURN=shape`
+DEFINE SYMBOL indx = ($shape"0|POINT>0|X>i|Z>k|T>l|E>m|*>0")
+
+LET z1 = ($data_z_var)[($indx)=@MIN]
+LET z2 = ($data_z_var)[($indx)=@MAX]
+
+IF ($indx"|m>0|*>1") THEN
+   LET zmin = `z1[e=@min]`
+   LET zmax = `z2[e=@max]`
+ELSE
+   LET zmin = `z1`
+   LET zmax = `z2`
+ENDIF
+
+IF `zmin GT zmax` THEN 
+  PPL %range `zmax`, `zmin`, `ntic`
+  DEFINE SYMBOL vlim = /vlim=($ppl$range_high):($ppl$range_low)
+  DEFINE SYMBOL AX_VERT_POSTV = down  ! For LAS_results
+ELSE
+   PPL %range `zmin`, `zmax`, `ntic`
+   DEFINE SYMBOL vlim = /vlim=($ppl$range_low):($ppl$range_high)
+ENDIF
 
 ! Create the profile variables and symbols
 
@@ -52,13 +85,6 @@ IF ($ferret_plot_key"0|date_key>1|*>0") THEN GO setup_date_key.jnl
 
 ! For annotations in LAS_results.  If we are coloring by a
 ! feature-variable then ngood = npts
-
-DEFINE SYMBOL dtype = `($data_var),return=dtype`
-IF `($dtype"0|CHAR>0|*>1") EQ 0` THEN
-   DEFINE SYMBOL error_string = Invalid data type for variable ($ferret_title_0). Choose another variable.
-   MESSAGE/ERROR **ERROR ($error_string)
-   EXIT/PROGRAM
-ENDIF
 
 DEFINE SYMBOL shape = `($data_var),RETURN=shape`
 IF ($shape"0|E>1|*>0") THEN 
@@ -91,7 +117,6 @@ ELSE
 ENDIF
 
 DEFINE SYMBOL qualifiers = ($qualifiers)/LEVELS=($ferret_fill_levels"v")
-IF ($program_name"|PyFerret>1|*>0") THEN DEFINE SYMBOL qualifiers = ($qualifiers)/SYMBOL=boxfill
 
 IF ($ribbon"0|*>1") THEN \
    DEFINE SYMBOL  plot_command = PLOT/VS/RIBBON/LINE($qualifiers)
@@ -106,6 +131,5 @@ DEFINE VIEWPORT/XLIM=0:1/YLIM=0:1 vfull2
 
 DEFINE SYMBOL view1 = vfull1
 DEFINE SYMBOL view2 = vfull2
-
 ! End of file ------------ LAS_insitu_waterfall_setup.jnl--------------------------
 

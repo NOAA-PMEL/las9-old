@@ -20,6 +20,7 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import gwt.material.design.addins.client.window.MaterialWindow;
@@ -28,31 +29,7 @@ import gwt.material.design.client.constants.Display;
 import gwt.material.design.client.constants.ProgressType;
 import gwt.material.design.client.events.SideNavClosedEvent;
 import gwt.material.design.client.events.SideNavOpenedEvent;
-import gwt.material.design.client.ui.MaterialButton;
-import gwt.material.design.client.ui.MaterialCheckBox;
-import gwt.material.design.client.ui.MaterialCollapsible;
-import gwt.material.design.client.ui.MaterialCollapsibleItem;
-import gwt.material.design.client.ui.MaterialCollection;
-import gwt.material.design.client.ui.MaterialColumn;
-import gwt.material.design.client.ui.MaterialContainer;
-import gwt.material.design.client.ui.MaterialDialog;
-import gwt.material.design.client.ui.MaterialDialogContent;
-import gwt.material.design.client.ui.MaterialDropDown;
-import gwt.material.design.client.ui.MaterialIcon;
-import gwt.material.design.client.ui.MaterialLabel;
-import gwt.material.design.client.ui.MaterialLink;
-import gwt.material.design.client.ui.MaterialListBox;
-import gwt.material.design.client.ui.MaterialNavBar;
-import gwt.material.design.client.ui.MaterialNavBrand;
-import gwt.material.design.client.ui.MaterialNavSection;
-import gwt.material.design.client.ui.MaterialPanel;
-import gwt.material.design.client.ui.MaterialPreLoader;
-import gwt.material.design.client.ui.MaterialProgress;
-import gwt.material.design.client.ui.MaterialRange;
-import gwt.material.design.client.ui.MaterialRow;
-import gwt.material.design.client.ui.MaterialSideNavPush;
-import gwt.material.design.client.ui.MaterialSwitch;
-import gwt.material.design.client.ui.MaterialTextBox;
+import gwt.material.design.client.ui.*;
 import pmel.sdig.las.client.event.AnimateAction;
 import pmel.sdig.las.client.event.BreadcrumbSelect;
 import pmel.sdig.las.client.event.Download;
@@ -499,6 +476,25 @@ public class Layout extends Composite {
 //                    panel4.scale(navWidth);
         }
     }
+    public void addToSubsetColumn(MaterialRow r, Variable v) {
+        List<Widget> rows = subsetColumn.getChildrenList();
+        boolean add = true;
+        for (int i = 0; i < rows.size(); i++) {
+            Widget row = rows.get(i);
+            if ( row instanceof MaterialRow ) {
+                Widget b = ((MaterialRow) row).getWidget(0);
+                if ( b instanceof MaterialRadioButton) {
+                    String title = ((MaterialRadioButton)b).getText();
+                    if ( title.equals(v.getTitle())) {
+                        add = false;
+                    }
+                }
+            }
+        }
+        if (add) {
+            subsetColumn.add(r);
+        }
+    }
 
     public void addActiveConstraint(DataConstraintLink c) {
         int found = findActiveConstraint(c.getText());
@@ -536,28 +532,42 @@ public class Layout extends Composite {
         }
         return constraints;
     }
+    public List<DataConstraint> getVariableConstraints() {
+        List<DataConstraint> constraintList = getActiveConstraints();
+        List<DataConstraint> variableConstraints = new ArrayList<>();
+        for (int i = 0; i < constraintList.size(); i++) {
+            DataConstraint dc = constraintList.get(i);
+            if (dc.getType().equals("variable")) {
+                variableConstraints.add(dc);
+            }
+        }
+        return variableConstraints;
+    }
     public List<DataConstraint> getGroupedConstraints() {
         List<DataConstraint> constraintList = getActiveConstraints();
         Map<String, DataConstraint> groupedByLHS = new HashMap<>();
         for (int i = 0; i < constraintList.size(); i++) {
             DataConstraint dc = constraintList.get(i);
-            DataConstraint groupConstraint = groupedByLHS.get(dc.getLhs());
-            if ( groupConstraint != null ) {
-                groupConstraint.setOp("like");
-                String rhs = groupConstraint.getRhs();
-                if ( !rhs.startsWith("(") ) {
-                    rhs = "("+rhs;
-                }
-                if ( !rhs.endsWith(")") ) {
-                    rhs = rhs + "_ns_" + dc.getRhs() + ")";
+            // Only group text constraints
+            if ( dc.getType().equals("text") ) {
+                DataConstraint groupConstraint = groupedByLHS.get(dc.getLhs());
+                if (groupConstraint != null) {
+                    groupConstraint.setOp("like");
+                    String rhs = groupConstraint.getRhs();
+                    if (!rhs.startsWith("(")) {
+                        rhs = "(" + rhs;
+                    }
+                    if (!rhs.endsWith(")")) {
+                        rhs = rhs + "_ns_" + dc.getRhs() + ")";
+                    } else {
+                        rhs = rhs.replace(")", "");
+                        rhs = rhs + "_ns_" + dc.getRhs() + ")";
+                    }
+                    groupConstraint.setRhs(rhs);
                 } else {
-                    rhs = rhs.replace(")", "");
-                    rhs =  rhs + "_ns_" + dc.getRhs() + ")";
+                    DataConstraint gdc = new DataConstraint(dc.getType(), dc.getLhs(), dc.getOp(), dc.getRhs());
+                    groupedByLHS.put(gdc.getLhs(), gdc);
                 }
-                groupConstraint.setRhs(rhs);
-            } else {
-                DataConstraint gdc = new DataConstraint(dc.getType(), dc.getLhs(), dc.getOp(), dc.getRhs());
-                groupedByLHS.put(gdc.getLhs(), gdc);
             }
         }
         List<DataConstraint> groupedConstraints = new ArrayList<>();
@@ -1183,25 +1193,28 @@ public class Layout extends Composite {
     };
     @UiHandler("byVariableButton")
     public void addVariableConstraint(ClickEvent clickEvent) {
-        boolean fire = true;
+        boolean warn1 = false;
+        boolean warn2 = false;
+        String varname = byVariable.getSelectedValue();
         String minvalue = vmin.getText().trim();
         try {
             double m = Double.valueOf(minvalue).doubleValue();
+            eventBus.fireEventFromSource(new ChangeConstraint("add", "variable", varname, "gt", minvalue), byVariable);
         } catch (Exception e) {
-            fire = false;
-            Window.alert("Did you enter a valid number for the minimum value?");
+            warn1 = true;
+            // That's cool, we wont add your crap.
         }
         String maxvalue = vmax.getText().trim();
         try {
             double m = Double.valueOf(maxvalue).doubleValue();
-        } catch (Exception e) {
-            fire = false;
-            Window.alert("Did you enter a valid number for the maximum value?");
-        }
-        String varname = byVariable.getSelectedValue();
-        if ( fire ) {
-            eventBus.fireEventFromSource(new ChangeConstraint("add", "variable", varname, "gt", minvalue), byVariable);
             eventBus.fireEventFromSource(new ChangeConstraint("add", "variable", varname, "le", maxvalue), byVariable);
+        } catch (Exception e) {
+            warn2 = true;
+            // If they're both bad you get a warning
+        }
+
+        if ( warn1 && warn2 ) {
+            Window.alert("You must enter a valid number for one or both values?");
         }
     }
     @UiHandler("update")

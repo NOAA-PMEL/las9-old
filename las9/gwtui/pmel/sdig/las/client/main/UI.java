@@ -2632,6 +2632,11 @@ public class UI implements EntryPoint {
             }
             constraints = constraints + "&" + dc.getLhs() + dc.getOpAsSymbol() + rhs;
         }
+        List<DataConstraint> variableConstraints = layout.getVariableConstraints();
+        for (int i = 0; i < variableConstraints.size(); i++) {
+            DataConstraint vc = variableConstraints.get(i);
+            constraints = constraints + "&" + vc.getLhs() + vc.getOpAsSymbol() + vc.getRhs();
+        }
 
         List<String> queries = new ArrayList<>();
 
@@ -2729,6 +2734,10 @@ public class UI implements EntryPoint {
             // Apply any active constraints.
             List<DataConstraint> groupedConstraints = layout.getGroupedConstraints();
             lasRequest.setDataConstraints(groupedConstraints);
+            List<DataConstraint> varConstraints = layout.getVariableConstraints();
+            if ( varConstraints.size() > 0 ) {
+                lasRequest.setDataConstraints(varConstraints);
+            }
         }
         // TODO ask ferret to accept ISO Strings
 
@@ -3307,7 +3316,7 @@ public class UI implements EntryPoint {
                     }
                     MaterialRow r = new MaterialRow();
                     r.addStyleName("radioHeight");
-                    layout.subsetColumn.add(r);
+                    layout.addToSubsetColumn(r, v);
                     MaterialRadioButton rb = new MaterialRadioButton();
                     rb.addClickHandler(new ClickHandler() {
                         @Override

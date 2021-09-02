@@ -47,7 +47,8 @@ class ProductService {
             List<Annotation> annotationList = new ArrayList<Annotation>()
             group.annotation.each{a ->
                 Annotation annotation = new Annotation([type: a.@type.toString(), value: a.value.text()])
-                annotationList.add(annotation)
+                if ( !annotationList.any{ it.value == annotation.value } )
+                    annotationList.add(annotation)
             }
             aGroup.annotations = annotationList;
             annotationGroups.add(aGroup)

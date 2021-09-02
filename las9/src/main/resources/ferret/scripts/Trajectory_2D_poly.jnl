@@ -248,7 +248,7 @@ IF ($single_color"0|*>1") THEN
 ELSE
 ! or /missing=blank or leave off for gray...
 
-   PLOT($qualifiers)/MISSING=black/SET ($ferret_plot_var)
+   PLOT($qualifiers)/MISSING=blank/SET ($ferret_plot_var)
    GO key_at_top
    PPL RIBBON/OVER
 ENDIF
@@ -256,7 +256,7 @@ ENDIF
 
 ! Hack: histogram levels
  IF `STRINDEX("($ferret_fill_levels)", "H") GT 0 OR STRINDEX("($ferret_fill_levels)", "h") GT 0` THEN \
-PLOT($qualifiers)/missing=black/nokey  var_data 
+PLOT($qualifiers)/missing=blank/nokey  var_data
 
 SAY _________________ END line plot: clock seconds:                              ($clock_secs)
 SAY _________________ total time for line plot, seconds                                     ----- `($clock_secs) - pre_plot`

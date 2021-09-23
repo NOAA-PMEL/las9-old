@@ -27,6 +27,9 @@ GO ($data_initialization_script) ($1)
 
 GO LAS_unquote_string data_title
 
+! Prevent plot errors if there's a weird character in the global title attribute for this dataset
+IF ($ferret_annotations"0|*>1") THEN SET DATA/TITLE=" " `($data_num)`
+
 ! And if the configuration or initialization hasn't upped the memory,
 ! increase it somewhat.
 IF `($ferret_memory"25.6") LT 100` THEN SET MEM/SIZ=300

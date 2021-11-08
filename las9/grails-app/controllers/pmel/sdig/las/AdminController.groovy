@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat
 class AdminController {
     IngestService ingestService
     UpdateDatasetJobService updateDatasetJobService;
+    ReadMetadataJobService readMetadataJobService;
     LASProxy lasProxy = new LASProxy();
     def jsonSlurper = new JsonSlurper()
     def index() {
@@ -274,6 +275,29 @@ class AdminController {
             render dataset as JSON
         }
     }
+    def addUAF() {
+        AddRequest addRequest = new AddRequest()
+//        addRequest.setUrl("https://data.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml")
+        def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalogs/psl.noaa.gov/thredds/catalog/Datasets/20thC_ReanV2c/Monthlies/gaussian_sprd/subsurface/catalog.xml"
+        addRequest.setUrl(turl)
+        addRequest.setType("thredds")
+        def addprops = []
+        AddProperty ap1 = new AddProperty()
+        ap1.setName("parent_type")
+        ap1.setValue("site")
+
+        AddProperty ap2 = new AddProperty()
+        ap2.setName("parent_id")
+        ap2.setValue("1")
+        addprops.add(ap1)
+        addprops.add(ap2)
+        def parent = Site.get(1)
+        addRequest.setAddProperties(addprops)
+        Dataset dataset = ingestService.processRequset(addRequest, parent);
+        parent.addToDatasets(dataset)
+        parent.save(flush: true, failOnError: true);
+        log.info("Finished UAF ingest, Site saved");
+    }
     def addDataset() {
 
         def requestJSON = request.JSON
@@ -423,24 +447,35 @@ class AdminController {
         def parent;
         if ( did ) {
             Dataset dead = Dataset.get(did)
+            log.debug("Found data set to remove: " + dead.getHash())
             if (!dead.parent) {
                 parent = Site.get(1)
                 parent.removeFromDatasets(dead)
+                log.debug("Removing data set from site and saving")
                 parent.save(flush: true)
+                log.debug("Site saved")
             } else {
                 parent = dead.getParent()
+                log.debug("Removing data set " + dead.id + "from parent and saving")
                 parent.removeFromDatasets(dead)
                 parent.save(flush: true)
+                log.debug("Parent " + parent.id + " saved.")
             }
             updateDatasetJobService.unscheuleUpdate(dead.id)
-            dead.delete()
+            log.debug("Deleting data set." + dead.id)
+            dead.delete(flush: true)
+            log.debug("Dataset deleted.")
         }
         JSON.use("deep") {
+            log.debug("Rendering parent response for deleted data set.")
             render parent as JSON
         }
     }
     def start() {
-        ingestService.addVariablesToAll()
+        readMetadataJobService.buildTriggers()
+    }
+    def stop() {
+        readMetadataJobService.unscheuleUpdate()
     }
     def ferret() {
         Ferret ferret = Ferret.first()

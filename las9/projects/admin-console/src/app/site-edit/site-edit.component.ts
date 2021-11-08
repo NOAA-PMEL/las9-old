@@ -120,19 +120,19 @@ export class SiteEditComponent implements OnInit {
     this.linkProperties = [];
     this.footerLinkToEdit = new class implements FooterLink {
       id: number;
-      index: number;
-      text: string;
+      linkindex: number;
+      linktext: string;
       url: string;
     };
     this.footerLinkToEdit['url'] = "";
-    this.footerLinkToEdit['test'] = "";
-    this.footerLinkToEdit['index'] = 0;
+    this.footerLinkToEdit['linktext'] = "";
+    this.footerLinkToEdit['linkindex'] = 0;
     // this.footerLinks.push(this.footerLinkToEdit);
     let fpu: StringProperty = new StringProperty({label: 'url', value: '', key: 'url'})
     this.linkProperties.push(fpu);
-    let fpt: StringProperty = new StringProperty({label: 'text', value: '', key: 'text'})
+    let fpt: StringProperty = new StringProperty({label: 'linktext', value: '', key: 'linktext'})
     this.linkProperties.push(fpt);
-    let fpi: StringProperty = new StringProperty({label: 'index', value: '', key: 'index'})
+    let fpi: StringProperty = new StringProperty({label: 'linkindex', value: '', key: 'linkindex'})
     this.linkProperties.push(fpi);
     this.footerLinkForm = this.formService.makeFormGroup(this.linkProperties);
     this.edit_footerLink = true;

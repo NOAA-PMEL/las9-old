@@ -21,9 +21,9 @@ export interface Site {
 }
 export interface FooterLink {
   id: number;
-  index: number;
+  linkindex: number;
   url: string;
-  text: string;
+  linktext: string;
 }
 export interface Attributes {
 }

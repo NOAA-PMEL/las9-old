@@ -768,7 +768,10 @@ class IngestService {
         }
     }
     Dataset ingestFromThredds(String url, String parentHash, String erddap, boolean full) {
-
+        // Just cheat...
+        if ( url.contains("data.pmel.noaa.gov/uaf") ) {
+//            erddap = "https://upwell.pfeg.noaa.gov/erddap/"
+        }
         log.debug("Starting ingest of " + url)
         dateTimeService.init()
         String tdsid;
@@ -807,7 +810,7 @@ class IngestService {
         dataset.setHash(getDigest(catalog.getUriString()))
         def children = catalog.getDatasetsLogical();
         for ( int i = 0; i < children.size(); i++ ) {
-            thredds.client.catalog.Dataset invDataset = (Dataset) children.get(i)
+            thredds.client.catalog.Dataset invDataset = children.get(i)
             if ( !invDataset.getName().toLowerCase().equals("tds quality rubric")) {
                 List<Dataset> childDatasets = processUAFDataset(invDataset, erddap)
                 for (int j = 0; j < childDatasets.size(); j++) {
@@ -1187,11 +1190,13 @@ class IngestService {
                             }
                             variable.setIntervals(intervals)
                             variable.setGeometry(GeometryType.GRID)
-                            variable.save(failOnError: true)
+                            if (variable.validate())
+                                variable.save(failOnError: true)
                         }
-
-                        dataset.save(failOnError: true)
-                        rankDatasets.add(dataset)
+                        if (dataset.validate()) {
+                            dataset.save(failOnError: true)
+                            rankDatasets.add(dataset)
+                        }
                     }
                 }
             }

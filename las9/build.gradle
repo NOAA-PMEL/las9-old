@@ -15,7 +15,7 @@ buildscript {
     }
 }
 
-version "9.3"
+version "9.4"
 group "las"
 
 apply plugin:"eclipse"
@@ -39,7 +39,7 @@ repositories {
     maven { url "https://artifacts.unidata.ucar.edu/repository/unidata-all" }
 }
 ext {
-    unidata_version = '5.3.2'
+    unidata_version = '5.4.2'
 }
 dependencies {
     compile "org.springframework.boot:spring-boot-starter-logging"

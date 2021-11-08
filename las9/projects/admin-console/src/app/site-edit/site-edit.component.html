@@ -6,7 +6,7 @@
     <div *ngFor="let flink of footerLinks">
       <div class="ui-g" style="padding: 0px">
         <div class="ui-g-10" style="padding: 0px">
-          <button pButton class="wide-button ui-button-secondary" label="{{flink.text}}" (click)="editLink(flink)"></button>
+          <button pButton class="wide-button ui-button-secondary" label="{{flink.linktext}}" (click)="editLink(flink)"></button>
         </div>
         <div class="ui-g-1" style="padding: 0px">
            <button label="Edit" pButton class="wide-button ui-button-warning" type="button" icon="pi pi-pencil" iconPos="left" (click)="editLink(flink)"></button>

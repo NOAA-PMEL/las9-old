@@ -1496,10 +1496,10 @@ class InitializationService {
                 // No site configured, so build the default site.
 
                 // Add default footer links
-                FooterLink f1 = new FooterLink([url: "https://www.noaa.gov/", text: "NOAA", index: 1])
-                FooterLink f2 = new FooterLink([url: "https://www.pmel.noaa.gov/", text: "PMEL", index: 2])
-                FooterLink f3 = new FooterLink([url: "https://www.noaa.gov/protecting-your-privacy", text: "Privacy", index: 3])
-                FooterLink f4 = new FooterLink([url: "mailto:roland.schweitzer@noaa.gov", text: "Contact Administrator", index: 4])
+                FooterLink f1 = new FooterLink([url: "https://www.noaa.gov/", linktext: "NOAA", linkindex: 1])
+                FooterLink f2 = new FooterLink([url: "https://www.pmel.noaa.gov/", linktext: "PMEL", linkindex: 2])
+                FooterLink f3 = new FooterLink([url: "https://www.noaa.gov/protecting-your-privacy", linktext: "Privacy", linkindex: 3])
+                FooterLink f4 = new FooterLink([url: "mailto:roland.schweitzer@noaa.gov", linktext: "Contact Administrator", linkindex: 4])
 
                 site.addToFooterLinks(f1)
                 site.addToFooterLinks(f2)

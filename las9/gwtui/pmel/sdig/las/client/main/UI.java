@@ -560,12 +560,8 @@ public class UI implements EntryPoint {
                     if ( !newVariable.equals(GRID) ) {
                         mapView = "xy";
                     }
-                    layout.panel2.initializeAxes(p.getView(), mapView, newVariable);
+                    layout.panel2.initializeAxes(p.getView(), mapView, dataset, newVariable);
                     layout.panel2.setMapSelection(refMap.getYlo(), refMap.getYhi(), refMap.getXlo(), refMap.getXhi());
-                    if ( variables.get(0).getVerticalAxis() != null ) {
-                        layout.panel2.setZlo(zAxisWidget.getLo());
-                        layout.panel2.setZhi(zAxisWidget.getHi());
-                    }
                     layout.panel2.setFerretDateLo(dateTimeWidget.getFerretDateLo());
                     layout.panel2.setFerretDateHi(dateTimeWidget.getFerretDateHi());
                 }
@@ -582,7 +578,7 @@ public class UI implements EntryPoint {
                 layout.setPanels(count);
                 if ( count == 2 ) {
                     if ( historyRequestPanel2 == null ) {
-                        setUpPanel(2, variables.get(0));
+                        setUpPanel(2, dataset, variables.get(0));
                     } else {
                         String op = historyRequestPanel2.getOperation();
                         String hash = historyRequestPanel2.getDatasetHashes().get(0);
@@ -784,7 +780,7 @@ public class UI implements EntryPoint {
                         datasetService.getDataset(dataset.getId() + ".json", layout.panel2.datasetCallback);
                     } else if (selected instanceof Variable) {
                         Variable variable = (Variable) event.getSelected();
-                        layout.panel2.switchVariables(variable);
+//                        layout.panel2.switchVariables(variable);
                         layout.setUpdate(Constants.UPDATE_NEEDED);
                     }
                 }
@@ -1015,7 +1011,7 @@ public class UI implements EntryPoint {
                         } else {
                             layout.downloadMapPanel.setDisplay(Display.BLOCK);
                         }
-                        if (view.contains("z") || variables.get(0).getVerticalAxis() == null) {
+                        if (view.contains("z") || dataset.getVerticalAxis() == null) {
                             layout.downloadZaxisPanel.setDisplay(Display.NONE);
                         } else {
                             layout.downloadZaxisPanel.setDisplay(Display.BLOCK);
@@ -1076,7 +1072,7 @@ public class UI implements EntryPoint {
                     correlationMap.setCurrentSelection(refMap.getYlo(), refMap.getYhi(), refMap.getXlo(), refMap.getXhi());
                     correlationDateTime.setLo(dateTimeWidget.getFerretDateLo());
                     correlationDateTime.setHi(dateTimeWidget.getFerretDateHi());
-                    if (variables.get(0).getVerticalAxis() != null) {
+                    if (dataset.getVerticalAxis() != null) {
                         correlationZaxisWidget.setDisplay(Display.BLOCK);
                         correlationZaxisWidget.setLo(zAxisWidget.getLo());
                         correlationZaxisWidget.setHi(zAxisWidget.getHi());
@@ -1210,14 +1206,14 @@ public class UI implements EntryPoint {
         xhi = refMap.getXhi();
         ylo = refMap.getYlo();
         yhi = refMap.getYhi();
-        if (variables.get(0).getVerticalAxis() != null) {
+        if (dataset.getVerticalAxis() != null) {
             zlo = zAxisWidget.getLo();
             zhi = zAxisWidget.getHi();
         } else {
             zlo = null;
             zhi = null;
         }
-        if (variables.get(0).getTimeAxis() != null) {
+        if (dataset.getTimeAxis() != null) {
             tlo = dateTimeWidget.getISODateLo();
             thi = dateTimeWidget.getISODateHi();
         } else {
@@ -1861,7 +1857,7 @@ public class UI implements EntryPoint {
                 }
             });
             layout.panel2.addBreadcrumb(vbc);
-            setUpPanel(2, variable);
+            setUpPanel(2, dataset, variable);
         }
     };
     MethodCallback<Dataset> infoCallback = new MethodCallback<Dataset>() {
@@ -2201,26 +2197,27 @@ public class UI implements EntryPoint {
         layout.removeBreadcrumbs(selected, panel);
     }
     private void applyConfig() {
-
-        TimeAxis tAxis = null;
-        if (newVariable != null) {
-            tAxis = newVariable.getTimeAxis();
-        } else if (newVector != null) {
-            tAxis = newVector.getU().getTimeAxis();
-        }
-
+        TimeAxis tAxis = dataset.getTimeAxis();
+        VerticalAxis vAxis = dataset.getVerticalAxis();
+//        TimeAxis tAxis = null;
+//        if (newVariable != null) {
+//            tAxis = newVariable.getTimeAxis();
+//        } else if (newVector != null) {
+//            tAxis = newVector.getU().getTimeAxis();
+//        }
+//
         if (tAxis != null) {
             dateTimeWidget.init(tAxis, false);
             animateDateTimeWidget.init(tAxis, true);
             downloadDateTime.init(tAxis, true);
             correlationDateTime.init(tAxis, true);
         }
-        VerticalAxis vAxis = null;
-        if (newVariable != null) {
-            vAxis = newVariable.getVerticalAxis();
-        } else if (newVector != null) {
-            vAxis = newVector.getU().getVerticalAxis();
-        }
+//        VerticalAxis vAxis = null;
+//        if (newVariable != null) {
+//            vAxis = newVariable.getVerticalAxis();
+//        } else if (newVector != null) {
+//            vAxis = newVector.getU().getVerticalAxis();
+//        }
         if (vAxis != null) {
             zAxisWidget.init(vAxis);
             downloadZaxisWidget.init(vAxis);
@@ -2243,11 +2240,11 @@ public class UI implements EntryPoint {
         }
         // Start with the XY tool. May change later below.
         refMap.setTool("xy");
-        double uy_min = useVariable.getGeoAxisY().getMin();
-        double uy_max = useVariable.getGeoAxisY().getMax();
-        double ux_min = useVariable.getGeoAxisX().getMin();
-        double ux_max = useVariable.getGeoAxisX().getMax();
-        double u_delta = useVariable.getGeoAxisX().getDelta();
+        double uy_min = dataset.getGeoAxisY().getMin();
+        double uy_max = dataset.getGeoAxisY().getMax();
+        double ux_min = dataset.getGeoAxisX().getMin();
+        double ux_max = dataset.getGeoAxisX().getMax();
+        double u_delta = dataset.getGeoAxisX().getDelta();
         refMap.setDataExtent(uy_min, uy_max, ux_min, ux_max, u_delta);
 //        downloadMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
 //        correlationMap.setDataExtent(useVariable.getGeoAxisY().getMin(), useVariable.getGeoAxisY().getMax(), useVariable.getGeoAxisX().getMin(), useVariable.getGeoAxisX().getMax(), useVariable.getGeoAxisX().getDelta());
@@ -2314,7 +2311,7 @@ public class UI implements EntryPoint {
                 dateTimeWidget.setLo(tlo);
                 dateTimeWidget.setHi(thi);
             }
-            if (variables.get(0).getVerticalAxis() != null) {
+            if (dataset.getVerticalAxis() != null) {
                 zAxisWidget.setLo(zlo);
                 zAxisWidget.setHi(zhi);
             }
@@ -2525,7 +2522,7 @@ public class UI implements EntryPoint {
         layout.panel1.addAnnotation(new MaterialLabel("Dataset: " +dataset.getTitle()));
         layout.panel1.addAnnotation(new MaterialLabel("Variable: " +variables1.get(0).getTitle()));
         layout.panel1.addAnnotation(new MaterialLabel("Time: " + timeseriesReqeust.getAxesSets().get(0).getTlo()+" : " + timeseriesReqeust.getAxesSets().get(0).getThi() ));
-        if ( variables.get(0).getVerticalAxis() != null ) {
+        if ( dataset.getVerticalAxis() != null ) {
             layout.panel1.addAnnotation(new MaterialLabel("Depth: " + timeseriesReqeust.getAxesSets().get(0).getZlo() + " : " + timeseriesReqeust.getAxesSets().get(0).getZhi()));
         }
         layout.panel1.addAnnotation(new MaterialLabel("Latitude: " + timeseriesReqeust.getAxesSets().get(0).getYlo()+" : " + timeseriesReqeust.getAxesSets().get(0).getYlo() ));
@@ -2592,8 +2589,8 @@ public class UI implements EntryPoint {
             constraints = constraints + "latitude>=" + refMap.getYlo() + "&latitude<=" + refMap.getYhi();
 
         }
-        if (v.getVerticalAxis() != null) {
-            String zname = v.getVerticalAxis().getName();
+        if (dataset.getVerticalAxis() != null) {
+            String zname = dataset.getVerticalAxis().getName();
             if (zAxisWidget.isRange()) {
                 if ( !vars.contains(zname) ) vars = vars + ","+zname;
                 if (!constraints.endsWith("&")) constraints = constraints + "&";
@@ -2605,7 +2602,7 @@ public class UI implements EntryPoint {
                 constraints = constraints + zname +"=" + zAxisWidget.getLo();
             }
         }
-        if (v.getTimeAxis() != null) {
+        if (dataset.getTimeAxis() != null) {
             if (dateTimeWidget.isRange()) {
                 if ( !vars.contains("time") ) vars = "time," + vars;
                 if (!constraints.endsWith("&")) constraints = constraints + "&";
@@ -2752,7 +2749,7 @@ public class UI implements EntryPoint {
                     variables.add(1, id);
                 }
             }
-            if (variables.get(0).getTimeAxis() != null) {
+            if (dataset.getTimeAxis() != null) {
                 lasRequest.getAxesSets().get(0).setTlo(dateTimeWidget.getISODateLo());
                 if (dateTimeWidget.isRange()) {
                     lasRequest.getAxesSets().get(0).setThi(dateTimeWidget.getISODateHi());
@@ -2762,7 +2759,7 @@ public class UI implements EntryPoint {
             }
         } else {
 //            if (analysis == null || (analysis != null && !analysis.getAxes().contains("t"))) {
-                if (variables.get(0).getTimeAxis() != null) {
+                if (dataset.getTimeAxis() != null) {
                     lasRequest.getAxesSets().get(0).setTlo(dateTimeWidget.getFerretDateLo());
                     if (dateTimeWidget.isRange()) {
                         lasRequest.getAxesSets().get(0).setThi(dateTimeWidget.getFerretDateHi());
@@ -2773,7 +2770,7 @@ public class UI implements EntryPoint {
             }
         }
 
-        if (variables.get(0).getVerticalAxis() != null) {
+        if (dataset.getVerticalAxis() != null) {
 
 //            if (analysis == null || (analysis != null && !analysis.getAxes().contains("z"))) {
                 lasRequest.getAxesSets().get(0).setZlo(zAxisWidget.getLo());
@@ -2817,7 +2814,7 @@ public class UI implements EntryPoint {
                     lasRequest.getAxesSets().get(1).setYhi(String.valueOf(comparePanel.getYhi()));
                 }
                 if (!view.contains("z") && !comparePanel.isDifference()) {
-                    if (comparePanel.getVariable().getVerticalAxis() != null) {
+                    if (comparePanel.getDataset().getVerticalAxis() != null) {
                         lasRequest.getAxesSets().get(0).setZlo(comparePanel.getZlo());
                         if (comparePanel.isZRange()) {
                             lasRequest.getAxesSets().get(0).setZhi(comparePanel.getZhi());
@@ -2826,7 +2823,7 @@ public class UI implements EntryPoint {
                         }
                     }
                 } else if (!view.contains("z") && comparePanel.isDifference()) {
-                    if (comparePanel.getVariable().getVerticalAxis() != null) {
+                    if (comparePanel.getDataset().getVerticalAxis() != null) {
                         lasRequest.getAxesSets().get(1).setZlo(comparePanel.getZlo());
                         if (comparePanel.isZRange()) {
                             lasRequest.getAxesSets().get(1).setZhi(comparePanel.getZhi());
@@ -2836,7 +2833,7 @@ public class UI implements EntryPoint {
                     }
                 }
                 if (!view.contains("t") && !comparePanel.isDifference()) {
-                    if ( comparePanel.getVariable().getTimeAxis() != null ) {
+                    if ( comparePanel.getDataset().getTimeAxis() != null ) {
                         lasRequest.getAxesSets().get(0).setTlo(comparePanel.getFerretDateLo());
                         if (comparePanel.dateTimeWidget.isRange()) {
                             lasRequest.getAxesSets().get(0).setThi(comparePanel.getFerretDateHi());
@@ -2845,7 +2842,7 @@ public class UI implements EntryPoint {
                         }
                     }
                 } else if (!view.contains("t") && comparePanel.isDifference()) {
-                    if ( comparePanel.getVariable().getTimeAxis() != null ) {
+                    if ( comparePanel.getDataset().getTimeAxis() != null ) {
                         lasRequest.getAxesSets().get(1).setTlo(comparePanel.getFerretDateLo());
                         if (comparePanel.dateTimeWidget.isRange()) {
                             lasRequest.getAxesSets().get(1).setThi(comparePanel.getFerretDateHi());
@@ -2877,7 +2874,7 @@ public class UI implements EntryPoint {
                 lasRequest.getAxesSets().get(0).setYlo(String.valueOf(correlationMap.getYlo()));
                 lasRequest.getAxesSets().get(0).setYhi(String.valueOf(correlationMap.getYhi()));
 
-                if ( variables.get(0).getVerticalAxis() != null ) {
+                if ( dataset.getVerticalAxis() != null ) {
                     lasRequest.getAxesSets().get(0).setZlo(correlationZaxisWidget.getLo());
                     lasRequest.getAxesSets().get(0).setZhi(correlationZaxisWidget.getHi());
                 }
@@ -3176,19 +3173,19 @@ public class UI implements EntryPoint {
         }
         return tokens;
     }
-    private void setUpPanel(int tp, Variable variable) {
+    private void setUpPanel(int tp, Dataset ds, Variable v_st) {
         // This action will set the variable and initialize the axes.
         if ( tp == 2 ) {
 
             String pview = products.getSelectedProduct().getView();
-            layout.panel2.setVariable(variable);
+            layout.panel2.setVariable(v_st);
             // Initialize the Axes and Hide axes that are in the view
             String mapView = pview;
-            if ( !variable.getGeometry().equals(GRID) ) {
+            if ( !v_st.getGeometry().equals(GRID) ) {
                 // DSG selections always require X and Y in the view
                 mapView = "xy";
             }
-            layout.panel2.initializeAxes(pview, mapView, variable);
+            layout.panel2.initializeAxes(pview, mapView, ds, v_st);
 
             // set them to match the left nav
             //TODO - this needs logic to get from the left nav and the history and decide which to use based on the
@@ -3218,19 +3215,19 @@ public class UI implements EntryPoint {
             layout.panel2.setMapSelection(nylo, nyhi, nxlo, nxhi);
 
             // Use the first
-            if (variable.getVerticalAxis() != null) {
+            if (ds.getVerticalAxis() != null) {
 
 
                 // Use z initially as same from main panel && !pview.contains("z")
-                if ( variables.get(0).getVerticalAxis() != null ) {
+                if ( ds.getVerticalAxis() != null ) {
                     layout.panel2.setZlo(zAxisWidget.getLo());
                     layout.panel2.setZhi(zAxisWidget.getHi());
                 } else {
                     // Otherwise, use the variable or the history
                     String v_zlo = null;
                     String v_zhi = null;
-                    if ( variable.getVerticalAxis() != null ) {
-                        v_zlo = String.valueOf(variable.getVerticalAxis().getMin());
+                    if ( ds.getVerticalAxis() != null ) {
+                        v_zlo = String.valueOf(ds.getVerticalAxis().getMin());
                         v_zhi = v_zlo;
 
                     }
@@ -3250,13 +3247,13 @@ public class UI implements EntryPoint {
                 }
                 layout.panel2.setZRange(zAxisWidget.isRange());
             }
-            if ( variable.getTimeAxis() != null ) {
+            if ( ds.getTimeAxis() != null ) {
                 layout.panel2.setFerretDateLo(dateTimeWidget.getFerretDateLo());
                 layout.panel2.setFerretDateHi(dateTimeWidget.getFerretDateHi());
                 layout.panel2.dateTimeWidget.setRange(dateTimeWidget.isRange());
             }
 
-            if (variable.getGeometry().equals(Constants.GRID)) {
+            if (v_st.getGeometry().equals(Constants.GRID)) {
                 // TODO all panels
                 layout.panel2.enableDifference(true);
             }
@@ -3336,28 +3333,28 @@ public class UI implements EntryPoint {
 
 
         }
-        if (useVariable.getTimeAxis() != null) {
-
-            layout.showDateTime();
-            if (view.contains("t") || p.getData_view().contains("t")) {
-                dateTimeWidget.setRange(true);
-            } else {
-                dateTimeWidget.setRange(false);
-            }
-        } else {
-            layout.hideDateTime();
-        }
-
-        if (useVariable.getVerticalAxis() != null) {
-            layout.showVertialAxis();
-            if (view.contains("z") || p.getData_view().contains("z") ) {
-                zAxisWidget.setRange(true);
-            } else {
-                zAxisWidget.setRange(false);
-            }
-        } else {
-            layout.hideVerticalAxis();
-        }
+//        if (useVariable.getTimeAxis() != null) {
+//
+//            layout.showDateTime();
+//            if (view.contains("t") || p.getData_view().contains("t")) {
+//                dateTimeWidget.setRange(true);
+//            } else {
+//                dateTimeWidget.setRange(false);
+//            }
+//        } else {
+//            layout.hideDateTime();
+//        }
+//
+//        if (useVariable.getVerticalAxis() != null) {
+//            layout.showVertialAxis();
+//            if (view.contains("z") || p.getData_view().contains("z") ) {
+//                zAxisWidget.setRange(true);
+//            } else {
+//                zAxisWidget.setRange(false);
+//            }
+//        } else {
+//            layout.hideVerticalAxis();
+//        }
 
         if ( layout.isAnalysisActive() ) {
             // Amend the range settings based on the analysis settings.

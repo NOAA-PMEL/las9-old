@@ -15,10 +15,6 @@ public class Variable implements Comparable {
 	String units;
 	Dataset dataset;
 	String type;
-	TimeAxis timeAxis;
-	GeoAxisX geoAxisX;
-	GeoAxisY geoAxisY;
-	VerticalAxis verticalAxis;
 	Stats stats;
 	Set<VariableProperty> variableProperties;
 	String thumbnail;
@@ -103,52 +99,20 @@ public class Variable implements Comparable {
 		this.type = type;
 	}
 
-	public TimeAxis getTimeAxis() {
-		return timeAxis;
-	}
-
-	public void setTimeAxis(TimeAxis timeAxis) {
-		this.timeAxis = timeAxis;
-	}
-
-	public GeoAxisX getGeoAxisX() {
-		return geoAxisX;
-	}
-
-	public void setGeoAxisX(GeoAxisX geoAxisX) {
-		this.geoAxisX = geoAxisX;
-	}
-
-	public GeoAxisY getGeoAxisY() {
-		return geoAxisY;
-	}
-
-	public void setGeoAxisY(GeoAxisY geoAxisY) {
-		this.geoAxisY = geoAxisY;
-	}
-
-    public String getIntervals() {
-        return intervals;
-    }
-
-    public void setIntervals(String intervals) {
-        this.intervals = intervals;
-    }
-
-    public VerticalAxis getVerticalAxis() {
-		return verticalAxis;
-	}
-
-	public void setVerticalAxis(VerticalAxis verticalAxis) {
-		this.verticalAxis = verticalAxis;
-	}
-
 	public Stats getStats() {
 		return stats;
 	}
 
 	public void setStats(Stats stats) {
 		this.stats = stats;
+	}
+
+	public String getIntervals() {
+		return intervals;
+	}
+
+	public void setIntervals(String intervals) {
+		this.intervals = intervals;
 	}
 
 	public Set<VariableProperty> getVariableProperties() {

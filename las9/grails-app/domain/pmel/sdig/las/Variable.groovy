@@ -24,7 +24,7 @@ class Variable {
     static belongsTo = [Dataset, Vector]
 
     static hasMany = [variableProperties: VariableProperty, variableAttributes: VariableAttribute]
-    static hasOne = [stats: Stats, timeAxis: TimeAxis, geoAxisX: GeoAxisX, geoAxisY: GeoAxisY, verticalAxis: VerticalAxis]
+    static hasOne = [stats: Stats]
     static mapping = {
         sort "title"
         url type: "text"
@@ -38,8 +38,6 @@ class Variable {
 
     }
     static constraints = {
-        verticalAxis(nullable: true)
-        timeAxis(nullable: true)
         stats(nullable: true)
         variableProperties(nullable: true)
         units(nullable:true)

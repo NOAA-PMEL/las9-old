@@ -702,7 +702,7 @@ public class OLMapWidget extends Composite {
         double dt = Math.abs(360. - w);
         if (dt <= 2. * delta) {
             modulo = true;
-            selectionMade = false;
+            selectionMade = true;
         } else {
             modulo = false;
         }

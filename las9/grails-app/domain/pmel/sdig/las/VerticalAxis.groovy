@@ -16,7 +16,7 @@ class VerticalAxis {
 	
 	static hasMany = [zvalues: Zvalue]
 	
-	static belongsTo = [variable: Variable]
+	static belongsTo = [dataset: Dataset]
 	
 	public setZV(List zv) {
 		zvalues = zv

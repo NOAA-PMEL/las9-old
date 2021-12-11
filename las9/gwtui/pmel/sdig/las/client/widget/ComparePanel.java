@@ -488,29 +488,29 @@ public class ComparePanel extends Composite {
         outputPanel.scale(navWidth);
     }
 
-    public void initializeAxes(String view, String mapView, Variable variable) {
+    public void initializeAxes(String view, String mapView, Dataset dd, Variable vv_ia) {
 
         // Turn them all on
         mapPanel.setDisplay(Display.BLOCK);
         dateTimePanel.setDisplay(Display.BLOCK);
         zaxisPanel.setDisplay(Display.BLOCK);
 
-        TimeAxis tAxis = variable.getTimeAxis();
+        TimeAxis tAxis = dd.getTimeAxis();
 
         if ( tAxis != null ) {
             dateTimeWidget.init(tAxis, false);
         }
 
-        if ( variable.getVerticalAxis() != null ) {
-            zAxisWidget.init(variable.getVerticalAxis());
+        if ( dd.getVerticalAxis() != null ) {
+            zAxisWidget.init(dd.getVerticalAxis());
         }
 
 
-        double xmin = variable.getGeoAxisX().getMin();
-        double xmax = variable.getGeoAxisX().getMax();
-        double ymin = variable.getGeoAxisY().getMin();
-        double ymax = variable.getGeoAxisY().getMax();
-        refMap.setDataExtent(ymin, ymax, xmin, xmax, variable.getGeoAxisX().getDelta());
+        double xmin = dd.getGeoAxisX().getMin();
+        double xmax = dd.getGeoAxisX().getMax();
+        double ymin = dd.getGeoAxisY().getMin();
+        double ymax = dd.getGeoAxisY().getMax();
+        refMap.setDataExtent(ymin, ymax, xmin, xmax, dd.getGeoAxisX().getDelta());
         refMap.setTool(mapView);
 
         if ( tAxis != null ) {
@@ -524,15 +524,15 @@ public class ComparePanel extends Composite {
                 dateTimeWidget.setLo(display_lo);
             }
         }
-        hideViewAxes(view, variable);
+        hideViewAxes(view, dd);
     }
-    public void hideViewAxes(String view, Variable variable) {
+    public void hideViewAxes(String view, Dataset hdd) {
         this.view = view;
 
         if ( view.contains("xy") ) {
             mapPanel.setDisplay(Display.NONE);
         }
-        if ( view.contains("z") || variable.getVerticalAxis() == null ) {
+        if ( view.contains("z") || hdd.getVerticalAxis() == null ) {
             zaxisPanel.setDisplay(Display.NONE);
         }
         if ( view.contains("t") ) {
@@ -609,49 +609,49 @@ public class ComparePanel extends Composite {
     public void setDifference(boolean value) {
         difference.setValue(value, false);
     }
-    public void switchVariables(Variable newVariable) {
-        this.newVariable = newVariable;
-        if ( variable != null ) {
-            // Save current state
-            xlo = refMap.getXlo();
-            xhi = refMap.getXhi();
-            ylo = refMap.getYlo();
-            yhi = refMap.getYhi();
-            if (variable.getVerticalAxis() != null) {
-                zlo = zAxisWidget.getLo();
-                zhi = zAxisWidget.getHi();
-            } else {
-                zlo = null;
-                zhi = null;
-            }
-            if (variable.getTimeAxis() != null) {
-                tlo = dateTimeWidget.getISODateLo();
-                thi = dateTimeWidget.getISODateHi();
-            } else {
-                tlo = null;
-                thi = null;
-            }
-        }
-
-        // newVariable was set before rpc to get config.
-        String mapView = view;
-        if ( !newVariable.getGeometry().equals(Constants.GRID) ) {
-            mapView = "xy";
-        }
-        initializeAxes(view, mapView, newVariable);
-
-        // Put the values back if we've been here before
-        if ( variable != null ) {
-            refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
-            dateTimeWidget.setLo(tlo);
-            dateTimeWidget.setHi(thi);
-            if (variable.getVerticalAxis() != null) {
-                zAxisWidget.setLo(zlo);
-                zAxisWidget.setHi(zhi);
-            }
-        }
-        variable = newVariable;
-    }
+//    public void switchVariables(Variable newVariable) {
+//        this.newVariable = newVariable;
+//        if ( variable != null ) {
+//            // Save current state
+//            xlo = refMap.getXlo();
+//            xhi = refMap.getXhi();
+//            ylo = refMap.getYlo();
+//            yhi = refMap.getYhi();
+//            if (variable.getVerticalAxis() != null) {
+//                zlo = zAxisWidget.getLo();
+//                zhi = zAxisWidget.getHi();
+//            } else {
+//                zlo = null;
+//                zhi = null;
+//            }
+//            if (variable.getTimeAxis() != null) {
+//                tlo = dateTimeWidget.getISODateLo();
+//                thi = dateTimeWidget.getISODateHi();
+//            } else {
+//                tlo = null;
+//                thi = null;
+//            }
+//        }
+//
+//        // newVariable was set before rpc to get config.
+//        String mapView = view;
+//        if ( !newVariable.getGeometry().equals(Constants.GRID) ) {
+//            mapView = "xy";
+//        }
+//        initializeAxes(view, mapView, newVariable);
+//
+//        // Put the values back if we've been here before
+//        if ( variable != null ) {
+//            refMap.setCurrentSelection(ylo, yhi, xlo, xhi);
+//            dateTimeWidget.setLo(tlo);
+//            dateTimeWidget.setHi(thi);
+//            if (variable.getVerticalAxis() != null) {
+//                zAxisWidget.setLo(zlo);
+//                zAxisWidget.setHi(zhi);
+//            }
+//        }
+//        variable = newVariable;
+//    }
 
     public String getLevels() {
         return autocolors.getText();

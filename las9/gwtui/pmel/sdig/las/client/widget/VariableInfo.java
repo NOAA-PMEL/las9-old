@@ -105,10 +105,10 @@ public class VariableInfo extends Composite {
                 loader.setDisplay(Display.NONE);
             }
         });
-        GeoAxisX x = variable.getGeoAxisX();
-        GeoAxisY y = variable.getGeoAxisY();
-        VerticalAxis z = variable.getVerticalAxis();
-        TimeAxis t = variable.getTimeAxis();
+        GeoAxisX x = d.getGeoAxisX();
+        GeoAxisY y = d.getGeoAxisY();
+        VerticalAxis z = d.getVerticalAxis();
+        TimeAxis t = d.getTimeAxis();
         if ( x != null ) {
             lonMin.setText(Util.format_two(x.getMin()));
             lonMax.setText(Util.format_two(x.getMax()));

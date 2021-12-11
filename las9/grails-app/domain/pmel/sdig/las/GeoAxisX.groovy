@@ -12,7 +12,7 @@ class GeoAxisX {
 	double max
 	double delta
 	long size
-	static belongsTo = [variable: Variable]
+	static belongsTo = [dataset: Dataset]
     static constraints = {	
 		
     }

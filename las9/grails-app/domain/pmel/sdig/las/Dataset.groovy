@@ -24,6 +24,7 @@ class Dataset {
     List datasets
 
     static hasMany = [datasetProperties: DatasetProperty, variables: Variable, datasets: Dataset, vectors: Vector]
+    static hasOne = [timeAxis: TimeAxis, geoAxisX: GeoAxisX, geoAxisY: GeoAxisY, verticalAxis: VerticalAxis]
 
     Dataset parent;
     static belongsTo = [Dataset, Site]
@@ -47,6 +48,8 @@ class Dataset {
 
 
     static constraints = {
+        verticalAxis(nullable: true)
+        timeAxis(nullable: true)
         geometry(nullable: true)
         parent(nullable: true)
         url(nullable: true)
@@ -59,6 +62,10 @@ class Dataset {
         vectors (nullable: true)
         message(nullable: true)
         history(nullable: true)
+        geoAxisX(nullable: true)
+        geoAxisY(nullable: true)
+        verticalAxis(nullable: true)
+        timeAxis(nullable: true)
     }
 
     String getDatasetPropertyValue(String type, String name) {

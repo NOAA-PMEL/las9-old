@@ -1,5 +1,6 @@
 package pmel.sdig.las
 
+import com.google.common.base.Utf8
 import com.google.gson.*
 import grails.gorm.transactions.Transactional
 import grails.web.context.ServletContextHolder
@@ -64,19 +65,19 @@ class IngestService {
 
     Dataset processRequset(AddRequest addRequest, Object parent) {
 
-        if ( addRequest.getType().equals("netcdf") ) {
+        if (addRequest.getType().equals("netcdf")) {
             return ingest(null, addRequest.getUrl())
-        } else if ( addRequest.getType().equals("dsg") ) {
+        } else if (addRequest.getType().equals("dsg")) {
             return ingestDSG(addRequest)
-        } else if ( addRequest.getType().equals("tabledap")) {
+        } else if (addRequest.getType().equals("tabledap")) {
             return ingestAllFromErddap(addRequest.getUrl(), addRequest.getAddProperties())
-        } else if ( addRequest.getType().equals("thredds")) {
+        } else if (addRequest.getType().equals("thredds")) {
             def phash = null;
-            if ( parent instanceof Dataset) {
+            if (parent instanceof Dataset) {
                 phash = parent.getHash()
             }
             def ingesturl = addRequest.getUrl();
-            if ( ingesturl.endsWith(".html") ) ingesturl = ingesturl.replace(".html", ".xml")
+            if (ingesturl.endsWith(".html")) ingesturl = ingesturl.replace(".html", ".xml")
             return ingestFromThredds(ingesturl, phash, null, false)
         }
     }
@@ -89,19 +90,20 @@ class IngestService {
 
         def url = addRequest.getUrl()
 
-        if ( url.endsWith(".html") ) url = url.replace(".html", "")
+        if (url.endsWith(".html")) url = url.replace(".html", "")
 
         Dataset dataset = ingestFromErddap_using_json(url, properties)
 
         dataset
 
     }
+
     String[] getMinMax(JsonObject bounds, String name) {
         JsonArray rows = (JsonArray) ((JsonObject) (bounds.get("table"))).get("rows")
         JsonArray names = (JsonArray) ((JsonObject) (bounds.get("table"))).get("columnNames")
         int index = -1
         for (int i = 0; i < names.size(); i++) {
-            if ( names.get(i).getAsString().equals(name) ) {
+            if (names.get(i).getAsString().equals(name)) {
                 index = i
             }
         }
@@ -115,9 +117,10 @@ class IngestService {
         minmax[1] = max
         return minmax
     }
+
     void updateTime(long id) {
         Dataset dataset = Dataset.get(id)
-        if ( dataset.variableChildren ) {
+        if (dataset.variableChildren) {
             log.info("Updating time axis information for " + dataset.getTitle())
             Dataset nd = null;
             if (dataset.geometry == GeometryType.GRID) {
@@ -151,6 +154,7 @@ class IngestService {
             log.info("Finished updating time information axis for " + dataset.getTitle())
         }
     }
+
     Dataset ingest(String parentHash, String url) {
 
         // Set the status of the parent for each variable using the parentHash key.
@@ -175,7 +179,7 @@ class IngestService {
             return dataset
         }
 
-        if ( gridDs != null) {
+        if (gridDs != null) {
 
             log.debug("Grid data set found ... ")
             List<Attribute> globals = gridDs.getGlobalAttributes()
@@ -185,13 +189,13 @@ class IngestService {
             Map<String, String> drsParams = new HashMap<String, String>()
 
             String title = url
-            for (Iterator iterator = globals.iterator(); iterator.hasNext(); ) {
+            for (Iterator iterator = globals.iterator(); iterator.hasNext();) {
                 Attribute attribute = (Attribute) iterator.next()
-                if ( attribute.getShortName().equals("title") ) {
+                if (attribute.getShortName().equals("title")) {
                     title = attribute.getStringValue()
-                } else if ( attribute.getShortName().equals("dataset_title") ) {
+                } else if (attribute.getShortName().equals("dataset_title")) {
                     title = attribute.getStringValue();
-                } else if ( attribute.getShortName().toLowerCase().equals("history") ) {
+                } else if (attribute.getShortName().toLowerCase().equals("history")) {
                     dataset.setHistory(attribute.getStringValue())
                 }
                 drsParams.put(attribute.getShortName(), attribute.getStringValue())
@@ -202,7 +206,7 @@ class IngestService {
             List<GridDatatype> grids = gridDs.getGrids()
             String m = grids.size() + " variables were found. Processing..."
             ingestStatusService.saveProgress(parentHash, m)
-            if ( grids.size() <= 0 ) {
+            if (grids.size() <= 0) {
                 dataset.setStatus(Dataset.INGEST_FAILED)
                 dataset.setMessage("No data on a regular grid found. May be a projected data set.");
                 return dataset
@@ -221,16 +225,16 @@ class IngestService {
 
                 Attribute ln_attr = gridDatatype.findAttributeIgnoreCase("long_name")
                 Attribute sn_attr = gridDatatype.findAttributeIgnoreCase("standard_name")
-                if ( ln_attr ) {
+                if (ln_attr) {
                     vtitle = ln_attr.getStringValue()
                 }
-                if ( !vtitle && sn_attr ) {
+                if (!vtitle && sn_attr) {
                     vtitle = sn_attr.getStringValue()
                 }
-                if ( !vtitle ) {
+                if (!vtitle) {
                     vtitle = gridDatatype.getName()
                 }
-                if ( sn_attr ) {
+                if (sn_attr) {
                     sname = sn_attr.getStringValue()
                 }
 
@@ -239,24 +243,8 @@ class IngestService {
                 // Set the variable name in the DRS params...
                 drsParams.put("shortname", gridDatatype.getShortName())
 
-                // Build the DRS
-//                DataReferenceSyntax drs = new DataReferenceSyntax()
-//                // Map constructor does not work when called from Java!?!
-//                drs.setActivity(drsParams.get("activity"))
-//                drs.setData_structure(drsParams.get("data_structure"))
-//                drs.setEnsemble(drsParams.get("ensemble"))
-//                drs.setExperiment_id(drsParams.get("experiement_id"))
-//                drs.setFrequency(drsParams.get("frequency"))
-//                drs.setInstitute_id(drsParams.get("institute_id"))
-//                drs.setInstrument(drsParams.get("instrument"))
-//                drs.setModel_id(drsParams.get("model_id"))
-//                drs.setObs_project(drsParams.get("obs_project"))
-//                drs.setProduct(drsParams.get("product"))
-//                drs.setRealm(drsParams.get("realm"))
-//                drs.setSource_id(drsParams.get("source_id"))
-//                drs.setShortname(drsParams.get("shortname"))
-
                 GridCoordSystem gcs = gridDatatype.getCoordinateSystem()
+
 
                 String units = gridDatatype.getUnitsString()
                 // Axes are next...
@@ -302,18 +290,18 @@ class IngestService {
                         double du = tu.getValue()
                         String u = tu.getUnitString()
 
-                        if ( times.length > 1 ) {
+                        if (times.length > 1) {
                             if (regular) {
                                 // TODO sec, week, year?
-                                if ( u.contains("second") ) {
+                                if (u.contains("second")) {
                                     // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
                                     int seconds = (int) du
                                     p0 = new Period(0, 0, 0, 0, 0, 0, seconds, 0)
                                     int hours = p0.normalizedStandard(PeriodType.hours()).getHours();
                                     int days = p0.normalizedStandard(PeriodType.days()).getDays();
-                                    if ( hours < 24 ) {
+                                    if (hours < 24) {
                                         p0 = new Period(0, 0, 0, 0, hours, 0, 0, 0);
-                                    } else if ( days > 27 ) {
+                                    } else if (days > 27) {
                                         p0 = new Period(0, 1, 0, 0, 0, 0, 0, 0);
                                     } else {
                                         p0 = new Period(0, 0, 0, days, 0, 0, 0, 0);
@@ -323,7 +311,7 @@ class IngestService {
                                         if (du < 23.5 * d && du < 23.5 * d + 1) {
                                             // The unit is hours and the delta is less than 25 so use the hours delta
                                             // Period(int years, int months, int weeks, int days, int hours, int minutes, int seconds, int millis)
-                                            int hrs = (int)du;
+                                            int hrs = (int) du;
                                             p0 = new Period(0, 0, 0, 0, hrs, 0, 0, 0)
                                         }
                                     }
@@ -344,7 +332,7 @@ class IngestService {
                                 }
                             } else {
                                 p0 = getPeriod(cdu, times[0], times[1])
-                                if ( !isMonotonic(times) ) {
+                                if (!isMonotonic(times)) {
                                     log.debug("Time axis is not monotonic... quitting.")
                                 }
                                 int hours = p0.getHours()
@@ -373,7 +361,7 @@ class IngestService {
                                 tAxis.setPeriod(pf.print(period))
                             }
 
-                        } else if ( times.length ) {
+                        } else if (times.length) {
                             tAxis.setDelta(pf.print(Period.ZERO));
                             tAxis.setPeriod(pf.print(Period.ZERO))
                         }
@@ -417,7 +405,7 @@ class IngestService {
                     }
                     def xmin = x.getMinValue()
                     def xmax = x.getMaxValue()
-                    if ( !xmin || !xmax || Double.isNaN(xmin)  || Double.isNaN(xmax) ) {
+                    if (!xmin || !xmax || Double.isNaN(xmin) || Double.isNaN(xmax)) {
                         if (x.isRegular()) {
                             xmin = x.getStart();
                             xmax = x.getSize() * x.getIncrement();
@@ -462,12 +450,12 @@ class IngestService {
                     double xmax = x.getMaxValue()
                     double xmin = x.getMinValue()
                     double range = xmax - xmin
-                    double delta = range/Double.valueOf(x.getSize()+1).doubleValue()
+                    double delta = range / Double.valueOf(x.getSize() + 1).doubleValue()
                     double max_span = 360.0d - delta
                     VariableProperty vp4 = new VariableProperty()
                     vp4.setType("ferret")
                     vp4.setName("lon_modulo")
-                    if ( Math.abs(range) >= max_span ) {
+                    if (Math.abs(range) >= max_span) {
                         vp4.setValue("1")
                     } else {
                         vp4.setValue("0")
@@ -535,121 +523,12 @@ class IngestService {
                     }
                     zAxis.setZV(values)
                     String posi = z.getPositive()
-                    if ( posi != null ) {
+                    if (posi != null) {
                         zAxis.setPositive(posi)
                     } else {
                         zAxis.setPositive("not specified")
                     }
                 }
-
-// The make stats code in-line
-//                def ferret = Ferret.first()
-//                def palette = "blue_darkorange"
-//                if ( vtitle.toLowerCase().contains("temp") ) {
-//                    palette = "blue_darkred"
-//                } else if ( vtitle.toLowerCase().contains("precip") ) {
-//                    palette = "brown_blue"
-//                }
-//
-//                int tsize
-//                if ( tAxis ) {
-//                    tsize = tAxis.size
-//                } else {
-//                    tsize = 1
-//                }
-//                int min = Math.min(12, tsize)
-//                // DEBUG
-//                //TODO remove this debug
-//                min = 1
-//                Stats stats = null
-//                for ( int tcounter = 0 tcounter < min tcounter++ ) {
-//                    StringBuilder jnl = new StringBuilder()
-//                    StringBuilder timeRange = new StringBuilder()
-//                    StringBuilder levelRange = new StringBuilder()
-//
-//                    def xcount = xAxis.size
-//                    def ycount = yAxis.size
-//
-//                    def xstride = 1
-//                    if ( xcount >= 1000 && xcount < 3000 ) {
-//                        xstride = 5
-//                    } else if ( xcount >=3000 && xcount < 5000 ) {
-//                        xstride = 10
-//                    } else if ( xcount >= 5000 ) {
-//                        xstride = 50
-//                    }
-//
-//                    def ystride = 1
-//                    if ( ycount >= 1000 && ycount < 3000 ) {
-//                        ystride = 5
-//                    } else if ( ycount >=3000 && ycount < 5000 ) {
-//                        ystride = 10
-//                    } else if ( ycount >= 5000){
-//                        ystride = 50
-//                    }
-//                    if ( tAxis ) {
-//                        int tindex = tcounter + 1
-//
-//                        timeRange.append("l=\""+tindex+"\"")
-//                    }
-//
-//                    if ( zAxis ) {
-//                        // Always do the first level.
-//                        levelRange.append("/k=1")
-//                    }
-//
-//                    def relativeStatsBase = dataset.hash + File.separator + vname
-//                    File base = new File(ferret.tempDir + File.separator + relativeStatsBase)
-//                    if ( !base.exists() ) {
-//                        base.mkdirs()
-//                    }
-//                    def relativeStatsPath = relativeStatsBase + File.separator + "stats.txt"
-//                    def relativeColorBar = relativeStatsBase
-//                    jnl.append("DEFINE SYMBOL DATA = ${url}\n")
-//                    if ( vname.contains("-") ) {
-//                        jnl.append("DEFINE SYMBOL PARAMETER = '$vname'\n")
-//                    } else {
-//                        jnl.append("DEFINE SYMBOL PARAMETER = $vname\n")
-//                    }
-//                    if ( timeRange.length() > 0 || levelRange.length() > 0 ) {
-//                        jnl.append("DEFINE SYMBOL RANGES=${timeRange.toString()}${levelRange.toString()}\n")
-//                    }
-//                    jnl.append("DEFINE SYMBOL OUTPUT = ${relativeStatsPath}\n")
-//                    jnl.append("LET XSTRIDE = ${xstride}\n")
-//                    jnl.append("LET YSTRIDE = ${ystride}\n")
-//
-//                    jnl.append("go stats\n")
-//
-//                    File statsFile = new File(ferret.tempDir + File.separator + relativeStatsPath)
-//
-//
-//
-//                    def ferretResult = ferretService.runScript(jnl.toString())
-//                    if ( ferretResult["error"] == false ) {
-//                        Stats statsTemp = new Stats(ferret.tempDir + File.separator + relativeStatsPath)
-//                        statsTemp.setPalette(palette)
-//                        if ( !stats ) {
-//                            stats = statsTemp
-//                        } else {
-//                            if ( statsTemp.histogram_lev_min < stats.histogram_lev_min) {
-//                                stats.histogram_lev_min = statsTemp.histogram_lev_min
-//                            }
-//                            if ( statsTemp.histogram_lev_max > stats.histogram_lev_max ) {
-//                                stats.histogram_lev_max = statsTemp.histogram_lev_max
-//                            }
-//                        }
-//
-//                    } else {
-//                        log.error(ferretResult["message"])
-//                        return null
-//                    }
-//                    statsFile.delete()
-//
-//                }
-//
-//
-//                stats.computeDel()
-// End of make stats in-line
 
                 String intervals = ""
                 if (xAxis && xAxis.size > 1) {
@@ -658,7 +537,7 @@ class IngestService {
                 if (yAxis && yAxis.size > 1) {
                     intervals = intervals + "y"
                 }
-                if (zAxis && zAxis.size > 1 ) {
+                if (zAxis && zAxis.size > 1) {
                     intervals = intervals + "z"
                 }
                 if (tAxis) {
@@ -675,28 +554,43 @@ class IngestService {
                 variable.setIntervals(intervals)
                 variable.setUnits(units)
 
-                variable.setGeoAxisX(xAxis)
-                xAxis.setVariable(variable)
+                if (dataset.getGeoAxisX() == null) {
+                    dataset.setGeoAxisX(xAxis)
+                    xAxis.setDataset(dataset)
+                } else {
+                    if (!sameAxis(xAxis, dataset.getGeoAxisX())) {
+                        log.error("Second X-axis found in data set.")
+                    }
+                }
 
-                variable.setGeoAxisY(yAxis)
-                yAxis.setVariable(variable)
+                if (dataset.getGeoAxisY() == null) {
+                    dataset.setGeoAxisY(yAxis)
+                    yAxis.setDataset(dataset)
+                } else {
+                    if (!sameAxis(yAxis, dataset.getGeoAxisY())) {
+                        log.error("Second Y-axis found in data set.")
+                    }
+                }
 
                 if (zAxis) {
-                    variable.setVerticalAxis(zAxis)
-                    zAxis.setVariable(variable)
-                }
-                if (tAxis) {
-                    variable.setTimeAxis(tAxis)
-                    tAxis.setVariable(variable)
+                    if (dataset.getVerticalAxis() == null) {
+                        dataset.setVerticalAxis(zAxis)
+                        zAxis.setDataset(dataset)
+                    } else {
+                        if (!sameAxis(zAxis, dataset.getVerticalAxis())) {
+                            log.error("Second vertical axis found in data set")
+                        }
+                    }
                 }
 
-//                if ( variable.validate() ) {
-//                    variable.save(failOnError: true)
-//                } else {
-//                    variable.errors.allErrors.each {
-//                        print it
-//                    }
-//                }
+                if (tAxis) {
+                    if (dataset.getTimeAxis() == null) {
+                        dataset.setTimeAxis(tAxis)
+                        tAxis.setDataset(dataset)
+                    }
+                    // Not worried about multiple times at the moment
+                }
+
 
                 log.debug("Adding " + variable.getTitle() + " to data set")
                 dataset.addToVariables(variable)
@@ -709,7 +603,7 @@ class IngestService {
 
             }
 
-            if ( !dataset.validate() ) {
+            if (!dataset.validate()) {
                 dataset.errors.each {
                     log.debug(it.toString())
                 }
@@ -722,6 +616,59 @@ class IngestService {
         dataset
         // Is it an ESGF catalog or data set?
     }
+
+    boolean sameAxis(GeoAxisX a1, GeoAxisX a2) {
+        def delta_f = 0.001
+        if (a1.type == a2.type &&
+                Math.abs(a1.delta - a2.delta) < delta_f &&
+                a1.size == a2.size &&
+                Math.abs(a1.max - a2.max) < delta_f &&
+                Math.abs(a1.min - a2.min) < delta_f) {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    boolean sameAxis(GeoAxisY a1, GeoAxisY a2) {
+        def delta_f = 0.001
+        if (a1.type == a2.type &&
+                Math.abs(a1.delta - a2.delta) < delta_f &&
+                a1.size == a2.size &&
+                Math.abs(a1.max - a2.max) < delta_f &&
+                Math.abs(a1.min - a2.min) < delta_f) {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    boolean sameAxis(VerticalAxis a1, VerticalAxis a2) {
+        def delta_f = 0.001
+        if (a1.type == a2.type &&
+                a1.size == a2.size &&
+                Math.abs(a1.max - a2.max) < delta_f &&
+                Math.abs(a1.min - a2.min) < delta_f) {
+            if (a1.zvalues && a2.zvalues) {
+                if (a1.zvalues.size() != a2.zvalues.size()) {
+                    return false;
+                } else {
+                    for (int zi = 0; zi < a1.zvalues.size(); zi++) {
+                        if (Math.abs(a1.zvalues.get(zi).getValue() - a2.zvalues.get(zi).getValue()) > delta_f) {
+                            log.error('Found differing z values')
+                            log.error('axis 1 at ' + zi + ' with value ' + a1.zvalues.get(zi).getValue())
+                            log.error('axis 2 at ' + zi + ' with value ' + a2.zvalues.get(zi).getValue())
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true
+        } else {
+            return false
+        }
+    }
+
     def addVariablesAndSaveFromThredds(String url, String parentHash, String erddap, boolean full) {
         Dataset.withNewTransaction {
             Dataset dataset = Dataset.findByUrl(url)
@@ -767,19 +714,20 @@ class IngestService {
             }
         }
     }
+
     Dataset ingestFromThredds(String url, String parentHash, String erddap, boolean full) {
         // Just cheat...
-        if ( url.contains("data.pmel.noaa.gov/uaf") ) {
-//            erddap = "https://upwell.pfeg.noaa.gov/erddap/"
+        if (url.contains("data.pmel.noaa.gov/uaf")) {
+            erddap = "https://upwell.pfeg.noaa.gov/erddap/"
         }
         log.debug("Starting ingest of " + url)
         dateTimeService.init()
         String tdsid;
         String urlwithid;
-        if ( url.contains("#") ) {
+        if (url.contains("#")) {
             urlwithid = url.substring(0, url.indexOf("#"))
-            tdsid = url.substring(url.indexOf("#") + 1, url.length() )
-            if ( !tdsid.equals("null") ) {
+            tdsid = url.substring(url.indexOf("#") + 1, url.length())
+            if (!tdsid.equals("null")) {
                 urlwithid = urlwithid + "?dataset=" + tdsid;
             }
         } else {
@@ -788,7 +736,7 @@ class IngestService {
         ingestStatusService.saveProgress(parentHash, "Reading the catalog from the remote server.")
         CatalogBuilder builder = new CatalogBuilder();
         Catalog catalog = builder.buildFromLocation(urlwithid, null);
-        if ( erddap == null ) { // Just a thredds catalog, no supporting ERDDAP
+        if (erddap == null) { // Just a thredds catalog, no supporting ERDDAP
             ingestStatusService.saveProgress(parentHash, "Catalog read. Looking for data sources.")
             return createDatasetFromCatalog(catalog, parentHash, full);
         } else {
@@ -796,12 +744,13 @@ class IngestService {
         }
         log.debug("Finished ingest of " + url)
     }
+
     Dataset createDatasetFromUAF(Catalog catalog, String erddap) {
         Dataset dataset = new Dataset()
         String cname = catalog.getName();
-        if ( cname.equals("THREDDS Server Default Catalog : You must change this to fit your server!"))
+        if (cname.equals("THREDDS Server Default Catalog : You must change this to fit your server!"))
             cname = "Data Catalog";
-        if ( !cname ) {
+        if (!cname) {
             dataset.setTitle(catalog.getUriString())
         } else {
             dataset.setTitle(cname)
@@ -809,9 +758,9 @@ class IngestService {
         dataset.setUrl(catalog.getUriString())
         dataset.setHash(getDigest(catalog.getUriString()))
         def children = catalog.getDatasetsLogical();
-        for ( int i = 0; i < children.size(); i++ ) {
+        for (int i = 0; i < children.size(); i++) {
             thredds.client.catalog.Dataset invDataset = children.get(i)
-            if ( !invDataset.getName().toLowerCase().equals("tds quality rubric")) {
+            if (!invDataset.getName().toLowerCase().equals("tds quality rubric")) {
                 List<Dataset> childDatasets = processUAFDataset(invDataset, erddap)
                 for (int j = 0; j < childDatasets.size(); j++) {
                     Dataset child = childDatasets.get(j)
@@ -819,18 +768,22 @@ class IngestService {
                 }
             }
         }
+        dataset.setStatus(Dataset.INGEST_FINISHED)
         dataset
     }
+
     List<Dataset> processUAFDataset(thredds.client.catalog.Dataset invDataset, String erddap) {
 
         List<Dataset> all = new ArrayList<Dataset>()
         if (invDataset.hasAccess() && invDataset.getAccess(ServiceType.OPENDAP) != null) {
-            all.addAll(createFromUAFDataset(invDataset, erddap))
+            List<Dataset> a = createFromUAFDataset(invDataset, erddap)
+            if (a.size() > 0)
+                all.addAll(a)
         }
-        if ( invDataset.hasNestedDatasets() ) {
+        if (invDataset.hasNestedDatasets()) {
             List<thredds.client.catalog.Dataset> children = invDataset.getDatasetsLogical()
             thredds.client.catalog.Dataset rubric = children.get(children.size() - 1)
-            if ( rubric.getName().equals("") ) {
+            if (rubric.getName().equals("")) {
                 children.remove(rubric)
             }
 
@@ -848,6 +801,7 @@ class IngestService {
     }
 
     List<Dataset> createFromUAFDataset(thredds.client.catalog.Dataset invDataset, String erddap) {
+
         List<Dataset> rankDatasets = new ArrayList<Dataset>()
         // Either one with variables or one data sets holding the different rank variables?
         if ( erddap.endsWith("/") ) {
@@ -856,14 +810,8 @@ class IngestService {
         String searchUafErddap = erddap + "/search/index.json?page=1&itemsPerPage=1000&searchFor=";
         String metadataUafErddap = erddap + "/info/";  // + ID like "noaa_esrl_3ff0_1c43_88d7" + "/index.json"
         if ( invDataset.hasAccess() && invDataset.getAccess(ServiceType.OPENDAP) != null ) {
-            String idurl = invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName();
-            String url = idurl;
-            if (url.startsWith("https://")) {
-                url = url.replaceAll("https://", "");
-            } else if (url.startsWith("http://")) {
-                url = url.replace("http://", "");
-            }
-
+            String url = invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName();
+            String term = url
             log.debug("Processing UAF THREDDS dataset: " + invDataset.getAccess(ServiceType.OPENDAP).getStandardUrlName() + " from " + invDataset.getParentCatalog().getUriString())
 
 
@@ -872,7 +820,8 @@ class IngestService {
             JsonParser jsonParser = new JsonParser();
             String indexJSON = null;
             try {
-                indexJSON = lasProxy.executeGetMethodAndReturnResult(searchUafErddap + url);
+                log.debug('Search URL is ' + searchUafErddap + term)
+                indexJSON = lasProxy.executeGetMethodAndReturnResult(searchUafErddap + term);
             } catch (HttpException e) {
                 log.debug("Failed on " + searchUafErddap + url);
             } catch (IOException e) {
@@ -891,8 +840,6 @@ class IngestService {
                         idIndex = i;
                     }
                 }
-
-
 
                 JsonArray rows = table.getAsJsonArray("rows");
                 log.debug("ERDDAP Dataset from " + url + " has " + rows.size() + " rows.");
@@ -1048,8 +995,8 @@ class IngestService {
                                                 parts = majorParts[2].split("=");
                                                 geoAxisY.setDelta(Double.valueOf(parts[1]).doubleValue());
                                             }
-                                        } else if (dimName.equals("depth")) {
-                                            String zstring = lasProxy.executeGetMethodAndReturnResult(erddap + "/griddap/" + erddapDatasetId + ".json?depth");
+                                        } else if (dimName.equals("depth") || dimName.equals("level")) {
+                                            String zstring = lasProxy.executeGetMethodAndReturnResult(erddap + "/griddap/" + erddapDatasetId + ".json?" + dimName);
                                             JsonObject zobject = jsonParser.parse(zstring).getAsJsonObject();
                                             JsonObject ztable = zobject.get("table").getAsJsonObject();
                                             JsonArray zarray = ztable.getAsJsonArray("rows");
@@ -1139,11 +1086,11 @@ class IngestService {
                                         }
                                     } else if (metaType.equals("variable")) {
                                         Variable variable = new Variable();
-                                        variable.setHash(getDigest(idurl + "#" + metaRow.get(1).getAsString()));
+                                        variable.setHash(getDigest(url + "#" + metaRow.get(1).getAsString()));
                                         variable.setName(metaRow.get(1).getAsString());
                                         // Gets reset if there is a long_name attribute
                                         variable.setTitle(metaRow.get(1).getAsString())
-                                        variable.setUrl(idurl + "#" + metaRow.get(1).getAsString());
+                                        variable.setUrl(url + "#" + metaRow.get(1).getAsString());
                                         dataset.addToVariables(variable)
                                     }
 
@@ -1154,46 +1101,51 @@ class IngestService {
                             log.error(e.getLocalizedMessage())
                         }
                     }
-                    if ( dataset.getVariables() ) {
-                        dataset.variables.each { Variable variable ->
-                            String intervals = ""
-                            if (geoAxisX.getMax()) {
-                                GeoAxisX vx = new GeoAxisX(geoAxisX.properties)
-                                variable.setGeoAxisX(vx)
-                                vx.setVariable(variable)
-                                intervals = intervals + "x"
-                            }
-                            if (geoAxisY.getMax()) {
-                                GeoAxisY vy = new GeoAxisY(geoAxisY.properties)
-                                variable.setGeoAxisY(vy)
-                                vy.setVariable(variable)
-                                intervals = intervals + "y"
-                            }
-                            if (verticalAxis.getZvalues()) {
-                                VerticalAxis vv = new VerticalAxis(verticalAxis.properties)
-                                variable.setVerticalAxis(vv)
-                                vv.setVariable(variable)
-                                intervals = intervals + "z"
-                            }
-                            if (timeAxis.getStart()) {
-                                TimeAxis vt = new TimeAxis(timeAxis.properties)
-                                CalendarDateUnit cdu = CalendarDateUnit.of(vt.getCalendar(), vt.getUnitsString())
-                                DateTime t0 = dateTimeService.dateTimeFromIso(vt.getStart())
-                                DateTime tN = dateTimeService.dateTimeFromIso(vt.getEnd())
-                                // Bob's times are always "seconds since" so divide milli's by 1000.
-                                Period pTotal = getPeriod(cdu, (t0.getMillis()/1000.0d), (tN.getMillis()/1000.0d))
-                                vt.setPeriod(pf.print(pTotal))
-                                vt.setDelta(pf.print(p0))
-                                variable.setTimeAxis(vt)
-                                vt.setVariable(variable)
-                                intervals = intervals + "t"
-                            }
+                    if ( dataset.getVariables() ) { // have at least one variable
+                        String intervals = ""
+                        if (geoAxisX.getMax()) {
+                            GeoAxisX vx = new GeoAxisX(geoAxisX.properties)
+                            dataset.setGeoAxisX(vx)
+                            vx.setDataset(dataset)
+                            intervals = intervals + "x"
+                        }
+                        if (geoAxisY.getMax()) {
+                            GeoAxisY vy = new GeoAxisY(geoAxisY.properties)
+                            dataset.setGeoAxisY(vy)
+                            vy.setDataset(dataset)
+                            intervals = intervals + "y"
+                        }
+                        if (verticalAxis.getZvalues()) {
+                            VerticalAxis vv = new VerticalAxis(verticalAxis.properties)
+                            dataset.setVerticalAxis(vv)
+                            vv.setDataset(dataset)
+                            intervals = intervals + "z"
+                        }
+                        if (timeAxis.getStart()) {
+                            TimeAxis vt = new TimeAxis(timeAxis.properties)
+                            CalendarDateUnit cdu = CalendarDateUnit.of(vt.getCalendar(), vt.getUnitsString())
+                            DateTime t0 = dateTimeService.dateTimeFromIso(vt.getStart())
+                            DateTime tN = dateTimeService.dateTimeFromIso(vt.getEnd())
+                            // Bob's times are always "seconds since" so divide milli's by 1000.
+                            Period pTotal = getPeriod(cdu, (t0.getMillis() / 1000.0d), (tN.getMillis() / 1000.0d))
+                            vt.setPeriod(pf.print(pTotal))
+                            vt.setDelta(pf.print(p0))
+                            dataset.setTimeAxis(vt)
+                            vt.setDataset(dataset)
+                            intervals = intervals + "t"
+                        }
+
+                        for (int vit = 0; vit < dataset.getVariables().size(); vit++ ) {
+                            Variable variable = dataset.getVariables().get(vit)
                             variable.setIntervals(intervals)
                             variable.setGeometry(GeometryType.GRID)
+                            variable.setDataset(dataset)
+                            dataset.variableChildren = true
                             if (variable.validate())
                                 variable.save(failOnError: true)
                         }
                         if (dataset.validate()) {
+                            dataset.setStatus(Dataset.INGEST_FINISHED)
                             dataset.save(failOnError: true)
                             rankDatasets.add(dataset)
                         }
@@ -1219,10 +1171,11 @@ class IngestService {
         }
         main
     }
+
     Dataset createDatasetFromCatalog(Catalog catalog, String parentHash, boolean full) {
         Dataset dataset = new Dataset()
         if (catalog.getName()) {
-            if ( catalog.getName().toLowerCase().contains("you must change") ) {
+            if (catalog.getName().toLowerCase().contains("you must change")) {
                 String name = fixName(catalog.getUriString())
                 dataset.setTitle(name)
             } else {
@@ -1238,7 +1191,7 @@ class IngestService {
         List<thredds.client.catalog.Dataset> children = catalog.getDatasetsLogical();
 
         // TODO getFullName ???
-        if ( children.size() == 2 && !children.get(0).hasAccess() && children.get(1).getName().toLowerCase().contains("rubric") ) {
+        if (children.size() == 2 && !children.get(0).hasAccess() && children.get(1).getName().toLowerCase().contains("rubric")) {
             thredds.client.catalog.Dataset onlyChild = children.get(0);
             String name = onlyChild.getName();
             if (name == null) {
@@ -1257,19 +1210,20 @@ class IngestService {
                     !nextChild.getName().contains("An error occurred processing")) {
                 log.debug(nextChild.getName() + ' name approved. Processing.')
                 Dataset child = processDataset(nextChild, parentHash, full, dataset)
-                if ( child && (child.variableChildren || (child.getDatasets() && child.getDatasets().size() > 0) ) ) {
+                if (child && (child.variableChildren || (child.getDatasets() && child.getDatasets().size() > 0))) {
                     dataset.addToDatasets(child)
                 }
             }
         }
         dataset
     }
+
     Dataset processDataset(thredds.client.catalog.Dataset invDataset, String parentHash, boolean full, Dataset parent) {
 
         List<thredds.client.catalog.Dataset> invDatasetList = new LinkedList<thredds.client.catalog.Dataset>(invDataset.getDatasetsLogical());
         List<thredds.client.catalog.Dataset> remove = new ArrayList<>()
         boolean access = false;
-        if ( invDataset.hasAccess() ) {
+        if (invDataset.hasAccess()) {
             access = invDataset.getAccess(ServiceType.OPENDAP) != null;
         }
         for (int i = 0; i < invDatasetList.size(); i++) {
@@ -1280,7 +1234,7 @@ class IngestService {
                     access = true
                 }
             }
-            if ( child.getName().contains("automated cleaning process") || child.getName().toLowerCase().contains("tds quality") || child.getName().contains("An error occurred processing")) {
+            if (child.getName().contains("automated cleaning process") || child.getName().toLowerCase().contains("tds quality") || child.getName().contains("An error occurred processing")) {
                 remove.add(child)
             }
         }
@@ -1315,7 +1269,7 @@ class IngestService {
                         }
                         d.variableChildren = true
                         d.geometry = GeometryType.GRID
-                        if ( d.getStatus() != Dataset.INGEST_FAILED)
+                        if (d.getStatus() != Dataset.INGEST_FAILED)
                             d.setStatus(Dataset.INGEST_FINISHED)
                     } else {
                         d.variableChildren = true
@@ -1332,8 +1286,8 @@ class IngestService {
             thredds.client.catalog.Dataset kid = kids.get(i)
             if (!kid.getName().toLowerCase().contains("quality rubric") && !kid.getName().contains("automated cleaning process")) {
                 Dataset dkid = processDataset(kid, parentHash, full, saveToDataset)
-                if ( dkid != null ) {
-                    if ( dkid.variableChildren || (dkid.getDatasets() && dkid.getDatasets().size() > 0) ) {
+                if (dkid != null) {
+                    if (dkid.variableChildren || (dkid.getDatasets() && dkid.getDatasets().size() > 0)) {
                         saveToDataset.addToDatasets(dkid)
                     }
                 }
@@ -1341,34 +1295,35 @@ class IngestService {
         }
         d
     }
+
     Dataset ingestAllFromErddap(String url, List<AddProperty> ingestProperties) {
 
 
         def search = "?page=1&itemsPerPage=1000"
         url = url.replace(search, "");
-        if ( url.endsWith("index.html") ) url = url.replace("index.html", "")
-        if ( !url.endsWith("tabledap") && !url.endsWith("tabledap/") ) {
+        if (url.endsWith("index.html")) url = url.replace("index.html", "")
+        if (!url.endsWith("tabledap") && !url.endsWith("tabledap/")) {
             log.warn("Expecting a url of the form https://host.gov/erddap/tabledap/ trying with /tabledap appended.")
-            if ( url.endsWith("erddap") ) {
+            if (url.endsWith("erddap")) {
                 url = url + "/tabledap/"
-            } else if ( url.endsWith("erddap/") ) {
+            } else if (url.endsWith("erddap/")) {
                 url = url + "tabledap/"
             }
         }
-        if ( !url.endsWith("/") ) {
+        if (!url.endsWith("/")) {
             url = url + "/"
         }
 
         Dataset dsg = new Dataset([title: "Discrete Geometry Data", url: url, hash: getDigest(url)])
-        def tsurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/timeseries/"
+        def tsurl = url.substring(0, url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/timeseries/"
         Dataset timeseries = new Dataset([title: "Timeseries Data", url: tsurl, hash: getDigest(tsurl)])
-        def trurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/trajectory/"
+        def trurl = url.substring(0, url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/trajectory/"
         Dataset trajectories = new Dataset([title: "Trajectory Data", url: trurl, hash: getDigest(trurl)])
-        def trpurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/trajectoryprofile/"
+        def trpurl = url.substring(0, url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/trajectoryprofile/"
         Dataset trajectorieprofiles = new Dataset([title: "Trajectory Profile Data", url: trurl, hash: getDigest(trurl)])
-        def pturl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/point/"
+        def pturl = url.substring(0, url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/point/"
         Dataset point = new Dataset([title: "Point Data", url: pturl, hash: getDigest(pturl)])
-        def prurl = url.substring(0,url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/profile/"
+        def prurl = url.substring(0, url.indexOf("erddap/")) + "erddap/categorize/cdm_data_type/profile/"
         Dataset profile = new Dataset([title: "Profile Data", url: prurl, hash: getDigest(prurl)])
         log.info("Processing table dap data sets from " + url)
         def tabledap = url;
@@ -1377,11 +1332,11 @@ class IngestService {
         try {
             stream = lasProxy.executeGetMethodAndReturnStream(url, null);
         } catch (HttpException e) {
-            System.err.println("DAS processing error: "+e.getMessage());
+            System.err.println("DAS processing error: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("DAS processing error: "+e.getMessage());
+            System.err.println("DAS processing error: " + e.getMessage());
         }
-        if ( stream != null ) {
+        if (stream != null) {
             InputStreamReader reader = new InputStreamReader(stream);
             JsonStreamParser jp = new JsonStreamParser(reader);
             JsonObject tabledap_list = (JsonObject) jp.next();
@@ -1404,15 +1359,15 @@ class IngestService {
 
                 Dataset tabledapItem = ingestFromErddap_using_json(fullurl, ingestProperties);
                 def placed = null;
-                if ( tabledapItem ) {
+                if (tabledapItem) {
                     // First check if there is a container data set with the tabledap URL
                     Dataset d = Dataset.findByUrl(tabledap)
-                    if ( d ) {
+                    if (d) {
                         // The top level may contain other containers. One must travel down the hierarchy until the
                         // matching data set contains only data sets with variable children.
                         List<Dataset> children = d.getDatasets();
                         placed = placeDataset(null, tabledapItem, children)
-                        if ( placed ) {
+                        if (placed) {
                             placed.save(flush: true)
                             d.save(flush: true)
                         } else {
@@ -1424,7 +1379,7 @@ class IngestService {
                                 point.addToDatasets(tabledapItem)
                             } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
                                 profile.addToDatasets(tabledapItem)
-                            } else if ( tabledapItem.getGeometry() == GeometryType.TRAJECTORY_PROFILE ) {
+                            } else if (tabledapItem.getGeometry() == GeometryType.TRAJECTORY_PROFILE) {
                                 trajectorieprofiles.addToDatasets(tabledapItem)
                             }
                         }
@@ -1438,42 +1393,43 @@ class IngestService {
                             point.addToDatasets(tabledapItem)
                         } else if (tabledapItem.getGeometry() == GeometryType.PROFILE) {
                             profile.addToDatasets(tabledapItem)
-                        } else if ( tabledapItem.getGeometry() == GeometryType.TRAJECTORY_PROFILE ) {
+                        } else if (tabledapItem.getGeometry() == GeometryType.TRAJECTORY_PROFILE) {
                             trajectorieprofiles.addToDatasets(tabledapItem)
                         }
                     }
                 }
             }
-            if ( timeseries.datasets && timeseries.datasets.size() > 0 ) {
+            if (timeseries.datasets && timeseries.datasets.size() > 0) {
                 dsg.addToDatasets(timeseries)
             }
-            if ( trajectories.datasets && trajectories.datasets.size() > 0 ) {
+            if (trajectories.datasets && trajectories.datasets.size() > 0) {
                 dsg.addToDatasets(trajectories)
             }
-            if ( point.datasets && point.datasets.size() > 0 ) {
+            if (point.datasets && point.datasets.size() > 0) {
                 dsg.addToDatasets(point)
             }
-            if ( profile.datasets &&  profile.datasets.size() > 0 ) {
+            if (profile.datasets && profile.datasets.size() > 0) {
                 dsg.addToDatasets(profile)
             }
-            if ( trajectorieprofiles.datasets && trajectorieprofiles.datasets.size() > 0 ) {
+            if (trajectorieprofiles.datasets && trajectorieprofiles.datasets.size() > 0) {
                 dsg.addToDatasets(trajectorieprofiles)
             }
         }
         dsg
     }
+
     Dataset placeDataset(Dataset incoming_parent, Dataset incoming, List<Dataset> containers) {
         for (int i = 0; i < containers.size(); i++) {
             Dataset parent = containers.get(i)
-            if ( incoming.getTitle().contains(parent.getTitle()) ) {
+            if (incoming.getTitle().contains(parent.getTitle())) {
                 // It's a match. It either goes here of in one of the children
                 List<Dataset> children = parent.getDatasets()
-                if ( children.size() == 0 ) {
+                if (children.size() == 0) {
                     parent.addToDatasets(incoming)
                     incoming_parent = parent;
                 } else {
                     Dataset child = children.get(0);
-                    if ( child.getVariableChildren() ) {
+                    if (child.getVariableChildren()) {
                         parent.addToDatasets(incoming)
                         incoming_parent = parent
                     } else {
@@ -1484,21 +1440,22 @@ class IngestService {
         }
         return incoming_parent;
     }
-    Dataset ingestFromErddap_using_json(String url, List<AddProperty> properties ) {
+
+    Dataset ingestFromErddap_using_json(String url, List<AddProperty> properties) {
 
 
         def dsg_url = url;
 
         // For now if the metadata is missing we're just going to punt for now and return a null.
 
-        if ( !url.endsWith("/") ) {
+        if (!url.endsWith("/")) {
             url = url + "/"
         }
         url = url + "index.json"
         url = url.replace("tabledap", "info")
         String json = lasProxy.executeGetMethodAndReturnResult(url)
         JsonMetadata metadata
-        if ( json ) {
+        if (json) {
             metadata = new JsonMetadata(json)
         } else {
             return null;
@@ -1508,9 +1465,9 @@ class IngestService {
 
         boolean auto_display = false
 
-        AddProperty auto = properties.find{ it.name == "auto_display"}
+        AddProperty auto = properties.find { it.name == "auto_display" }
 
-        if ( auto ) auto_display = true
+        if (auto) auto_display = true
 
         AddProperty plots = properties.find { it.name == "mapandplot" }
 
@@ -1523,7 +1480,7 @@ class IngestService {
         }
 
         AddProperty hour
-        if ( properties ) {
+        if (properties) {
             hour = properties.find { it.name == "hours" }
         } else {
             hour = new AddProperty([name: "hour", value: "1"])
@@ -1538,7 +1495,7 @@ class IngestService {
 
         def axesToSkip = []
 
-        def id = url.substring(url.lastIndexOf("/")+1, url.length() - 1)
+        def id = url.substring(url.lastIndexOf("/") + 1, url.length() - 1)
 
         int timeout = 400
 
@@ -1547,7 +1504,7 @@ class IngestService {
         Dataset dataset = new Dataset([url: dsg_url, hash: hash])
 
         DateTime date = new DateTime()
-        log.info("Processing: " + url + " at "+date.toString() )
+        log.info("Processing: " + url + " at " + date.toString())
 
         String cdm_trajectory_variables = metadata.getAttributeValue(NC_GLOBAL, TRAJECTORY)
         String cdm_profile_variables = metadata.getAttributeValue(NC_GLOBAL, PROFILE)
@@ -1556,27 +1513,27 @@ class IngestService {
         String altitude_proxy = metadata.getAttributeValue(NC_GLOBAL, "altitude_proxy")
         String grid_type = cdm_data_type.toLowerCase(Locale.ENGLISH)
 
-        log.debug( "This data set has cdm_data_type of " + cdm_data_type)
-        if ( cdm_trajectory_variables && ! cdm_profile_variables) log.debug("This trajectory id is a " + cdm_trajectory_variables)
-        if ( ! cdm_trajectory_variables && cdm_profile_variables) log.debug("The profile id is a " + cdm_profile_variables)
-        if ( cdm_trajectory_variables && cdm_profile_variables) log.debug("This trajectory and profile ids are " + cdm_trajectory_variables + " and " + cdm_profile_variables)
-        if ( cdm_timeseries_variables ) log.debug("The timeseries id is  " + cdm_timeseries_variables)
-        if ( ! cdm_trajectory_variables && cdm_profile_variables) log.debug("This is a " + GeometryType.PROFILE)
+        log.debug("This data set has cdm_data_type of " + cdm_data_type)
+        if (cdm_trajectory_variables && !cdm_profile_variables) log.debug("This trajectory id is a " + cdm_trajectory_variables)
+        if (!cdm_trajectory_variables && cdm_profile_variables) log.debug("The profile id is a " + cdm_profile_variables)
+        if (cdm_trajectory_variables && cdm_profile_variables) log.debug("This trajectory and profile ids are " + cdm_trajectory_variables + " and " + cdm_profile_variables)
+        if (cdm_timeseries_variables) log.debug("The timeseries id is  " + cdm_timeseries_variables)
+        if (!cdm_trajectory_variables && cdm_profile_variables) log.debug("This is a " + GeometryType.PROFILE)
 
         String title = metadata.getAttributeValue(NC_GLOBAL, "title")
-        if ( !title ) {
+        if (!title) {
             title = metadata.getAttributeValue("dataset_title")
         }
-        if ( !title ) {
+        if (!title) {
             title = "Data set from " + url
         }
 
         dataset.setTitle(title)
 
         String subset_names = null
-        if (cdm_trajectory_variables && cdm_profile_variables ) {
+        if (cdm_trajectory_variables && cdm_profile_variables) {
             dataset.setGeometry(GeometryType.TRAJECTORY_PROFILE)
-        } else if ( cdm_timeseries_variables && cdm_profile_variables ) {
+        } else if (cdm_timeseries_variables && cdm_profile_variables) {
             dataset.setGeometry(GeometryType.TIMESERIES_PROFILE)
         } else if (cdm_trajectory_variables) {
             subset_names = cdm_trajectory_variables
@@ -1592,7 +1549,7 @@ class IngestService {
             dataset.setGeometry(GeometryType.POINT)
         }
 
-        if ( subset_names ) {
+        if (subset_names) {
             subset_names.tokenize(",").each {
                 subsetNames.add(it.trim())
             }
@@ -1601,7 +1558,7 @@ class IngestService {
         def trajectoryId
         def profileId
         def dsgid
-        if ( dataset.getGeometry().equals(GeometryType.TRAJECTORY_PROFILE) ) {
+        if (dataset.getGeometry().equals(GeometryType.TRAJECTORY_PROFILE)) {
             trajectoryId = metadata.getVariableWithCf_role("trajectory_id")
             profileId = metadata.getVariableWithCf_role("profile_id")
             log.debug("Setting trajectory id = " + trajectoryId + " and profile_id = " + profileId + " for trajectory profile data set.")
@@ -1610,16 +1567,16 @@ class IngestService {
             log.debug("id var = " + dsgid)
         }
         def id_var_list = []
-        if ( trajectoryId ) {
+        if (trajectoryId) {
             id_var_list.push(trajectoryId)
             dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "trajectory_id", value: trajectoryId]))
 
         }
-        if ( profileId ) {
+        if (profileId) {
             id_var_list.push(profileId)
             dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "profile_id", value: profileId]))
         }
-        if ( dsgid ) id_var_list.push(dsgid)
+        if (dsgid) id_var_list.push(dsgid)
 
         String timeVar = metadata.getAssociatedVariable("_CoordinateAxisType", "time")
         String latVar = metadata.getAssociatedVariable("_CoordinateAxisType", "lat")
@@ -1638,8 +1595,8 @@ class IngestService {
         dataVariables.remove(lonVar)
         subsetNames.remove(lonVar)
         subsetNames.remove(latVar)
-        if ( zVar ) dataVariables.remove(zVar)
-        dataVariables.each{
+        if (zVar) dataVariables.remove(zVar)
+        dataVariables.each {
             log.debug("Data variable found " + it)
         }
 
@@ -1651,7 +1608,7 @@ class IngestService {
         VerticalAxis zAxis = new VerticalAxis()
         zAxis.setType("z")
 
-        if ( !axesToSkip.contains("t") && timeVar ) {
+        if (!axesToSkip.contains("t") && timeVar) {
             timeAxis.setName(timeVar)
             timeAxis.setTitle("Time")
 
@@ -1777,7 +1734,7 @@ class IngestService {
         }
 
 
-        if ( ! axesToSkip.contains("x") && lonVar ) {
+        if (!axesToSkip.contains("x") && lonVar) {
 
             geoAxisX.setName(lonVar)
             DatasetProperty xp = new DatasetProperty([type: "tabledap_access", name: "longitude", value: lonVar])
@@ -1797,8 +1754,8 @@ class IngestService {
             String start = metadata.getAttributeValue(NC_GLOBAL, "geospatial_lon_min")
             String end = metadata.getAttributeValue(NC_GLOBAL, "geospatial_lon_max")
 
-            if ( ! start || ! end )  {
-                log.debug("Rejected "+ url + " for no lon start/end metadata.")
+            if (!start || !end) {
+                log.debug("Rejected " + url + " for no lon start/end metadata.")
                 return null
             }
             double dmin = -180.0d
@@ -1841,25 +1798,25 @@ class IngestService {
 
             // Maybe we prefer lon360 values because of the wrap...
             def range = metadata.getAttributeValue("lon360", "actual_range")
-            if ( range ) {
+            if (range) {
                 // I suspect if lon360 exists we should use it
                 def parts = range.split(",")
                 def min = Double.valueOf(parts[0].trim()).doubleValue()
                 def max = Double.valueOf(parts[1].trim()).doubleValue()
-                if ((min > 2.5 && min < 180 && max < 357.5 && max > 180) || (min >= 180.0d && max >= 180.0d) ) {
+                if ((min > 2.5 && min < 180 && max < 357.5 && max > 180) || (min >= 180.0d && max >= 180.0d)) {
                     dstart = min
                     dend = max
                 }
 
                 def r = dend - dstart
-                def fudge = r*0.15d
+                def fudge = r * 0.15d
 
-                if ( (dstart - fudge) > 0.0d ) {
+                if ((dstart - fudge) > 0.0d) {
                     dstart = dstart - fudge
                 } else {
                     dstart = 0.0d
                 }
-                if ( (dend + fudge) < 360.0d ) {
+                if ((dend + fudge) < 360.0d) {
                     dend = dend + fudge
                 } else {
                     dend = 360.0d
@@ -1874,26 +1831,26 @@ class IngestService {
             geoAxisX.setDelta(1.0d)
 
         }
-        if ( ! axesToSkip.contains("y") && latVar) {
+        if (!axesToSkip.contains("y") && latVar) {
 
             geoAxisY.setName(latVar)
             DatasetProperty latName = new DatasetProperty([type: "tabledap_access", name: "latitude", value: latVar])
             dataset.addToDatasetProperties(latName)
-            String units = metadata.getAttributeValue(latVar,"units")
+            String units = metadata.getAttributeValue(latVar, "units")
             if (units) {
                 geoAxisY.setUnits(units)
             } else {
                 geoAxisX.setUnits("none")
             }
-            String lat_long_name = metadata.getAttributeValue(latVar,"long_name")
-            if ( lat_long_name ) {
+            String lat_long_name = metadata.getAttributeValue(latVar, "long_name")
+            if (lat_long_name) {
                 geoAxisY.setTitle(lat_long_name)
             } else {
                 geoAxisY.setTitle("Latitude")
             }
             String start = metadata.getAttributeValue(NC_GLOBAL, "geospatial_lat_min")
             String end = metadata.getAttributeValue(NC_GLOBAL, "geospatial_lat_max")
-            if ( ! start || ! end ) {
+            if (!start || !end) {
                 log.debug("Rejected " + url + " for no lat start/end metadata.")
                 return null
             }
@@ -1919,13 +1876,13 @@ class IngestService {
             }
             double step = (dend - dstart) / (Double.valueOf(fsize) - 1.0d)
             def dr = dend - dstart
-            def fudge = dr*0.15d
-            if ( dstart - fudge > -85.0d ) {
+            def fudge = dr * 0.15d
+            if (dstart - fudge > -85.0d) {
                 dstart = dstart - fudge;
             } else {
                 dstart = -90.0d
             }
-            if ( dend + fudge < 85.0d ) {
+            if (dend + fudge < 85.0d) {
                 dend = dend + fudge
             } else {
                 dend = 90.0d
@@ -1936,15 +1893,15 @@ class IngestService {
             geoAxisY.setSize(fsize)
 
         }
-        if ( ! axesToSkip.contains("z") && zVar ) {
+        if (!axesToSkip.contains("z") && zVar) {
             DatasetProperty alt = new DatasetProperty([type: "tabledap_access", name: "altitude", value: zVar])
             dataset.addToDatasetProperties(alt)
-            String units = metadata.getAttributeValue(zVar,"units")
-            if ( units ) {
+            String units = metadata.getAttributeValue(zVar, "units")
+            if (units) {
                 zAxis.setUnits(units)
             }
             String longname = metadata.getAttributeValue(zVar, "long_name")
-            if ( longname ) {
+            if (longname) {
                 zAxis.setTitle(longname)
             } else {
                 zAxis.setTitle(zVar)
@@ -1952,7 +1909,7 @@ class IngestService {
             zAxis.setName(zVar)
 
             String pos = metadata.getAttributeValue(zVar, "positive")
-            if ( pos ) {
+            if (pos) {
                 zAxis.setPositive(pos)
             } else {
                 zAxis.setPositive("down")
@@ -1962,10 +1919,10 @@ class IngestService {
             String start = metadata.getAttributeValue(NC_GLOBAL, "geospatial_vertical_min")
             String end = metadata.getAttributeValue(NC_GLOBAL, "geospatial_vertical_max")
 
-            if ( !start && !end ) {
+            if (!start && !end) {
                 // try this instead
                 String range = metadata.getAttributeValue(zVar, "actual_range")
-                if ( range.contains((","))) {
+                if (range.contains((","))) {
                     String[] parts = range.split(",")
                     start = parts[0].trim()
                     end = parts[1].trim()
@@ -1990,12 +1947,12 @@ class IngestService {
 
 
         dataset.setVariableChildren(true)
-        id_var_list.each {dsgIDVariablename ->
+        id_var_list.each { dsgIDVariablename ->
 
             Variable idvb = new Variable()
 
             idvb.setName(dsgIDVariablename)
-            idvb.setUrl(url+"#"+dsgIDVariablename)
+            idvb.setUrl(url + "#" + dsgIDVariablename)
             idvb.setHash(getDigest(idvb.getUrl()))
             idvb.setDsgId(true)
             String longname = metadata.getAttributeValue(dsgIDVariablename, "long_name")
@@ -2019,7 +1976,7 @@ class IngestService {
             gy.setVariable(idvb)
             idvb.setGeoAxisY(gy)
             def intervals = "xy"
-            if ( zVar ) {
+            if (zVar) {
                 VerticalAxis za = new VerticalAxis(zAxis.properties)
                 za.setVariable(idvb)
                 idvb.setVerticalAxis(za)
@@ -2039,11 +1996,8 @@ class IngestService {
         }
 
 
-
-
-
         // Add any subset variables that are not the id and are not a XYZT variable
-        subsetNames.each {subsetVariable ->
+        subsetNames.each { subsetVariable ->
 
             Variable vb = new Variable()
             vb.setName(subsetVariable)
@@ -2054,7 +2008,7 @@ class IngestService {
             } else {
                 vb.setTitle(subsetVariable)
             }
-            vb.setUrl(url+"#"+subsetVariable)
+            vb.setUrl(url + "#" + subsetVariable)
             vb.setHash(getDigest(vb.getUrl()))
             vb.setUnits("text")
             vb.setSubset(true)
@@ -2071,7 +2025,7 @@ class IngestService {
             vb.setGeoAxisY(gy)
 
             def intervals = "xy"
-            if ( zVar ) {
+            if (zVar) {
                 VerticalAxis za = new VerticalAxis(zAxis.properties)
                 za.setVariable(vb)
                 vb.setVerticalAxis(za)
@@ -2105,12 +2059,11 @@ class IngestService {
         pairs.append(lonVar + "-" + id + "," + latVar + "-" + id + "\n")
 
 
-
         def data_variable_ids = []
 
-        dataVariables.each {dataVar ->
+        dataVariables.each { dataVar ->
             vnames.append(dataVar)
-            if ( dataVar != dataVariables.last() ) {
+            if (dataVar != dataVariables.last()) {
                 vnames.append(",")
             }
             if (CdmDatatype.TRAJECTORY.contains(grid_type)) {
@@ -2157,23 +2110,23 @@ class IngestService {
         dataVariables.add(lonVar)
         dataVariables.add(latVar)
         dataVariables.add(timeVar)
-        if ( zVar ) dataVariables.add(zVar)
+        if (zVar) dataVariables.add(zVar)
 
-        dataVariables.each {dataVar ->
+        dataVariables.each { dataVar ->
 
             Variable vb = new Variable()
             vb.setName(dataVar)
-            vb.setUrl(dsg_url+"#"+dataVar)
+            vb.setUrl(dsg_url + "#" + dataVar)
             vb.setHash(getDigest(vb.getUrl()))
             vb.setGeometry(grid_type)
             String units = metadata.getAttributeValue(dataVar, "units")
-            if ( units ) {
+            if (units) {
                 vb.setUnits(units)
             } else {
                 vb.setUnits("none")
             }
             String longname = metadata.getAttributeValue(dataVar, "long_name")
-            if ( longname ) {
+            if (longname) {
                 vb.setTitle(longname)
             } else {
                 vb.setTitle(dataVar)
@@ -2210,8 +2163,8 @@ class IngestService {
             dataset.addToDatasetProperties(new DatasetProperty([type: "ui", name: "default", value: "file:ui.xml#" + grid_type]))
         } else {
             def dv
-            if ( default_value.contains("only") ) {
-                dv = grid_type+"_only"
+            if (default_value.contains("only")) {
+                dv = grid_type + "_only"
             } else {
                 dv = grid_type
             }
@@ -2221,9 +2174,10 @@ class IngestService {
         dataset
     }
 
-    /*
-    @Deprecated
-     */
+/*
+@Deprecated
+ */
+
     Dataset ingestFromErddap(String url, List<AddProperty> properties) {
 
         AddProperty plots = properties.find { it.name == "mapandplot" }
@@ -2237,7 +2191,7 @@ class IngestService {
         }
 
         AddProperty hour
-        if ( properties ) {
+        if (properties) {
             hour = properties.find { it.name == "hours" }
         } else {
             hour = new AddProperty([name: "hour", value: "1"])
@@ -2250,7 +2204,7 @@ class IngestService {
         }
 
 
-        def id = url.substring(url.lastIndexOf("/")+1, url.length() - 1)
+        def id = url.substring(url.lastIndexOf("/") + 1, url.length() - 1)
 
         int timeout = 400  // units of seconds
 
@@ -2267,7 +2221,6 @@ class IngestService {
         Map<String, AttributeTable> monthOfYear = new HashMap<String, AttributeTable>()
 
 
-
         InputStream stream = null
         JsonStreamParser jp = null
 
@@ -2278,7 +2231,7 @@ class IngestService {
         boolean isTrajectory = false
         boolean isTimeseries = false
 
-        def display  = null
+        def display = null
 
         def axesToSkip = []
 
@@ -2292,10 +2245,10 @@ class IngestService {
             Dataset dataset = new Dataset([url: url, hash: hash])
 
             DateTime date = new DateTime()
-            log.info("Processing: " + url + " at "+date.toString() )
+            log.info("Processing: " + url + " at " + date.toString())
 
 
-            input = lasProxy.executeGetMethodAndReturnStream(url+".das", null, timeout)
+            input = lasProxy.executeGetMethodAndReturnStream(url + ".das", null, timeout)
             das.parse(input)
             AttributeTable global = das.getAttributeTable("NC_GLOBAL")
             opendap.dap.Attribute cdm_trajectory_variables_attribute = global.getAttribute(TRAJECTORY)
@@ -2306,16 +2259,16 @@ class IngestService {
             String grid_type = cdm_data_type.getValueAt(0).toLowerCase(Locale.ENGLISH)
             opendap.dap.Attribute subset_names = null
             opendap.dap.Attribute title_attribute = global.getAttribute("title")
-            if ( title_attribute == null ) {
+            if (title_attribute == null) {
                 title_attribute = global.getAttribute("dataset_title")
             }
             String title = "No title global attribute"
-            if ( title_attribute != null ) {
+            if (title_attribute != null) {
                 Iterator<String> titleIt = title_attribute.getValuesIterator()
                 title = titleIt.next()
             }
             AttributeTable variableAttributes = das.getAttributeTable("s")
-            if ( ( (cdm_data_type != null && grid_type.equalsIgnoreCase(CdmDatatype.POINT) ) || cdm_profile_variables_attribute !=null || cdm_trajectory_variables_attribute != null || cdm_timeseries_variables_attribute != null ) && variableAttributes != null ) {
+            if (((cdm_data_type != null && grid_type.equalsIgnoreCase(CdmDatatype.POINT)) || cdm_profile_variables_attribute != null || cdm_trajectory_variables_attribute != null || cdm_timeseries_variables_attribute != null) && variableAttributes != null) {
                 if (grid_type.equals(CdmDatatype.TRAJECTORYPROFILE)) {
                     isTrajectoryProfile = true
                 } else {
@@ -2371,20 +2324,18 @@ class IngestService {
                     String name = (String) names.nextElement()
                     AttributeTable var = variableAttributes.getAttribute(name).getContainer()
                     if (subsetNames.contains(name)) {
-                        if (var.hasAttribute("cf_role") && ( var.getAttribute("cf_role").getValueAt(0).equals("trajectory_id") ||
+                        if (var.hasAttribute("cf_role") && (var.getAttribute("cf_role").getValueAt(0).equals("trajectory_id") ||
                                 var.getAttribute("cf_role").getValueAt(0).equals("profile_id") ||
-                                var.getAttribute("cf_role").getValueAt(0).equals("timeseries_id") ) )
-                        {
+                                var.getAttribute("cf_role").getValueAt(0).equals("timeseries_id"))) {
                             idVar.put(name, var);
                         } else {
                             if (!subsets.containsKey(name)) {
                                 subsets.put(name, var)
                             }
                         }
-                    } else if (var.hasAttribute("cf_role") && ( var.getAttribute("cf_role").getValueAt(0).equals("trajectory_id") ||
-                                    var.getAttribute("cf_role").getValueAt(0).equals("profile_id") ||
-                                    var.getAttribute("cf_role").getValueAt(0).equals("timeseries_id") ) )
-                    {
+                    } else if (var.hasAttribute("cf_role") && (var.getAttribute("cf_role").getValueAt(0).equals("trajectory_id") ||
+                            var.getAttribute("cf_role").getValueAt(0).equals("profile_id") ||
+                            var.getAttribute("cf_role").getValueAt(0).equals("timeseries_id"))) {
                         idVar.put(name, var);
                         if (!subsets.containsKey(name)) {
                             subsets.put(name, var)
@@ -2498,7 +2449,7 @@ class IngestService {
                 VerticalAxis zAxis = new VerticalAxis()
                 zAxis.setType("z")
 
-                if (!timeVar.keySet().isEmpty() && timeVar ) {
+                if (!timeVar.keySet().isEmpty() && timeVar) {
                     String name = timeVar.keySet().iterator().next()
                     timeAxis.setName(name)
                     AttributeTable var = timeVar.get(name)
@@ -2552,7 +2503,7 @@ class IngestService {
                     def minutes = false
                     def hours = false
 
-                    if ( hours_value ) {
+                    if (hours_value) {
                         hours = true
                     }
 
@@ -2582,7 +2533,7 @@ class IngestService {
                             DateTime now = new DateTime().withTimeAtStartOfDay()
                             DateTime earlier = now.minusDays(30)
                             start = dateTimeService.isoFromDateTime(earlier, "proleptic_gregorian")
-                            end   = dateTimeService.isoFromDateTime(now, "proleptic_gregorian")
+                            end = dateTimeService.isoFromDateTime(now, "proleptic_gregorian")
                         }
 
                         // This should be time strings in ISO Format
@@ -2604,10 +2555,10 @@ class IngestService {
                             timeAxis.setStart(hoursfmt.print(dtstart.withTimeAtStartOfDay()))
                         }
 
-                        AddProperty dlo = properties.find{it.name=="display_lo"}
-                        if ( dlo ) timeAxis.setDisplay_lo(dlo.getValue())
-                        AddProperty dhi = properties.find{it.name=="display_hi"}
-                        if ( dhi ) timeAxis.setDisplay_hi(dhi.getValue())
+                        AddProperty dlo = properties.find { it.name == "display_lo" }
+                        if (dlo) timeAxis.setDisplay_lo(dlo.getValue())
+                        AddProperty dhi = properties.find { it.name == "display_hi" }
+                        if (dhi) timeAxis.setDisplay_hi(dhi.getValue())
 
                         // Fudge
                         days = days + 1
@@ -2624,8 +2575,8 @@ class IngestService {
                             period = new Period(0, 0, 0, days, 0, 0, 0, 0)
                         }
 
-                        if ( hours_value ) {
-                            if ( hours_step < 1 ) {
+                        if (hours_value) {
+                            if (hours_step < 1) {
                                 int deltamin = (int) (60 * hours_step)
                                 Period delta = new Period(0, 0, 0, 0, 0, deltamin, 0, 0)
                                 timeAxis.setDelta(pf.print(delta))
@@ -2641,7 +2592,7 @@ class IngestService {
                         timeAxis.setPeriod(pf.print(period))
                         timeAxis.setStart(start)
                         timeAxis.setEnd(end)
-                        long size = (long)period.hours
+                        long size = (long) period.hours
                         // TODO what to do. Number of obs really.
                         timeAxis.setSize(size)
                         //TODO should be long_name, yeah ?-)
@@ -2674,7 +2625,7 @@ class IngestService {
                         geoAxisX.setUnits(units)
                     }
                     opendap.dap.Attribute ln = var.getAttribute("long_name")
-                    if ( ln != null ) {
+                    if (ln != null) {
                         String long_name = ln.getValueAt(0)
                         geoAxisX.setTitle(long_name)
                     } else {
@@ -2746,7 +2697,7 @@ class IngestService {
                         geoAxisY.setUnits(units)
                     }
                     opendap.dap.Attribute ln = var.getAttribute("long_name")
-                    if ( ln != null ) {
+                    if (ln != null) {
                         String long_name = ln.getValueAt(0)
                         geoAxisY.setTitle(long_name)
                     } else {
@@ -2847,7 +2798,7 @@ class IngestService {
                             zAxis.setMax(max)
                             zAxis.setMin(min)
                             zAxis.setDelta(step)
-                            if ( size < 0.00001d ) size = 1.0d
+                            if (size < 0.00001d) size = 1.0d
                             zAxis.setSize(size)
 
                         } else {
@@ -2865,7 +2816,7 @@ class IngestService {
 
                     AttributeTable idvar = idVar.get(dsgIDVariablename)
                     idvb.setName(dsgIDVariablename)
-                    idvb.setUrl(url+"#"+dsgIDVariablename)
+                    idvb.setUrl(url + "#" + dsgIDVariablename)
                     idvb.setHash(getDigest(idvb.getUrl()))
                     idvb.setDsgId(true)
                     opendap.dap.Attribute ln = idvar.getAttribute("long_name")
@@ -2890,7 +2841,7 @@ class IngestService {
                     gy.setVariable(idvb)
                     idvb.setGeoAxisY(gy)
                     def intervals = "xy"
-                    if ( !zVar.keySet().isEmpty() ) {
+                    if (!zVar.keySet().isEmpty()) {
                         VerticalAxis za = new VerticalAxis(zAxis.properties)
                         za.setVariable(idvb)
                         idvb.setVerticalAxis(za)
@@ -2965,7 +2916,7 @@ class IngestService {
                         } else {
                             vb.setTitle(name)
                         }
-                        vb.setUrl(url+"#"+name)
+                        vb.setUrl(url + "#" + name)
                         vb.setHash(getDigest(vb.getUrl()))
                         vb.setUnits("text")
                         vb.setSubset(true)
@@ -2982,7 +2933,7 @@ class IngestService {
                         vb.setGeoAxisY(gy)
 
                         def intervals = "xy"
-                        if ( !zVar.keySet().isEmpty() ) {
+                        if (!zVar.keySet().isEmpty()) {
                             VerticalAxis za = new VerticalAxis(zAxis.properties)
                             za.setVariable(vb)
                             vb.setVerticalAxis(za)
@@ -3076,7 +3027,6 @@ class IngestService {
                 String timen = timeVar.keySet().iterator().next()
 
 
-
                 List<String> data_variable_ids = new ArrayList()
                 for (Iterator subIt = data.keySet().iterator(); subIt.hasNext();) {
                     String key = (String) subIt.next()
@@ -3151,7 +3101,7 @@ class IngestService {
                         AttributeTable var = data.get(name)
                         Variable vb = new Variable()
                         vb.setName(name)
-                        vb.setUrl(url+"#"+name)
+                        vb.setUrl(url + "#" + name)
                         vb.setHash(getDigest(vb.getUrl()))
                         vb.setGeometry(grid_type)
                         opendap.dap.Attribute ua = var.getAttribute("units")
@@ -3192,7 +3142,7 @@ class IngestService {
 
                 }
 
-                if ( dsgIDVariablename ) {
+                if (dsgIDVariablename) {
                     dataset.addToDatasetProperties(new DatasetProperty([type: "tabledap_access", name: "table_variables", value: dsgIDVariablename]))
                 }
 
@@ -3226,8 +3176,8 @@ class IngestService {
                     dataset.addToDatasetProperties(new DatasetProperty([type: "ui", name: "default", value: "file:ui.xml#" + grid_type]))
                 } else {
                     def dv
-                    if ( default_value.contains("only") ) {
-                        dv = grid_type+"_only"
+                    if (default_value.contains("only")) {
+                        dv = grid_type + "_only"
                     } else {
                         dv = grid_type
                     }
@@ -3274,14 +3224,14 @@ class IngestService {
             dataset.setStatus(Dataset.INGEST_FINISHED)
             dataset
         } catch (Exception e) {
-            log.error("Exception adding data set. "+e.getMessage())
+            log.error("Exception adding data set. " + e.getMessage())
             //TODO return an error
         } finally {
-            if ( stream != null ) {
+            if (stream != null) {
                 try {
                     stream.close()
                 } catch (IOException e) {
-                    System.err.println("Error closing stream.  "+e.getMessage())
+                    System.err.println("Error closing stream.  " + e.getMessage())
                 }
             }
         }
@@ -3300,9 +3250,10 @@ class IngestService {
         }
 
     }
+
     def collapse(Dataset dataset) {
         Dataset parent = dataset.getParent()
-        if ( parent ) {
+        if (parent) {
             Dataset grandparent = parent.getParent()
             if (grandparent) {
                 if (grandparent.getDatasets().size() == 1 && parent.getDatasets().size() == 1) {
@@ -3311,7 +3262,7 @@ class IngestService {
                     grandparent.removeFromDatasets(parent)
                     dataset.setParent(grandparent)
                     grandparent.addToDatasets(dataset)
-                    log.debug("Removing: " + parent.getTitle() + " with id " + parent.getId() )
+                    log.debug("Removing: " + parent.getTitle() + " with id " + parent.getId())
                     parent.setParent(null);
                     // Are we at the top yet?
                     if (grandparent.getParent()) {
@@ -3331,9 +3282,10 @@ class IngestService {
             }
         }
     }
+
     public void addVariablesToAll() {
 
-        List<Dataset> needIngest = Dataset.withCriteria{
+        List<Dataset> needIngest = Dataset.withCriteria {
             eq("variableChildren", true)
             eq("status", Dataset.INGEST_NOT_STARTED)
             isEmpty("variables")
@@ -3342,8 +3294,8 @@ class IngestService {
         // When something goes wrong the transaction rolls back all of the datasets.
         // Do only a few at a time, but the service will run every 15 minutes.
         int limit = 25
-        if ( needIngest.size() < 25 ) limit = needIngest.size();
-        log.debug("STARTED adding variables to " + limit + " of " +needIngest.size() + " OPeNDAP endpoints from THREDDS catalogs.")
+        if (needIngest.size() < 25) limit = needIngest.size();
+        log.debug("STARTED adding variables to " + limit + " of " + needIngest.size() + " OPeNDAP endpoints from THREDDS catalogs.")
         Collections.shuffle(needIngest)
         for (int i = 0; i < limit; i++) {
 
@@ -3361,9 +3313,10 @@ class IngestService {
         log.debug("FINISHED adding variables to " + limit + " of " + needIngest.size() + " OPeNDAP endpoints from THREDDS catalogs.")
 
     }
+
     def addVectors(Dataset dataset) {
 
-        if ( !dataset.getVariableChildren() ) {
+        if (!dataset.getVariableChildren()) {
             return;
         }
 
@@ -3389,35 +3342,35 @@ class IngestService {
 
         for (int i = 0; i < variables.size(); i++) {
             Variable v = variables.get(i)
-            if ( v.getName().contains("x") ) {
+            if (v.getName().contains("x")) {
                 String xname = v.getName();
-                xname = xname.replace("x","");
+                xname = xname.replace("x", "");
                 x_names.put(xname, v)
-            } else if ( v.getName().contains("y") ) {
+            } else if (v.getName().contains("y")) {
                 String yname = v.getName();
                 yname = yname.replace("y", "");
                 y_names.put(yname, v)
-            } else if ( v.getName().contains("X") ) {
+            } else if (v.getName().contains("X")) {
                 String xname = v.getName();
                 xname = xname.replace("X", "");
                 X_names.put(xname, v)
-            } else if ( v.getName().contains("Y") ) {
+            } else if (v.getName().contains("Y")) {
                 String yname = v.getName()
                 yname = yname.replace("Y", "")
                 Y_names.put(yname, v)
-            } else if ( v.getName().contains("u") ) {
+            } else if (v.getName().contains("u")) {
                 String uname = v.getName()
                 uname = uname.replace("u", "")
                 u_names.put(uname, v)
-            } else if ( v.getName().contains("v") ) {
+            } else if (v.getName().contains("v")) {
                 String vname = v.getName()
                 vname = vname.replace("v", "")
                 v_names.put(vname, v)
-            } else if ( v.getName().contains("U") ) {
+            } else if (v.getName().contains("U")) {
                 String uname = v.getName()
                 uname = uname.replace("U", "")
                 U_names.put(uname, v)
-            } else if ( v.getName().contains("V") ) {
+            } else if (v.getName().contains("V")) {
                 String vname = v.getName()
                 vname = vname.replace("V", "")
                 V_names.put(vname, v)
@@ -3425,61 +3378,62 @@ class IngestService {
         }
 
         List<Vector> vees_x = vectorPairs(x_names, y_names)
-        if ( vees_x.size() > 0 ) {
+        if (vees_x.size() > 0) {
             for (int i = 0; i < vees_x.size(); i++) {
                 Vector vector = vees_x.get(i)
-                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
-                if ( !found ) {
+                Vector found = dataset.getVectors().find { Vector iv -> iv.getTitle() == vector.getTitle() }
+                if (!found) {
                     dataset.addToVectors(vector)
                 }
             }
         }
         List<Vector> vees_X = vectorPairs(X_names, Y_names)
-        if ( vees_X.size() > 0 ) {
+        if (vees_X.size() > 0) {
             for (int i = 0; i < vees_X.size(); i++) {
                 Vector vector = vees_X.get(i)
-                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
-                if ( !found ) {
+                Vector found = dataset.getVectors().find { Vector iv -> iv.getTitle() == vector.getTitle() }
+                if (!found) {
                     dataset.addToVectors(vector)
                 }
             }
         }
         List<Vector> vees_u = vectorPairs(u_names, v_names)
-        if ( vees_u.size() > 0 ) {
+        if (vees_u.size() > 0) {
             for (int i = 0; i < vees_u.size(); i++) {
                 Vector vector = vees_u.get(i)
-                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
-                if ( !found ) {
+                Vector found = dataset.getVectors().find { Vector iv -> iv.getTitle() == vector.getTitle() }
+                if (!found) {
                     dataset.addToVectors(vector)
                 }
             }
         }
         List<Vector> vees_U = vectorPairs(U_names, V_names)
-        if ( vees_U.size() > 0 ) {
+        if (vees_U.size() > 0) {
             for (int i = 0; i < vees_U.size(); i++) {
                 Vector vector = vees_U.get(i)
-                Vector found = dataset.getVectors().find{Vector iv -> iv.getTitle() == vector.getTitle()}
-                if ( !found ) {
+                Vector found = dataset.getVectors().find { Vector iv -> iv.getTitle() == vector.getTitle() }
+                if (!found) {
                     dataset.addToVectors(vector)
                 }
             }
         }
 
-        if ( dataset.getVectors() && dataset.getVectors().size() > 0 )
+        if (dataset.getVectors() && dataset.getVectors().size() > 0)
             dataset.save(flush: true)
 
     }
+
     def List<Vector> vectorPairs(Map<String, Variable> u, Map<String, Variable> v) {
         List<Vector> vectors = new ArrayList<>()
-        if ( u.size() > 0 ) {
+        if (u.size() > 0) {
             Iterator<String> keys = u.keySet().iterator()
-            while( keys.hasNext() ) {
+            while (keys.hasNext()) {
                 String key = keys.next()
                 Variable u_var = u.get(key)
                 Variable v_var = v.get(key)
-                if ( u_var && v_var ) {
+                if (u_var && v_var) {
                     Vector vector = new Vector()
-                    vector.setHash(u_var.getHash() + "_" + v_var.getHash() )
+                    vector.setHash(u_var.getHash() + "_" + v_var.getHash())
                     vector.setName(u_var.getName() + "_" + v_var.getName() + " vector")
                     vector.setTitle("Vector of " + u_var.getTitle() + " and " + v_var.getTitle())
                     vector.setGeometry(GeometryType.VECTOR)
@@ -3491,6 +3445,7 @@ class IngestService {
         }
         vectors
     }
+
     def makeVectors() {
         def datasets = Dataset.findAllByGeometry(GeometryType.GRID);
         for (int i = 0; i < datasets.size(); i++) {
@@ -3498,6 +3453,7 @@ class IngestService {
             addVectors(dataset)
         }
     }
+
     private static Period getPeriod(CalendarDateUnit cdu, double t0, double t1) {
         CalendarDate cdt0 = cdu.makeCalendarDate(t0)
         CalendarDate cdt1 = cdu.makeCalendarDate(t1)
@@ -3506,6 +3462,7 @@ class IngestService {
 
         return new Period(dt0, dt1)
     }
+
     private static String getPosition(double t, double tb1, double tb2) {
         String position = null
         double c1 = tb1 - t
@@ -3513,21 +3470,22 @@ class IngestService {
 
         double delta = 0.00001d
 
-        if ( c1 < delta ) {
+        if (c1 < delta) {
             position = "beginning"
         }
 
         double c2 = t - tb2
         double ca2 = Math.abs(c2)
 
-        if ( ca2 < delta ) {
+        if (ca2 < delta) {
             position = "end"
         }
-        if ( Math.abs(( tb1 + ((tb2 - tb1)/2.0d) ) - t) < delta ) {
+        if (Math.abs((tb1 + ((tb2 - tb1) / 2.0d)) - t) < delta) {
             position = "middle"
         }
         return position
     }
+
     public static String getDigest(String url) {
         MessageDigest md
         StringBuffer sb = new StringBuffer()
@@ -3549,8 +3507,8 @@ class IngestService {
 
     boolean isMonotonic(double[] times) {
         for (int i = 0; i < times.length - 1; i++) {
-            if ( times[i+1] <= times[i] ) {
-                log.debug("Time axis is not monotonic at " + i + " time[" + i + "] = " + times[i] + " time[" + i + 1 + "] = " + times[i+1])
+            if (times[i + 1] <= times[i]) {
+                log.debug("Time axis is not monotonic at " + i + " time[" + i + "] = " + times[i] + " time[" + i + 1 + "] = " + times[i + 1])
                 return false;
             }
         }

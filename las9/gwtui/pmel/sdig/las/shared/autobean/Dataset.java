@@ -19,6 +19,11 @@ public class Dataset implements Comparable {
     boolean variableChildren;
     Dataset parent;
 
+    TimeAxis timeAxis;
+    GeoAxisX geoAxisX;
+    GeoAxisY geoAxisY;
+    VerticalAxis verticalAxis;
+
     String message;
 
     public String getMessage() {
@@ -203,6 +208,38 @@ public class Dataset implements Comparable {
             }
         }
         return -1;
+    }
+
+    public TimeAxis getTimeAxis() {
+        return timeAxis;
+    }
+
+    public void setTimeAxis(TimeAxis timeAxis) {
+        this.timeAxis = timeAxis;
+    }
+
+    public GeoAxisX getGeoAxisX() {
+        return geoAxisX;
+    }
+
+    public void setGeoAxisX(GeoAxisX geoAxisX) {
+        this.geoAxisX = geoAxisX;
+    }
+
+    public GeoAxisY getGeoAxisY() {
+        return geoAxisY;
+    }
+
+    public void setGeoAxisY(GeoAxisY geoAxisY) {
+        this.geoAxisY = geoAxisY;
+    }
+
+    public VerticalAxis getVerticalAxis() {
+        return verticalAxis;
+    }
+
+    public void setVerticalAxis(VerticalAxis verticalAxis) {
+        this.verticalAxis = verticalAxis;
     }
     public boolean hasVariableChildren() {
         return variableChildren;

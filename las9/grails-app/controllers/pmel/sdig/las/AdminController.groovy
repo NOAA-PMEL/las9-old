@@ -277,7 +277,7 @@ class AdminController {
     }
     def addUAF() {
         AddRequest addRequest = new AddRequest()
-//        addRequest.setUrl("https://data.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml")
+//        def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml"
         def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalogs/psl.noaa.gov/thredds/catalog/Datasets/20thC_ReanV2c/Monthlies/gaussian_sprd/subsurface/catalog.xml"
         addRequest.setUrl(turl)
         addRequest.setType("thredds")
@@ -285,7 +285,6 @@ class AdminController {
         AddProperty ap1 = new AddProperty()
         ap1.setName("parent_type")
         ap1.setValue("site")
-
         AddProperty ap2 = new AddProperty()
         ap2.setName("parent_id")
         ap2.setValue("1")

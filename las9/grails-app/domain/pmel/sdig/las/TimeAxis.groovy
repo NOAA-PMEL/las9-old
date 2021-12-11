@@ -26,7 +26,7 @@ class TimeAxis {
 
     List nameValuePairs
 
-    static belongsTo = [variable: Variable]
+    static belongsTo = [dataset: Dataset]
 
     static hasMany = [nameValuePairs: NameValuePair]
 

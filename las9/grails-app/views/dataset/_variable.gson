@@ -5,8 +5,4 @@ model {
 json g.render(variable, [excludes: ["dataset","geoAxisX", "geoAxisY", "verticalAxis", "timeAxis", "variableAttributes", "variableProperties"]]) {
     variableAttributes g.render(variable.variableAttributes)
     variableProperties g.render(variable.variableProperties)
-    geoAxisX g.render(variable.geoAxisX, [excludes: ["variable"]])
-    geoAxisY g.render(variable.geoAxisY, [excludes: ["variable"]])
-    verticalAxis g.render(template: "verticalAxis", model: [verticalAxis: variable.verticalAxis])
-    timeAxis g.render(variable.timeAxis, [excludes: ["variable"]])
 }

@@ -995,7 +995,8 @@ class IngestService {
                                                 parts = majorParts[2].split("=");
                                                 geoAxisY.setDelta(Double.valueOf(parts[1]).doubleValue());
                                             }
-                                        } else if (dimName.equals("depth") || dimName.equals("level")) {
+                                        } else if (!dimName.equals("latitude") && dimName.equals("longitude") &&
+                                                   !dimName.equals("time")) {
                                             String zstring = lasProxy.executeGetMethodAndReturnResult(erddap + "/griddap/" + erddapDatasetId + ".json?" + dimName);
                                             JsonObject zobject = jsonParser.parse(zstring).getAsJsonObject();
                                             JsonObject ztable = zobject.get("table").getAsJsonObject();

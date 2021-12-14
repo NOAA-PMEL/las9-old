@@ -1,8 +1,10 @@
 import {AddRequest} from "./add-request";
-import {Observable} from "rxjs";
-import {HttpClient} from "@angular/common/http";
-import {Changes, UpdateSpec} from "./app/application-state.service";
+import {Observable} from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {Changes, UpdateSpec} from './app/application-state.service';
+import {Injectable} from '@angular/core';
 
+@Injectable()
 export class AdminService {
 
   constructor(private httpClient: HttpClient) { }

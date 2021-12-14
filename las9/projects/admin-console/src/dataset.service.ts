@@ -1,7 +1,9 @@
-import {HttpClient} from "@angular/common/http";
-import {Dataset} from "./app/json/Dataset";
-import {Site} from "./app/json/Site";
+import {HttpClient} from '@angular/common/http';
+import {Dataset} from './app/json/Dataset';
+import {Site} from './app/json/Site';
+import {Injectable} from '@angular/core';
 
+@Injectable()
 export class DatasetService {
 
   constructor(private httpClient: HttpClient) { }

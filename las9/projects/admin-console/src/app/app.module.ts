@@ -35,50 +35,47 @@ import {JsonFormService} from "../json-form.service";
 
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    JsonFormComponent,
-    FormPropertyComponent,
-    DatasetPickerComponent,
-    AdminComponent,
-    DatasetEditComponent,
-    DatasetAddComponent,
-    DatasetOrganizeComponent,
-    DatasetHideComponent,
-    DatasetDeleteComponent,
-    SiteEditComponent,
-    DatasetUpdateComponent,
-    BackupRestoreComponent,
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    ReactiveFormsModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    HttpClientModule,
-    ButtonModule,
-    DialogModule,
-    DynamicDialogModule,
-    CardModule,
-    SlideMenuModule,
-    BreadcrumbModule,
-    ScrollPanelModule,
-    TabViewModule,
-    PickListModule,
-    ProgressBarModule,
-    DropdownModule,
-    RadioButtonModule
-  ],
-  entryComponents: [
-    DatasetPickerComponent
-  ],
-  providers: [
-    DatasetService,
-    AdminService,
-    ApplicationStateService,
-    JsonFormService
-  ],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        JsonFormComponent,
+        FormPropertyComponent,
+        DatasetPickerComponent,
+        AdminComponent,
+        DatasetEditComponent,
+        DatasetAddComponent,
+        DatasetOrganizeComponent,
+        DatasetHideComponent,
+        DatasetDeleteComponent,
+        SiteEditComponent,
+        DatasetUpdateComponent,
+        BackupRestoreComponent,
+    ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        ReactiveFormsModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        HttpClientModule,
+        ButtonModule,
+        DialogModule,
+        DynamicDialogModule,
+        CardModule,
+        SlideMenuModule,
+        BreadcrumbModule,
+        ScrollPanelModule,
+        TabViewModule,
+        PickListModule,
+        ProgressBarModule,
+        DropdownModule,
+        RadioButtonModule
+    ],
+    providers: [
+        DatasetService,
+        AdminService,
+        ApplicationStateService,
+        JsonFormService
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }

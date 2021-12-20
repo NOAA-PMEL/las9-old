@@ -3333,28 +3333,28 @@ public class UI implements EntryPoint {
 
 
         }
-//        if (useVariable.getTimeAxis() != null) {
-//
-//            layout.showDateTime();
-//            if (view.contains("t") || p.getData_view().contains("t")) {
-//                dateTimeWidget.setRange(true);
-//            } else {
-//                dateTimeWidget.setRange(false);
-//            }
-//        } else {
-//            layout.hideDateTime();
-//        }
-//
-//        if (useVariable.getVerticalAxis() != null) {
-//            layout.showVertialAxis();
-//            if (view.contains("z") || p.getData_view().contains("z") ) {
-//                zAxisWidget.setRange(true);
-//            } else {
-//                zAxisWidget.setRange(false);
-//            }
-//        } else {
-//            layout.hideVerticalAxis();
-//        }
+        if (dataset.getTimeAxis() != null) {
+
+            layout.showDateTime();
+            if (view.contains("t") || p.getData_view().contains("t")) {
+                dateTimeWidget.setRange(true);
+            } else {
+                dateTimeWidget.setRange(false);
+            }
+        } else {
+            layout.hideDateTime();
+        }
+
+        if (dataset.getVerticalAxis() != null) {
+            layout.showVertialAxis();
+            if (view.contains("z") || p.getData_view().contains("z") ) {
+                zAxisWidget.setRange(true);
+            } else {
+                zAxisWidget.setRange(false);
+            }
+        } else {
+            layout.hideVerticalAxis();
+        }
 
         if ( layout.isAnalysisActive() ) {
             // Amend the range settings based on the analysis settings.

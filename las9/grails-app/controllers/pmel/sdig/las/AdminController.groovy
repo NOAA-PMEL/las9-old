@@ -277,8 +277,9 @@ class AdminController {
     }
     def addUAF() {
         AddRequest addRequest = new AddRequest()
-//        def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml"
-        def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalogs/psl.noaa.gov/thredds/catalog/Datasets/20thC_ReanV2c/Monthlies/gaussian_sprd/subsurface/catalog.xml"
+        def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalog.xml"
+//        def turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalogs/psl.noaa.gov/thredds/catalog/Datasets/20thC_ReanV2c/Monthlies/gaussian_sprd/subsurface/catalog.xml"
+        turl = "https://data.pmel.noaa.gov/uaf/thredds/CleanCatalogs/oceanwatch.pfeg.noaa.gov/thredds/catalog/FNMOC/NAVGEM/onedegree/10mWindU/catalog.xml"
         addRequest.setUrl(turl)
         addRequest.setType("thredds")
         def addprops = []

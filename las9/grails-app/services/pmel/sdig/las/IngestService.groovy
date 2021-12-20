@@ -1597,6 +1597,12 @@ class IngestService {
         subsetNames.remove(lonVar)
         subsetNames.remove(latVar)
         if (zVar) dataVariables.remove(zVar)
+        if ( dataVariables.size() == 0 ) {
+            log.info("No data variables found in " + url)
+            dataset.setStatus(Dataset.INGEST_FAILED)
+            dataset.setMessage("No data variables found.")
+            return dataset;
+        }
         dataVariables.each {
             log.debug("Data variable found " + it)
         }
@@ -1968,26 +1974,10 @@ class IngestService {
             idvb.addToVariableAttributes(cby)
             idvb.addToVariableAttributes(cid)
             idvb.setGeometry(grid_type)
-            // Axis and intervals
-            GeoAxisX gx = new GeoAxisX(geoAxisX.properties)
-            gx.setVariable(idvb)
-            idvb.setGeoAxisX(gx)
-
-            GeoAxisY gy = new GeoAxisY(geoAxisY.properties)
-            gy.setVariable(idvb)
-            idvb.setGeoAxisY(gy)
             def intervals = "xy"
             if (zVar) {
-                VerticalAxis za = new VerticalAxis(zAxis.properties)
-                za.setVariable(idvb)
-                idvb.setVerticalAxis(za)
                 intervals = intervals + "z"
             }
-
-            TimeAxis ta = new TimeAxis(timeAxis.properties)
-            ta.setVariable(idvb)
-            idvb.setTimeAxis(ta)
-
             intervals = intervals + "t"
             idvb.setIntervals(intervals)
 
@@ -1995,7 +1985,24 @@ class IngestService {
             subsetNames.remove(dsgIDVariablename)
             dataset.addToDatasetProperties(new DatasetProperty([type: "thumbnails", name: "metadata", value: dsgIDVariablename]))
         }
+        // Axis and intervals
+        GeoAxisX gx = new GeoAxisX(geoAxisX.properties)
+        gx.setDataset(dataset)
+        dataset.setGeoAxisX(gx)
 
+        GeoAxisY gy = new GeoAxisY(geoAxisY.properties)
+        gy.setDataset(dataset)
+        dataset.setGeoAxisY(gy)
+
+        if (zVar) {
+            VerticalAxis za = new VerticalAxis(zAxis.properties)
+            za.setDataset(dataset)
+            dataset.setVerticalAxis(za)
+        }
+
+        TimeAxis ta = new TimeAxis(timeAxis.properties)
+        ta.setDataset(dataset)
+        dataset.setTimeAxis(ta)
 
         // Add any subset variables that are not the id and are not a XYZT variable
         subsetNames.each { subsetVariable ->
@@ -2017,25 +2024,11 @@ class IngestService {
             vb.addToVariableAttributes(new VariableAttribute([name: "subset_variable", value: "true"]))
             vb.addToVariableAttributes(new VariableAttribute([name: "geometry", value: grid_type.toLowerCase(Locale.ENGLISH)]))
 
-            GeoAxisX gx = new GeoAxisX(geoAxisX.properties)
-            gx.setVariable(vb)
-            vb.setGeoAxisX(gx)
-
-            GeoAxisY gy = new GeoAxisY(geoAxisY.properties)
-            gy.setVariable(vb)
-            vb.setGeoAxisY(gy)
-
             def intervals = "xy"
             if (zVar) {
                 VerticalAxis za = new VerticalAxis(zAxis.properties)
-                za.setVariable(vb)
-                vb.setVerticalAxis(za)
                 intervals = intervals + "z"
             }
-
-            TimeAxis ta = new TimeAxis(timeAxis.properties)
-            ta.setVariable(vb)
-            vb.setTimeAxis(ta)
 
             intervals = intervals + "t"
             vb.setIntervals(intervals)
@@ -2132,23 +2125,12 @@ class IngestService {
             } else {
                 vb.setTitle(dataVar)
             }
-            GeoAxisX gx = new GeoAxisX(geoAxisX.properties)
-            gx.setVariable(vb)
-            vb.setGeoAxisX(gx)
-            GeoAxisY gy = new GeoAxisY(geoAxisY.properties)
-            gy.setVariable(vb)
-            vb.setGeoAxisY(gy)
             def intervals = "xy"
             if (zVar) {
                 VerticalAxis za = new VerticalAxis(zAxis.properties)
-                za.setVariable(vb)
-                vb.setVerticalAxis(za)
                 intervals = intervals + "z"
             }
             intervals = intervals + "t"
-            TimeAxis ta = new TimeAxis(timeAxis.properties)
-            ta.setVariable(vb)
-            vb.setTimeAxis(ta)
             vb.setIntervals(intervals)
             vb.addToVariableAttributes(new VariableAttribute([name: "grid_type", value: grid_type.toLowerCase(Locale.ENGLISH)]))
             dataset.addToVariables(vb)
